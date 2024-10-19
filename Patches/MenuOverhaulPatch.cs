@@ -14,6 +14,8 @@ using UnityEngine.SceneManagement;
 using SPT.Reflection.Utils;
 using System.IO;
 using TMPro;
+using UnityEngine.EventSystems;
+using System.Globalization;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
@@ -40,7 +42,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             HandleScene(SceneManager.GetActiveScene());
 
             // Disable camera movement
-            DisableCameraMovement();
+            await DisableCameraMovement();
 
             // List of button names to process
             string[] buttonNames = { "PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup" };
@@ -75,6 +77,49 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             Plugin.LogSource.LogWarning("_playButton field not found in MenuScreen.");
                         }
                     }
+
+                    // Special handling for ExitButtonGroup
+                    if (buttonName == "ExitButtonGroup")
+                    {
+                        GameObject exitButton = buttonObject.transform.Find("ExitButton")?.gameObject;
+                        if (exitButton != null)
+                        {
+                            SetButtonHoverColors(exitButton);
+                            exitButton.transform.Find("Background")?.gameObject.SetActive(false);
+                            GameObject SizeLabel = exitButton.transform.Find("SizeLabel")?.gameObject;
+                            GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
+                            GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
+                            if (icon != null)
+                            {
+                                icon.SetActive(false);
+                            }
+                            else
+                            {
+                                Plugin.LogSource.LogWarning($"Icon not found in exitButton.");
+                            }
+                        }
+                        else
+                        {
+                            Plugin.LogSource.LogWarning("ExitButton not found in ExitButtonGroup.");
+                        }
+                    }
+                    else
+                    {
+                        SetButtonHoverColors(buttonObject);
+                        buttonObject.transform.Find("Background")?.gameObject.SetActive(false);
+                        GameObject SizeLabel = buttonObject.transform.Find("SizeLabel")?.gameObject;
+                        GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
+                        GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
+                        if (icon != null)
+                        {
+                            icon.SetActive(false);
+                        }
+                        else
+                        {
+                            Plugin.LogSource.LogWarning($"Icon not found in {buttonName}.");
+                        }
+
+                    }
                 }
                 else
                 {
@@ -86,13 +131,50 @@ namespace MoxoPixel.MenuOverhaul.Patches
             await AddPlayerModel();
         }
 
+        private static void SetButtonHoverColors(GameObject buttonObject)
+        {
+            if (buttonObject == null)
+            {
+                Plugin.LogSource.LogWarning("buttonObject is null.");
+                return;
+            }
+
+            if (!buttonObject.TryGetComponent(out DefaultUIButton buttonComponent))
+            {
+                Plugin.LogSource.LogWarning("DefaultUIButton component not found on button.");
+                return;
+            }
+
+            var buttonField = AccessTools.Field(typeof(DefaultUIButton), "_button");
+            var animationField = AccessTools.Field(typeof(TweenAnimatedButton), "_animation");
+            var normalLabelColorField = AccessTools.Field(typeof(DefaultUIButtonAnimation), "_normalLabelColor");
+            var highlightedLabelColorField = AccessTools.Field(typeof(DefaultUIButtonAnimation), "_highlightedLabelColor");
+
+            if (buttonField == null || animationField == null || normalLabelColorField == null || highlightedLabelColorField == null)
+            {
+                Plugin.LogSource.LogWarning("One or more fields could not be found using AccessTools.");
+                return;
+            }
+
+            if (!(buttonField.GetValue(buttonComponent) is TweenAnimatedButton _button))
+            {
+                Plugin.LogSource.LogWarning("TweenAnimatedButton component not found on button.");
+                return;
+            }
+
+            if (!(animationField.GetValue(_button) is DefaultUIButtonAnimation _animation))
+            {
+                Plugin.LogSource.LogWarning("DefaultUIButtonAnimation component not found on button.");
+                return;
+            }
+            normalLabelColorField.SetValue(_animation, new Color(0.85f, 0.92f, 0.92f, 1f));
+            highlightedLabelColorField.SetValue(_animation, new Color(1f, 0.75f, 0.3f, 1f));
+        }
+
         private static Task LoadPatchContent(MenuScreen __instance)
         {
-            // Your patch content loading logic here
             HideGameObject(__instance, "_alphaWarningGameObject");
             HideGameObject(__instance, "_warningGameObject");
-
-            // Any other initialization or loading logic
 
             return Task.CompletedTask; // Return a completed task to satisfy the method signature
         }
@@ -118,7 +200,44 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         clonedPlayerModelView.transform.localPosition = new Vector3(400f, -250f, 0f);
                         clonedPlayerModelView.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f); // Set the scale
 
-                        // Locate the Main Light and set its color
+
+                        Transform cameraTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
+                        if (cameraTransform != null)
+                        {
+                            var prismEffects = cameraTransform.GetComponent<PrismEffects>();
+                            if (prismEffects != null)
+                            {
+                                // Set the specified properties
+                                prismEffects.useChromaticAberration = true;
+                                prismEffects.useDof = true;
+                                prismEffects.useExposure = true;
+                                prismEffects.useAmbientObscurance = true;
+                                prismEffects.tonemapType = Prism.Utils.TonemapType.ACES;
+                                prismEffects.toneValues = new Vector3(3f, 0.2f, 0.5f);
+                                prismEffects.exposureUpperLimit = 0.55f;
+                                prismEffects.aoBias = 0.1f;
+                                prismEffects.aoIntensity = 3f;
+                                prismEffects.aoRadius = 0.2f;
+                                prismEffects.aoBlurFilterDistance = 1.25f;
+                                prismEffects.aoMinIntensity = 1f;
+                                prismEffects.aoLightingContribution = 5f;
+                                prismEffects.useBloom = true;
+                                prismEffects.bloomIntensity = 0.04f;
+                                prismEffects.bloomThreshold = 0.02f;
+                                prismEffects.useLensDirt = false;
+
+                            }
+                            else
+                            {
+                                Plugin.LogSource.LogWarning("PrismEffects component not found on Camera_inventory.");
+                            }
+                        }
+                        else
+                        {
+                            Plugin.LogSource.LogWarning("Camera_inventory not found.");
+                        }
+
+                        // Locate the Main Light
                         Transform mainLightTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/PlayerMVObjectLights/Main Light");
                         if (mainLightTransform != null)
                         {
@@ -126,6 +245,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             if (mainLight != null)
                             {
                                 mainLight.color = new Color(0.7f, 1f, 1f, 1f);
+                                mainLight.range = 2.8f;
+                                mainLight.intensity = 0.4f;
                             }
                             else
                             {
@@ -135,6 +256,44 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         else
                         {
                             Plugin.LogSource.LogWarning("Main Light GameObject not found.");
+                        }
+
+                        // Locate the Hair Light
+                        Transform hairLightTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/PlayerMVObjectLights/Hair Light");
+                        if (hairLightTransform != null)
+                        {
+                            Light hairLight = hairLightTransform.GetComponent<Light>();
+                            if (hairLight != null)
+                            {
+                                hairLight.intensity = 0.5f;
+                            }
+                            else
+                            {
+                                Plugin.LogSource.LogWarning("Light component not found on Hair Light.");
+                            }
+                        }
+                        else
+                        {
+                            Plugin.LogSource.LogWarning("Hair Light GameObject not found.");
+                        }
+
+                        // Locate the Fill Light
+                        Transform fillLightTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/PlayerMVObjectLights/Fill Light");
+                        if (fillLightTransform != null)
+                        {
+                            Light fillLight = fillLightTransform.GetComponent<Light>();
+                            if (fillLight != null)
+                            {
+                                fillLight.color = new Color(0.5f, 0.5f, 0.5f, 1f);
+                            }
+                            else
+                            {
+                                Plugin.LogSource.LogWarning("Light component not found on Fill Light.");
+                            }
+                        }
+                        else
+                        {
+                            Plugin.LogSource.LogWarning("Fill Light GameObject not found.");
                         }
 
                         Transform bottomFieldTransform = clonedPlayerModelView.transform.Find("BottomField");
@@ -265,7 +424,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             var experienceTransform = bottomFieldTransform.Find("Experience");
             if (experienceTransform != null)
             {
-
                 // Find the ExpValue component
                 var expValueTransform = experienceTransform.Find("ExpValue");
                 if (expValueTransform != null)
@@ -274,7 +432,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
                     if (experienceTMP != null)
                     {
-                        experienceTMP.text = PatchConstants.BackEndSession.Profile.Experience.ToString();
+                        var numberFormat = new NumberFormatInfo
+                        {
+                            NumberGroupSeparator = " ",
+                            NumberDecimalDigits = 0
+                        };
+                        experienceTMP.text = PatchConstants.BackEndSession.Profile.Experience.ToString("N", numberFormat);
                     }
                 }
                 else
@@ -382,6 +545,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     byte[] fileData = File.ReadAllBytes(mainMenuImage);
                     Texture2D texture = new Texture2D(2, 2);
                     texture.LoadImage(fileData);
+                    texture = FlipTextureVertically(texture);
+                    texture = FlipTextureHorizontally(texture);
 
                     List<Material> materials = new List<Material>();
 
@@ -413,8 +578,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         newPlane.transform.SetParent(factoryLayout.transform);
 
                         // Set the transforms
-                        newPlane.transform.localPosition = new Vector3(-0.2012f, 0.0326f, 7.399f);
-                        newPlane.transform.position = new Vector3(-0.2012f, -999.9673f, 4.399f);
+                        newPlane.transform.localPosition = new Vector3(0f, 0f, 5.399f);
+                        newPlane.transform.position = new Vector3(0f, -999.999f, 5.399f);
                         newPlane.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
                         newPlane.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
                         newPlane.transform.localScale = new Vector3(1.9f, 1f, 0.92f);
@@ -440,6 +605,38 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 Plugin.LogSource.LogWarning("panorama GameObject not found in FactoryLayout.");
             }
+        }
+
+        private static Texture2D FlipTextureVertically(Texture2D original)
+        {
+            Texture2D flipped = new Texture2D(original.width, original.height);
+            for (int y = 0; y < original.height; y++)
+            {
+                for (int x = 0; x < original.width; x++)
+                {
+                    flipped.SetPixel(x, original.height - y - 1, original.GetPixel(x, y));
+                }
+            }
+            flipped.Apply();
+            return flipped;
+        }
+
+        private static Texture2D FlipTextureHorizontally(Texture2D original)
+        {
+            int width = original.width;
+            int height = original.height;
+            Texture2D flipped = new Texture2D(width, height);
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    flipped.SetPixel(width - x - 1, y, original.GetPixel(x, y));
+                }
+            }
+
+            flipped.Apply();
+            return flipped;
         }
 
         private static void SetChildActive(GameObject parent, string childName, bool isActive)
@@ -579,80 +776,99 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        private static void DisableCameraMovement()
+        private static async Task DisableCameraMovement()
         {
-            // Find the Environment UI GameObject
-            GameObject environmentUI = GameObject.Find("Environment UI");
-            if (environmentUI != null)
+            GameObject environmentUI = null;
+
+            for (int i = 0; i < 50; i++)  // Try up to 50 times (5 seconds total)
             {
-                // Find and activate the AlignmentCamera GameObject
-                GameObject alignmentCamera = environmentUI.transform.Find("AlignmentCamera")?.gameObject;
-                if (alignmentCamera != null)
+                environmentUI = GameObject.Find("Environment UI");
+                if (environmentUI != null)
                 {
-                    alignmentCamera.SetActive(true);
-
-                    // Set the fieldOfView to 80
-                    Camera cameraComponent = alignmentCamera.GetComponent<Camera>();
-                    if (cameraComponent != null)
-                    {
-                        cameraComponent.fieldOfView = 80;
-                    }
-                    else
-                    {
-                        Plugin.LogSource.LogWarning("Camera component not found on AlignmentCamera.");
-                    }
+                    break;  // Found the object, break out of the loop
                 }
-                else
-                {
-                    Plugin.LogSource.LogWarning("AlignmentCamera GameObject not found.");
-                }
+                await Task.Delay(100);  // Wait 100ms before checking again
+            }
 
-                // Find the EnvironmentUISceneFactory GameObject
-                GameObject environmentUISceneFactory = environmentUI.transform.Find("EnvironmentUISceneFactory")?.gameObject;
-                if (environmentUISceneFactory != null)
-                {
-                    // Find the FactoryCameraContainer GameObject
-                    GameObject factoryCameraContainer = environmentUISceneFactory.transform.Find("FactoryCameraContainer")?.gameObject;
-                    if (factoryCameraContainer != null)
-                    {
-                        // Find and disable the MainMenuCamera GameObject
-                        GameObject mainMenuCamera = factoryCameraContainer.transform.Find("MainMenuCamera")?.gameObject;
-                        if (mainMenuCamera != null)
-                        {
-                            mainMenuCamera.SetActive(false);
+            if (environmentUI == null)
+            {
+                Plugin.LogSource.LogWarning("Environment UI GameObject not found.");
+                return;
+            }
 
-                            // Transfer the LightSwitcherOverkill component
-                            var lightSwitcher = mainMenuCamera.GetComponent<LightSwitcherOverkill>();
-                            if (lightSwitcher != null)
-                            {
-                                var newLightSwitcher = alignmentCamera.AddComponent<LightSwitcherOverkill>();
+            // Find the EnvironmentUISceneFactory GameObject
+            GameObject environmentUISceneFactory = environmentUI.transform.Find("EnvironmentUISceneFactory")?.gameObject;
+            if (environmentUISceneFactory == null)
+            {
+                Plugin.LogSource.LogWarning("EnvironmentUISceneFactory GameObject not found.");
+                return;
+            }
 
-                                // Copy properties from the original LightSwitcherOverkill to the new one
-                                newLightSwitcher.enabled = lightSwitcher.enabled;
-                            }
-                            else
-                            {
-                                Plugin.LogSource.LogWarning("LightSwitcherOverkill component not found on MainMenuCamera.");
-                            }
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning("MainMenuCamera GameObject not found.");
-                        }
-                    }
-                    else
-                    {
-                        Plugin.LogSource.LogWarning("FactoryCameraContainer GameObject not found.");
-                    }
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("EnvironmentUISceneFactory GameObject not found.");
-                }
+            // Find the FactoryCameraContainer GameObject
+            GameObject factoryCameraContainer = environmentUISceneFactory.transform.Find("FactoryCameraContainer")?.gameObject;
+            if (factoryCameraContainer == null)
+            {
+                Plugin.LogSource.LogWarning("FactoryCameraContainer GameObject not found.");
+                return;
+            }
+
+            // Find the MainMenuCamera GameObject
+            GameObject mainMenuCamera = factoryCameraContainer.transform.Find("MainMenuCamera")?.gameObject;
+            if (mainMenuCamera == null)
+            {
+                Plugin.LogSource.LogWarning("MainMenuCamera GameObject not found.");
+                return;
+            }
+
+            mainMenuCamera.SetActive(false);
+
+            // Find the FactoryLayout GameObject
+            GameObject factoryLayout = environmentUISceneFactory.transform.Find("FactoryLayout")?.gameObject;
+            if (factoryLayout == null)
+            {
+                Plugin.LogSource.LogWarning("FactoryLayout GameObject not found.");
+                return;
+            }
+
+            GameObject alignmentCameraPos = environmentUI.transform.Find("AlignmentCamera")?.gameObject;
+            if (alignmentCameraPos == null)
+            {
+                Plugin.LogSource.LogWarning("AlignmentCamera GameObject not found.");
+                return;
+            }
+
+            // Move the AlignmentCamera into the FactoryLayout
+            if (alignmentCameraPos.transform.parent != factoryLayout.transform)
+            {
+                alignmentCameraPos.transform.SetParent(factoryLayout.transform);
+            }
+
+            // Find or create the AlignmentCamera GameObject
+            GameObject alignmentCamera = environmentUI.transform.Find("EnvironmentUISceneFactory/FactoryLayout/AlignmentCamera")?.gameObject;
+            if (alignmentCamera == null)
+            {
+                // If AlignmentCamera is not found, create a new one
+                alignmentCamera = new GameObject("AlignmentCamera");
+                alignmentCamera.transform.SetParent(factoryLayout.transform); // Set it under FactoryLayout instead
+
+                // Add a Camera component to the new GameObject
+                Camera cameraComponent = alignmentCamera.AddComponent<Camera>();
+                cameraComponent.fieldOfView = 80;
             }
             else
             {
-                Plugin.LogSource.LogWarning("Environment UI GameObject not found.");
+                alignmentCamera.SetActive(true);
+
+                // Set the fieldOfView to 80
+                Camera cameraComponent = alignmentCamera.GetComponent<Camera>();
+                if (cameraComponent != null)
+                {
+                    cameraComponent.fieldOfView = 80;
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning("Camera component not found on AlignmentCamera.");
+                }
             }
         }
     }
