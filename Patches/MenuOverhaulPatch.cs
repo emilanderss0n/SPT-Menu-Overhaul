@@ -32,17 +32,20 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
-            // Load your patch content here
-            await LoadPatchContent(__instance);
+            GameObject isMainMenuScreen = GameObject.Find("Common UI/Common UI/MenuScreen");
+            if (isMainMenuScreen == null)
+            {
+                return;
+            }
+
+            await LoadPatchContent(__instance).ConfigureAwait(false);
 
             // Subscribe to the sceneLoaded event
             SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
 
             // Initial check for the active scene
             HandleScene(SceneManager.GetActiveScene());
-
-            // Disable camera movement
-            await DisableCameraMovement();
 
             // List of button names to process
             string[] buttonNames = { "PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup" };
@@ -62,7 +65,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     // Calculate the y position based on the index and margin
                     int index = Array.IndexOf(buttonNames, buttonName);
                     float yOffset = -index * 60; // margin between buttons
-                    rectTransform.anchoredPosition = new Vector2(200, yOffset); // Adjust the x value as needed
+                    rectTransform.anchoredPosition = new Vector2(250, yOffset); // Adjust the x value as needed
+
+                    SetIconImages(buttonObject, buttonName);
 
                     // If the button is PlayButton, change the font size using DefaultUIButton
                     if (buttonName == "PlayButton")
@@ -70,11 +75,24 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         FieldInfo playButtonField = typeof(MenuScreen).GetField("_playButton", BindingFlags.NonPublic | BindingFlags.Instance);
                         if (playButtonField != null)
                         {
-                            ModifyButtonText(playButtonField, __instance, "ESCAPE FROM TARKOV", 36);
+                            ModifyButtonText(playButtonField, __instance, fontSize: 36);
                         }
                         else
                         {
                             Plugin.LogSource.LogWarning("_playButton field not found in MenuScreen.");
+                        }
+
+                        // Delay the visibility change to ensure it runs last
+                        await Task.Delay(10); // Adjust the delay as needed
+                        GameObject SizeLabel = buttonObject.transform.Find("SizeLabel")?.gameObject;
+                        GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
+                        if (iconContainer != null)
+                        {
+                            iconContainer.SetActive(true);
+                        }
+                        else
+                        {
+                            Plugin.LogSource.LogWarning($"IconContainer not found for {buttonName}.");
                         }
                     }
 
@@ -84,19 +102,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         GameObject exitButton = buttonObject.transform.Find("ExitButton")?.gameObject;
                         if (exitButton != null)
                         {
-                            SetButtonHoverColors(exitButton);
                             exitButton.transform.Find("Background")?.gameObject.SetActive(false);
                             GameObject SizeLabel = exitButton.transform.Find("SizeLabel")?.gameObject;
                             GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
                             GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
                             if (icon != null)
                             {
-                                icon.SetActive(false);
+                                icon.SetActive(true);
                             }
                             else
                             {
                                 Plugin.LogSource.LogWarning($"Icon not found in exitButton.");
                             }
+                            SetIconImages(exitButton, "ExitButton");
                         }
                         else
                         {
@@ -105,20 +123,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     }
                     else
                     {
-                        SetButtonHoverColors(buttonObject);
                         buttonObject.transform.Find("Background")?.gameObject.SetActive(false);
                         GameObject SizeLabel = buttonObject.transform.Find("SizeLabel")?.gameObject;
                         GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
                         GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
+                        GameObject iconIdle = iconContainer.transform.Find("IconIdle")?.gameObject;
                         if (icon != null)
                         {
-                            icon.SetActive(false);
+                            icon.SetActive(true);
                         }
                         else
                         {
-                            Plugin.LogSource.LogWarning($"Icon not found in {buttonName}.");
+                            Plugin.LogSource.LogWarning($"Icon not set active for {buttonName}.");
                         }
-
                     }
                 }
                 else
@@ -128,47 +145,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
 
             // Call AddPlayerModel
-            await AddPlayerModel();
-        }
+            await AddPlayerModel().ConfigureAwait(false);
 
-        private static void SetButtonHoverColors(GameObject buttonObject)
-        {
-            if (buttonObject == null)
-            {
-                Plugin.LogSource.LogWarning("buttonObject is null.");
-                return;
-            }
-
-            if (!buttonObject.TryGetComponent(out DefaultUIButton buttonComponent))
-            {
-                Plugin.LogSource.LogWarning("DefaultUIButton component not found on button.");
-                return;
-            }
-
-            var buttonField = AccessTools.Field(typeof(DefaultUIButton), "_button");
-            var animationField = AccessTools.Field(typeof(TweenAnimatedButton), "_animation");
-            var normalLabelColorField = AccessTools.Field(typeof(DefaultUIButtonAnimation), "_normalLabelColor");
-            var highlightedLabelColorField = AccessTools.Field(typeof(DefaultUIButtonAnimation), "_highlightedLabelColor");
-
-            if (buttonField == null || animationField == null || normalLabelColorField == null || highlightedLabelColorField == null)
-            {
-                Plugin.LogSource.LogWarning("One or more fields could not be found using AccessTools.");
-                return;
-            }
-
-            if (!(buttonField.GetValue(buttonComponent) is TweenAnimatedButton _button))
-            {
-                Plugin.LogSource.LogWarning("TweenAnimatedButton component not found on button.");
-                return;
-            }
-
-            if (!(animationField.GetValue(_button) is DefaultUIButtonAnimation _animation))
-            {
-                Plugin.LogSource.LogWarning("DefaultUIButtonAnimation component not found on button.");
-                return;
-            }
-            normalLabelColorField.SetValue(_animation, new Color(0.85f, 0.92f, 0.92f, 1f));
-            highlightedLabelColorField.SetValue(_animation, new Color(1f, 0.75f, 0.3f, 1f));
+            SetButtonIconTransform(__instance, "PlayButton", new Vector3(0.8f, 0.8f, 0.8f), new Vector3(-48f, 0f, 0f));
+            SetButtonIconTransform(__instance, "TradeButton", new Vector3(0.8f, 0.8f, 0.8f));
+            SetButtonIconTransform(__instance, "HideoutButton", new Vector3(0.8f, 0.8f, 0.8f));
+            SetButtonIconTransform(__instance, "ExitButtonGroup", new Vector3(0.8f, 0.8f, 0.8f));
         }
 
         private static Task LoadPatchContent(MenuScreen __instance)
@@ -176,7 +158,202 @@ namespace MoxoPixel.MenuOverhaul.Patches
             HideGameObject(__instance, "_alphaWarningGameObject");
             HideGameObject(__instance, "_warningGameObject");
 
-            return Task.CompletedTask; // Return a completed task to satisfy the method signature
+            return Task.CompletedTask;
+        }
+
+        private static void SetButtonIconTransform(MenuScreen __instance, string buttonName, Vector3? localScale = null, Vector3? anchoredPosition = null)
+        {
+
+            GameObject button = __instance.transform.Find(buttonName)?.gameObject;
+            if (button == null)
+            {
+                Plugin.LogSource.LogWarning($"SetButtonIconTransform - Button {buttonName} not found in MenuScreen.");
+                return;
+            }
+
+            GameObject sizeLabel;
+            if (buttonName == "ExitButtonGroup")
+            {
+                GameObject exitButton = button.transform.Find("ExitButton")?.gameObject;
+                if (exitButton == null)
+                {
+                    Plugin.LogSource.LogWarning($"SetButtonIconTransform - ExitButton not found in {buttonName}.");
+                    return;
+                }
+                sizeLabel = exitButton.transform.Find("SizeLabel")?.gameObject;
+            }
+            else
+            {
+                sizeLabel = button.transform.Find("SizeLabel")?.gameObject;
+            }
+
+            if (sizeLabel == null)
+            {
+                Plugin.LogSource.LogWarning($"SetButtonIconTransform - SizeLabel not found in {buttonName}.");
+                return;
+            }
+
+            GameObject iconContainer = sizeLabel.transform.Find("IconContainer")?.gameObject;
+            if (iconContainer == null)
+            {
+                Plugin.LogSource.LogWarning($"SetButtonIconTransform - IconContainer not found in {buttonName}.");
+                return;
+            }
+
+            GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
+            if (icon == null)
+            {
+                Plugin.LogSource.LogWarning($"SetButtonIconTransform - Icon not found for {buttonName}.");
+                return;
+            }
+
+            if (localScale.HasValue)
+            {
+                icon.transform.localScale = localScale.Value;
+            }
+
+            if (anchoredPosition.HasValue)
+            {
+                RectTransform rectTransform = icon.transform as RectTransform;
+                if (rectTransform != null && anchoredPosition.HasValue)
+                {
+                    rectTransform.anchoredPosition = anchoredPosition.Value;
+                }
+            }
+        }
+
+        private static void SetIconImages(GameObject buttonObject, string buttonName)
+        {
+            if (buttonObject == null)
+            {
+                Plugin.LogSource.LogWarning($"{buttonName} buttonObject is null.");
+                return;
+            }
+
+            string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "MenuOverhaul", "Resources");
+            string iconPath = null;
+
+            switch (buttonName)
+            {
+                case "PlayButton":
+                    iconPath = Path.Combine(basePath, "icon_play.png");
+                    break;
+                case "ExitButton":
+                case "ExitButtonGroup":
+                    iconPath = Path.Combine(basePath, "exit_status_runner.png");
+                    break;
+                case "HideoutButton":
+                    iconPath = Path.Combine(basePath, "hideout_icon_black.png");
+                    break;
+                case "CharacterButton":
+                    iconPath = Path.Combine(basePath, "icon_mainmenu_character.png");
+                    break;
+                case "TradeButton":
+                    iconPath = Path.Combine(basePath, "icon_trade.png");
+                    break;
+                default:
+                    Plugin.LogSource.LogWarning($"Icon for {buttonName} not found.");
+                    return;
+            }
+
+            if (!File.Exists(iconPath))
+            {
+                Plugin.LogSource.LogWarning($"Icon for {buttonName} not found.");
+                return;
+            }
+
+            byte[] fileData = File.ReadAllBytes(iconPath);
+            Texture2D texture = new Texture2D(2, 2);
+            if (!texture.LoadImage(fileData))
+            {
+                Plugin.LogSource.LogWarning($"Failed to load texture for {buttonName}.");
+                return;
+            }
+
+            Sprite newIconSprite = LoadNewIconSprite(buttonName, basePath);
+            if (newIconSprite == null)
+            {
+                Plugin.LogSource.LogWarning($"New icon sprite for {buttonName} could not be loaded.");
+                return;
+            }
+
+            SetImageSprite(buttonObject, newIconSprite, buttonName);
+            SetImageSprite(buttonObject.transform.Find("SizeLabel/IconContainer/Icon")?.gameObject, newIconSprite, buttonName);
+        }
+
+        private static void SetImageSprite(GameObject obj, Sprite sprite, string buttonName)
+        {
+            if (obj == null)
+            {
+                return;
+            }
+
+            Image image = obj.GetComponent<Image>();
+            if (image != null)
+            {
+                image.sprite = sprite;
+                image.overrideSprite = sprite;
+            }
+        }
+
+        private static readonly Dictionary<string, string> ButtonNameToFileNameMap = new Dictionary<string, string>
+        {
+            { "PlayButton", "icon_play.png" },
+            { "CharacterButton", "icon_mainmenu_character.png" },
+            { "TradeButton", "icon_trade.png" },
+            { "HideoutButton", "hideout_icon_black.png" },
+            { "ExitButton", "exit_status_runner.png" },
+            { "ExitButtonGroup", "exit_status_runner.png" }
+        };
+
+        private static Sprite LoadNewIconSprite(string buttonName, string basePath)
+        {
+            if (!ButtonNameToFileNameMap.TryGetValue(buttonName, out string fileName))
+            {
+                Plugin.LogSource.LogWarning($"No mapping found for button name: {buttonName}");
+                return null;
+            }
+
+            string filePath = Path.Combine(basePath, fileName);
+            if (!File.Exists(filePath))
+            {
+                Plugin.LogSource.LogWarning($"Icon file for {buttonName} does not exist at path: {filePath}");
+                return null;
+            }
+
+            try
+            {
+                byte[] fileData = File.ReadAllBytes(filePath);
+                Texture2D texture = new Texture2D(2, 2);
+                if (texture.LoadImage(fileData))
+                {
+                    return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning($"Failed to load image data for {buttonName} from file: {filePath}");
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"Exception occurred while loading icon sprite for {buttonName}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private static Texture2D LoadTextureFromFile(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                byte[] fileData = File.ReadAllBytes(filePath);
+                Texture2D texture = new Texture2D(2, 2);
+                if (texture.LoadImage(fileData))
+                {
+                    return texture;
+                }
+            }
+            return null;
         }
 
         private static async Task AddPlayerModel()
@@ -311,7 +488,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             }
 
                             bottomFieldTransform.localScale = new Vector3(0.7f, 0.7f, 0.7f);
-                            bottomFieldTransform.localPosition = new Vector3(820f, -100f, 0f);
+                            bottomFieldTransform.localPosition = new Vector3(840f, 0f, 0f);
 
                             // Update the nickname and experience count
                             UpdatePlayerStats(bottomFieldTransform);
@@ -376,6 +553,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     Plugin.LogSource.LogWarning("MainMenuPlayerModelView not found.");
                 }
             }
+            await Task.CompletedTask.ConfigureAwait(false);
         }
 
         private static void UpdatePlayerStats(Transform bottomFieldTransform)
@@ -385,7 +563,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             if (nicknameAndKarmaTransform != null)
             {
-
                 // Find the Label component
                 var labelTransform = nicknameAndKarmaTransform.Find("Label");
                 if (labelTransform != null)
@@ -414,10 +591,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 {
                     Plugin.LogSource.LogWarning("Icon component not found in NicknameAndKarma.");
                 }
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("NicknameAndKarma GameObject not found in BottomField.");
             }
 
             // Find the Experience object
@@ -456,154 +629,159 @@ namespace MoxoPixel.MenuOverhaul.Patches
             HandleScene(scene);
         }
 
+        private static void OnSceneUnloaded(Scene scene)
+        {
+            HandleScene(scene);
+        }
+
         private static void HandleScene(Scene scene)
         {
-            // Find instances of EnvironmentUI in the active scene
-            EnvironmentUI[] environmentUIs = UnityEngine.Object.FindObjectsOfType<EnvironmentUI>();
-            if (environmentUIs.Length == 0)
+            if (scene.name == "CommonUIScene")
             {
-                Plugin.LogSource.LogWarning("EnvironmentUI instances not found.");
-                return;
-            }
-
-            foreach (var environmentUI in environmentUIs)
-            {
-                // Find the specific GameObject named "EnvironmentUISceneFactory"
-                GameObject environmentUISceneFactory = environmentUI.gameObject.transform.Find("EnvironmentUISceneFactory")?.gameObject;
-                if (environmentUISceneFactory == null)
+                // Find instances of EnvironmentUI in the active scene
+                EnvironmentUI[] environmentUIs = UnityEngine.Object.FindObjectsOfType<EnvironmentUI>();
+                if (environmentUIs.Length == 0)
                 {
-                    Plugin.LogSource.LogWarning("EnvironmentUISceneFactory GameObject not found.");
-                    continue;
+                    Plugin.LogSource.LogWarning("EnvironmentUI instances not found.");
+                    return;
                 }
 
-                // Find the child GameObject named "FactoryLayout"
-                GameObject factoryLayout = environmentUISceneFactory.transform.Find("FactoryLayout")?.gameObject;
-                if (factoryLayout != null)
+                foreach (var environmentUI in environmentUIs)
                 {
-                    // Find and control the visibility of specific children
-                    SetChildActive(factoryLayout, "panorama", true);
-                    SetChildActive(factoryLayout, "decal_plane", true);
-                    SetChildActive(factoryLayout, "LampContainer", true);
-
-                    // Find the LampContainer and its children
-                    GameObject lampContainer = factoryLayout.transform.Find("LampContainer")?.gameObject;
-                    if (lampContainer != null)
+                    // Find the specific GameObject named "EnvironmentUISceneFactory"
+                    GameObject environmentUISceneFactory = environmentUI.gameObject.transform.Find("EnvironmentUISceneFactory")?.gameObject;
+                    if (environmentUISceneFactory == null)
                     {
-                        SetChildActive(lampContainer, "Lamp", true);
-                        SetChildActive(lampContainer, "MultiFlare", false);
+                        Plugin.LogSource.LogWarning("EnvironmentUISceneFactory GameObject not found.");
+                        continue;
                     }
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("FactoryLayout GameObject not found.");
-                }
 
-                // Find the FactoryCameraContainer and MainMenuCamera
-                GameObject factoryCameraContainer = environmentUISceneFactory.transform.Find("FactoryCameraContainer")?.gameObject;
-                if (factoryCameraContainer != null)
-                {
-                    GameObject mainMenuCamera = factoryCameraContainer.transform.Find("MainMenuCamera")?.gameObject;
-                    if (mainMenuCamera != null)
+                    // Find the child GameObject named "FactoryLayout"
+                    GameObject factoryLayout = environmentUISceneFactory.transform.Find("FactoryLayout")?.gameObject;
+                    if (factoryLayout != null)
                     {
-                        // Disable the PhysicsSimulator component on MainMenuCamera
-                        var physicsSimulator = mainMenuCamera.GetComponent<CW2.Animations.PhysicsSimulator>();
-                        if (physicsSimulator != null)
+                        // Find and control the visibility of specific children
+                        SetChildActive(factoryLayout, "panorama", true);
+                        SetChildActive(factoryLayout, "decal_plane", true);
+                        SetChildActive(factoryLayout, "LampContainer", true);
+
+                        // Find the LampContainer and its children
+                        GameObject lampContainer = factoryLayout.transform.Find("LampContainer")?.gameObject;
+                        if (lampContainer != null)
                         {
-                            physicsSimulator.enabled = false;
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning("PhysicsSimulator component not found on MainMenuCamera.");
+                            SetChildActive(lampContainer, "Lamp", true);
+                            SetChildActive(lampContainer, "MultiFlare", false);
                         }
                     }
                     else
                     {
-                        Plugin.LogSource.LogWarning("MainMenuCamera GameObject not found.");
+                        Plugin.LogSource.LogWarning("FactoryLayout GameObject not found.");
                     }
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("FactoryCameraContainer GameObject not found.");
-                }
 
-                // Load and set the new EmissionMap for the panorama GameObject
-                SetPanoramaEmissionMap(factoryLayout);
+                    // Load and set the new EmissionMap for the panorama GameObject
+                    SetPanoramaEmissionMap(factoryLayout);
+                }
+                // Disable camera movement
+                DisableCameraMovement();
             }
         }
 
         private static void SetPanoramaEmissionMap(GameObject factoryLayout)
         {
             string mainMenuImage = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "MenuOverhaul", "Resources", "background.jpg");
+            string ultraWideImage = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "MenuOverhaul", "Resources", "background_ultrawide.jpg");
             GameObject panorama = factoryLayout.transform.Find("panorama")?.gameObject;
+            GameObject customPlane = factoryLayout.transform.Find("CustomPlane")?.gameObject;
 
-            if (panorama != null)
+            if (panorama == null)
             {
-                Renderer renderer = panorama.GetComponent<Renderer>();
-                if (renderer != null)
+                Plugin.LogSource.LogWarning("panorama GameObject not found in FactoryLayout.");
+                return;
+            }
+
+            Renderer renderer = panorama.GetComponent<Renderer>();
+            if (renderer == null)
+            {
+                Plugin.LogSource.LogWarning("Renderer component not found on panorama.");
+                return;
+            }
+
+            string[] materialNames = { "part1", "part2", "part3", "part4" };
+            byte[] fileData;
+            Texture2D texture = new Texture2D(2, 2);
+
+            // Determine the screen aspect ratio
+            float aspectRatio = (float)Screen.width / Screen.height;
+
+            // Check if the aspect ratio is ultra-wide
+            if (aspectRatio > 2.33f)
+            {
+                // Load the ultra-wide image
+                fileData = File.ReadAllBytes(ultraWideImage);
+
+                // Adjust the localScale of CustomPlane
+                if (customPlane != null)
                 {
-                    string[] materialNames = { "part1", "part2", "part3", "part4" };
-                    byte[] fileData = File.ReadAllBytes(mainMenuImage);
-                    Texture2D texture = new Texture2D(2, 2);
-                    texture.LoadImage(fileData);
-                    texture = FlipTextureVertically(texture);
-                    texture = FlipTextureHorizontally(texture);
-
-                    List<Material> materials = new List<Material>();
-
-                    foreach (string materialName in materialNames)
-                    {
-                        Material material = renderer.materials.FirstOrDefault(mat => mat.name.Contains(materialName));
-                        if (material != null)
-                        {
-                            material.SetTexture("_EmissionMap", texture);
-                            material.EnableKeyword("_EMISSION");
-                            materials.Add(material);
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning($"Material with name containing '{materialName}' not found on panorama.");
-                        }
-                    }
-
-                    // Hide the panorama GameObject
-                    panorama.SetActive(false);
-
-                    // Check if CustomPlane already exists
-                    GameObject existingPlane = factoryLayout.transform.Find("CustomPlane")?.gameObject;
-                    if (existingPlane == null)
-                    {
-                        // Create a new plane mesh inside FactoryLayout
-                        GameObject newPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-                        newPlane.name = "CustomPlane";
-                        newPlane.transform.SetParent(factoryLayout.transform);
-
-                        // Set the transforms
-                        newPlane.transform.localPosition = new Vector3(0f, 0f, 5.399f);
-                        newPlane.transform.position = new Vector3(0f, -999.999f, 5.399f);
-                        newPlane.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
-                        newPlane.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
-                        newPlane.transform.localScale = new Vector3(1.9f, 1f, 0.92f);
-
-                        // Transfer other transforms from panorama object
-                        newPlane.layer = panorama.layer;
-                        newPlane.tag = panorama.tag;
-
-                        // Apply the materials to the new plane
-                        Renderer newPlaneRenderer = newPlane.GetComponent<Renderer>();
-                        newPlaneRenderer.materials = materials.ToArray();
-
-                        // Turn off shadow casting
-                        newPlaneRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                    }
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("Renderer component not found on panorama.");
+                    Vector3 localScale = customPlane.transform.localScale;
+                    localScale.x *= 1.5f; // Adjust the width as needed
+                    customPlane.transform.localScale = localScale;
                 }
             }
             else
             {
-                Plugin.LogSource.LogWarning("panorama GameObject not found in FactoryLayout.");
+                // Load the standard image
+                fileData = File.ReadAllBytes(mainMenuImage);
+            }
+
+            texture.LoadImage(fileData);
+            texture = FlipTextureVertically(texture);
+            texture = FlipTextureHorizontally(texture);
+
+            List<Material> materials = new List<Material>();
+
+            foreach (string materialName in materialNames)
+            {
+                Material material = renderer.materials.FirstOrDefault(mat => mat.name.Contains(materialName));
+                if (material != null)
+                {
+                    material.SetTexture("_EmissionMap", texture);
+                    material.EnableKeyword("_EMISSION");
+                    materials.Add(material);
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning($"Material with name containing '{materialName}' not found on panorama.");
+                }
+            }
+
+            // Hide the panorama GameObject
+            panorama.SetActive(false);
+
+            // Check if CustomPlane already exists
+            if (customPlane == null)
+            {
+                // Create a new plane mesh inside FactoryLayout
+                GameObject newPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
+                newPlane.name = "CustomPlane";
+                newPlane.transform.SetParent(factoryLayout.transform);
+
+                // Set the transforms
+                newPlane.transform.localPosition = new Vector3(0f, 0f, 5.399f);
+                newPlane.transform.position = new Vector3(0f, -999.999f, 5.399f);
+                newPlane.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+                newPlane.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
+                newPlane.transform.localScale = new Vector3(1.9f, 1f, 0.92f);
+
+                // Transfer other transforms from panorama object
+                newPlane.layer = panorama.layer;
+                newPlane.tag = panorama.tag;
+
+                // Apply the materials to the new plane
+                Renderer newPlaneRenderer = newPlane.GetComponent<Renderer>();
+                newPlaneRenderer.materials = materials.ToArray();
+
+                // Turn off shadow casting
+                newPlaneRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
         }
 
@@ -749,7 +927,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        private static void ModifyButtonText(FieldInfo buttonField, MenuScreen screen, string newText, int fontSize)
+        private static void ModifyButtonText(FieldInfo buttonField, MenuScreen screen, string newText = null, int fontSize = 0)
         {
             try
             {
@@ -758,7 +936,24 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     DefaultUIButton button = (DefaultUIButton)buttonField.GetValue(screen);
                     if (button != null)
                     {
-                        button.SetRawText(newText, fontSize);
+                        var textComponent = button.GetComponentInChildren<TextMeshProUGUI>();
+                        if (textComponent != null)
+                        {
+                            int currentFontSize = (int)textComponent.fontSize;  // Cast to int
+
+                            // Set text and use current font size if new fontSize is not specified
+                            button.SetRawText(newText ?? textComponent.text, fontSize > 0 ? fontSize : currentFontSize);
+
+                            // Override the font size directly on TextMeshProUGUI, if specified
+                            if (fontSize > 0)
+                            {
+                                textComponent.fontSize = fontSize;
+                            }
+                        }
+                        else
+                        {
+                            Plugin.LogSource.LogWarning("TextMeshProUGUI component not found on DefaultUIButton.");
+                        }
                     }
                     else
                     {
@@ -776,18 +971,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        private static async Task DisableCameraMovement()
+
+
+        private static void DisableCameraMovement()
         {
             GameObject environmentUI = null;
 
-            for (int i = 0; i < 50; i++)  // Try up to 50 times (5 seconds total)
+            for (int i = 0; i < 10; i++)  // Try up to 10 times (1 second total)
             {
                 environmentUI = GameObject.Find("Environment UI");
                 if (environmentUI != null)
                 {
                     break;  // Found the object, break out of the loop
                 }
-                await Task.Delay(100);  // Wait 100ms before checking again
             }
 
             if (environmentUI == null)
@@ -833,7 +1029,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             GameObject alignmentCameraPos = environmentUI.transform.Find("AlignmentCamera")?.gameObject;
             if (alignmentCameraPos == null)
             {
-                Plugin.LogSource.LogWarning("AlignmentCamera GameObject not found.");
                 return;
             }
 
@@ -864,10 +1059,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (cameraComponent != null)
                 {
                     cameraComponent.fieldOfView = 80;
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("Camera component not found on AlignmentCamera.");
                 }
             }
         }
