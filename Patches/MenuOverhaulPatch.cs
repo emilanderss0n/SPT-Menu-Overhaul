@@ -49,6 +49,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             // List of button names to process
             string[] buttonNames = { "PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup" };
+            
+            // HACK: Fixes loading / draw issues for the play button
+            await Task.Delay(10);
 
             foreach (var buttonName in buttonNames)
             {
@@ -80,19 +83,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         else
                         {
                             Plugin.LogSource.LogWarning("_playButton field not found in MenuScreen.");
-                        }
-
-                        // Delay the visibility change to ensure it runs last
-                        await Task.Delay(10); // Adjust the delay as needed
-                        GameObject SizeLabel = buttonObject.transform.Find("SizeLabel")?.gameObject;
-                        GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
-                        if (iconContainer != null)
-                        {
-                            iconContainer.SetActive(true);
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning($"IconContainer not found for {buttonName}.");
                         }
                     }
 
@@ -128,6 +118,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
                         GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
                         GameObject iconIdle = iconContainer.transform.Find("IconIdle")?.gameObject;
+                        if (iconContainer != null)
+                        {
+                            iconContainer.SetActive(true);
+                        }
                         if (icon != null)
                         {
                             icon.SetActive(true);
@@ -144,13 +138,13 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 }
             }
 
-            // Call AddPlayerModel
-            await AddPlayerModel().ConfigureAwait(false);
-
             SetButtonIconTransform(__instance, "PlayButton", new Vector3(0.8f, 0.8f, 0.8f), new Vector3(-48f, 0f, 0f));
             SetButtonIconTransform(__instance, "TradeButton", new Vector3(0.8f, 0.8f, 0.8f));
             SetButtonIconTransform(__instance, "HideoutButton", new Vector3(0.8f, 0.8f, 0.8f));
             SetButtonIconTransform(__instance, "ExitButtonGroup", new Vector3(0.8f, 0.8f, 0.8f));
+
+            // Call AddPlayerModel
+            await AddPlayerModel().ConfigureAwait(false);
         }
 
         private static Task LoadPatchContent(MenuScreen __instance)
