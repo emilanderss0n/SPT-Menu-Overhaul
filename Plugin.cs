@@ -1,10 +1,11 @@
 ﻿using BepInEx.Logging;
 using BepInEx;
 using MoxoPixel.MenuOverhaul.Patches;
+using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul
 {
-    [BepInPlugin("moxo.pixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.0.2")]
+    [BepInPlugin("moxo.pixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.0.3")]
     public class Plugin : BaseUnityPlugin
     {
         public static ManualLogSource LogSource;
@@ -12,14 +13,13 @@ namespace MoxoPixel.MenuOverhaul
         private void Awake()
         {
             LogSource = Logger;
-            LogSource.LogInfo("MenuOverhaul by MoxoPixel loaded");
+            Settings.Init(Config);
 
             new MenuOverhaulPatch().Enable();
-            LogSource.LogInfo("MenuOverhaul - MenuOverhaul patch loaded");
             new SetAlphaPatch().Enable();
-            LogSource.LogInfo("MenuOverhaul - SetAlpha patch loaded");
             new TweenButtonPatch().Enable();
-            LogSource.LogInfo("MenuOverhaul - TweenButton patch loaded");
+
+            LogSource.LogInfo("MenuOverhaul by MoxoPixel loaded");
         }
     }
 }

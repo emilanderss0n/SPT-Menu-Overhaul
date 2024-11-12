@@ -2,8 +2,6 @@ using DG.Tweening;
 using EFT.UI;
 using SPT.Reflection.Patching;
 using System.Reflection;
-using System.Threading.Tasks;
-using System;
 using UnityEngine;
 
 namespace MoxoPixel.MenuOverhaul.Patches
@@ -17,10 +15,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (targetMethod == null)
             {
                 Plugin.LogSource.LogError("Failed to find method_1 in DefaultUIButtonAnimation.");
-            }
-            else
-            {
-                Plugin.LogSource.LogInfo("Successfully found method_1 in DefaultUIButtonAnimation.");
             }
             return targetMethod;
         }
