@@ -129,6 +129,7 @@
   <ItemGroup>
     <Compile Include="Helpers\ButtonHelpers.cs" />
     <Compile Include="Helpers\LayoutHelpers.cs" />
+    <Compile Include="Helpers\LightHelpers.cs" />
     <Compile Include="Patches\MenuOverhaulPatch.cs" />
     <Compile Include="Patches\SetAlphaPatch.cs" />
     <Compile Include="Patches\TweenButtonPatch.cs" />

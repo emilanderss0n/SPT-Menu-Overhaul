@@ -12,6 +12,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
     public static class LayoutHelpers
     {
         private static AssetBundle iconAssetBundle;
+        private static bool isAlignmentCameraMoved = false;
         private static readonly Dictionary<string, string> ButtonNameToFileNameMap = new Dictionary<string, string>
         {
             { "PlayButton", "icon_play" },
@@ -440,20 +441,24 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             GameObject factoryLayout = envObjects.FactoryLayout;
             if (factoryLayout == null)
             {
-                Plugin.LogSource.LogWarning("FactoryLayout GameObject not found.");
+                Plugin.LogSource.LogInfo("FactoryLayout GameObject not found.");
                 return;
             }
 
-            GameObject alignmentCameraPos = envObjects.EnvironmentUI.transform.Find("AlignmentCamera")?.gameObject;
-            if (alignmentCameraPos == null)
+            if (!isAlignmentCameraMoved)
             {
-                Plugin.LogSource.LogWarning("AlignmentCamera GameObject not found.");
-                return;
-            }
+                GameObject alignmentCameraPos = envObjects.EnvironmentUI.transform.Find("AlignmentCamera")?.gameObject;
+                if (alignmentCameraPos == null)
+                {
+                    Plugin.LogSource.LogInfo("AlignmentCamera GameObject not found.");
+                    return;
+                }
 
-            if (alignmentCameraPos.transform.parent != factoryLayout.transform)
-            {
-                alignmentCameraPos.transform.SetParent(factoryLayout.transform);
+                if (alignmentCameraPos.transform.parent != factoryLayout.transform)
+                {
+                    alignmentCameraPos.transform.SetParent(factoryLayout.transform);
+                    isAlignmentCameraMoved = true;
+                }
             }
 
             GameObject alignmentCamera = envObjects.EnvironmentUI.transform.Find("EnvironmentUISceneFactory/FactoryLayout/AlignmentCamera")?.gameObject;

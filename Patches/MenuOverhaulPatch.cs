@@ -237,72 +237,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             Plugin.LogSource.LogWarning("Camera_inventory not found.");
                         }
 
-                        // Locate the Main Light
-                        Transform mainLightTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/PlayerMVObjectLights/Main Light");
-                        if (mainLightTransform != null)
-                        {
-                            Light mainLight = mainLightTransform.GetComponent<Light>();
-                            if (mainLight != null)
-                            {
-                                mainLight.color = new Color(0.5f, 0.7f, 1f, 1f);
-                                mainLight.range = 2.8f;
-                                mainLight.intensity = 0.4f;
-                                if (Settings.EnableExtraShadows.Value)
-                                {
-                                    mainLight.shadows = LightShadows.Soft;
-                                }
-                            }
-                            else
-                            {
-                                Plugin.LogSource.LogWarning("Light component not found on Main Light.");
-                            }
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning("Main Light GameObject not found.");
-                        }
-
-                        // Locate the Hair Light
-                        Transform hairLightTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/PlayerMVObjectLights/Hair Light");
-                        if (hairLightTransform != null)
-                        {
-                            Light hairLight = hairLightTransform.GetComponent<Light>();
-                            if (hairLight != null)
-                            {
-                                hairLight.intensity = 0.3f;
-                                if (Settings.EnableExtraShadows.Value)
-                                {
-                                    hairLight.shadows = LightShadows.Soft;
-                                }
-                            }
-                            else
-                            {
-                                Plugin.LogSource.LogWarning("Light component not found on Hair Light.");
-                            }
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning("Hair Light GameObject not found.");
-                        }
-
-                        // Locate the Fill Light
-                        Transform fillLightTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/PlayerMVObjectLights/Fill Light");
-                        if (fillLightTransform != null)
-                        {
-                            Light fillLight = fillLightTransform.GetComponent<Light>();
-                            if (fillLight != null)
-                            {
-                                fillLight.color = new Color(0.5f, 0.5f, 0.5f, 1f);
-                            }
-                            else
-                            {
-                                Plugin.LogSource.LogWarning("Light component not found on Fill Light.");
-                            }
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning("Fill Light GameObject not found.");
-                        }
+                        // Setup lights using LightHelpers
+                        LightHelpers.SetupLights(clonedPlayerModelView);
 
                         Transform bottomFieldTransform = clonedPlayerModelView.transform.Find("BottomField");
                         if (bottomFieldTransform != null)
