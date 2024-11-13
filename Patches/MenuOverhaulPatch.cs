@@ -27,12 +27,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
-            GameObject isMainMenuScreen = GameObject.Find("Common UI/Common UI/MenuScreen");
-            if (isMainMenuScreen == null)
-            {
-                return;
-            }
-
             ButtonHelpers.SetButtonIconTransform(__instance, "PlayButton", new Vector3(0.8f, 0.8f, 0.8f), new Vector3(-48f, 0f, 0f));
             ButtonHelpers.SetButtonIconTransform(__instance, "TradeButton", new Vector3(0.8f, 0.8f, 0.8f));
             ButtonHelpers.SetButtonIconTransform(__instance, "HideoutButton", new Vector3(0.8f, 0.8f, 0.8f));
