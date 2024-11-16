@@ -6,12 +6,15 @@ namespace MoxoPixel.MenuOverhaul.Utils
     public class Settings
     {
         private const string GeneralSectionTitle = "1. General";
+        private const string AdjustmentsSectionTitle = "2. Adjustments";
 
         public static ConfigFile Config;
 
         public static ConfigEntry<bool> EnableBackground;
         public static ConfigEntry<bool> EnableTopGlow;
         public static ConfigEntry<bool> EnableExtraShadows;
+        public static ConfigEntry<float> PositionLogotypeHorizontal;
+        public static ConfigEntry<float> PositionLogotypeVertical;
 
         public static List<ConfigEntryBase> ConfigEntries = new List<ConfigEntryBase>();
 
@@ -40,8 +43,26 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 "Enable Extra Shadows",
                 false,
                 new ConfigDescription(
-                    "Enable or disable more shadows to make the player in menu more detailed (restart required)",
+                    "Enable or disable more shadows to make the player in menu more detailed",
                     null,
+                    new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(PositionLogotypeHorizontal = Config.Bind(
+                AdjustmentsSectionTitle,
+                "Position Logotype Horizontal",
+                -1.9f,
+                new ConfigDescription(
+                    "Adjust the horizontal position of the logotype",
+                    new AcceptableValueRange<float>(-10f, 1f),
+                    new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(PositionLogotypeVertical = Config.Bind(
+                AdjustmentsSectionTitle,
+                "Position Logotype Vertical",
+                -999.4f,
+                new ConfigDescription(
+                    "Adjust the vertical position of the logotype",
+                    new AcceptableValueRange<float>(-1005f, -990f),
                     new ConfigurationManagerAttributes { })));
 
             RecalcOrder();

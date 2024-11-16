@@ -3,17 +3,162 @@ using System.Reflection;
 using System;
 using TMPro;
 using UnityEngine;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
 {
     internal class ButtonHelpers
     {
-        public static void SetButtonIconTransform(MenuScreen __instance, string buttonName, Vector3? localScale = null, Vector3? anchoredPosition = null)
+        private const float ButtonScale = 0.8f;
+        private const float ButtonYOffset = 60f;
+        private const float ButtonXOffset = 250f;
+        private static readonly string[] buttonNames = { "PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup" };
+        private static readonly Dictionary<string, GameObject> buttonCache = new Dictionary<string, GameObject>();
+
+        public static void SetupButtonIcons(MenuScreen __instance)
         {
-            GameObject button = __instance.transform.Find(buttonName)?.gameObject;
-            if (button == null)
+            CacheButtons(__instance);
+            SetButtonIconTransform("PlayButton", new Vector3(ButtonScale, ButtonScale, ButtonScale), new Vector3(-48f, 0f, 0f));
+            SetButtonIconTransform("TradeButton", new Vector3(ButtonScale, ButtonScale, ButtonScale));
+            SetButtonIconTransform("HideoutButton", new Vector3(ButtonScale, ButtonScale, ButtonScale));
+            SetButtonIconTransform("ExitButtonGroup", new Vector3(ButtonScale, ButtonScale, ButtonScale));
+        }
+
+        public static void ProcessButtons(MenuScreen __instance)
+        {
+            CacheButtons(__instance);
+
+            foreach (var buttonName in buttonNames)
             {
-                Plugin.LogSource.LogWarning($"SetButtonIconTransform - Button {buttonName} not found in MenuScreen.");
+                if (buttonCache.TryGetValue(buttonName, out GameObject buttonObject))
+                {
+                    SetupButtonTransform(buttonObject, buttonName);
+                    LayoutHelpers.SetIconImages(buttonObject, buttonName);
+                    HandleSpecialButtons(__instance, buttonObject, buttonName);
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning($"{buttonName} not found in MenuScreen.");
+                }
+            }
+        }
+
+        private static void CacheButtons(MenuScreen __instance)
+        {
+            foreach (var buttonName in buttonNames)
+            {
+                if (!buttonCache.ContainsKey(buttonName))
+                {
+                    GameObject buttonObject = __instance.gameObject.transform.Find(buttonName)?.gameObject;
+                    if (buttonObject != null)
+                    {
+                        buttonCache[buttonName] = buttonObject;
+                    }
+                }
+            }
+        }
+
+        public static void SetupButtonTransform(GameObject buttonObject, string buttonName)
+        {
+            RectTransform rectTransform = buttonObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = new Vector2(0, 0.5f);
+            rectTransform.anchorMax = new Vector2(0, 0.5f);
+            rectTransform.pivot = new Vector2(0, 0.5f);
+
+            int index = Array.IndexOf(buttonNames, buttonName);
+            float yOffset = -index * ButtonYOffset;
+            rectTransform.anchoredPosition = new Vector2(ButtonXOffset, yOffset);
+        }
+
+        private static void HandleSpecialButtons(MenuScreen __instance, GameObject buttonObject, string buttonName)
+        {
+            if (buttonName == "PlayButton")
+            {
+                HandlePlayButton(__instance, buttonObject);
+            }
+            else if (buttonName == "ExitButtonGroup")
+            {
+                HandleExitButtonGroup(buttonObject);
+            }
+            else
+            {
+                HideButtonBackground(buttonObject, buttonName);
+            }
+        }
+
+        private static async void HandlePlayButton(MenuScreen __instance, GameObject buttonObject)
+        {
+            FieldInfo playButtonField = typeof(MenuScreen).GetField("_playButton", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (playButtonField != null)
+            {
+                ModifyButtonText(playButtonField, __instance, fontSize: 36);
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("_playButton field not found in MenuScreen.");
+            }
+
+            await Task.Delay(1);
+            buttonObject.transform.Find("Background")?.gameObject.SetActive(false);
+            GameObject sizeLabel = buttonObject.transform.Find("SizeLabel")?.gameObject;
+            GameObject iconContainer = sizeLabel.transform.Find("IconContainer")?.gameObject;
+            if (iconContainer != null)
+            {
+                iconContainer.SetActive(true);
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning($"IconContainer not found for {buttonObject.name}.");
+            }
+        }
+
+        private static void HandleExitButtonGroup(GameObject buttonObject)
+        {
+            GameObject exitButton = buttonObject.transform.Find("ExitButton")?.gameObject;
+            if (exitButton != null)
+            {
+                exitButton.transform.Find("Background")?.gameObject.SetActive(false);
+                GameObject SizeLabel = exitButton.transform.Find("SizeLabel")?.gameObject;
+                GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
+                GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
+                if (icon != null)
+                {
+                    icon.SetActive(true);
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning($"Icon not found in exitButton.");
+                }
+                LayoutHelpers.SetIconImages(exitButton, "ExitButton");
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("ExitButton not found in ExitButtonGroup.");
+            }
+        }
+
+        private static void HideButtonBackground(GameObject buttonObject, string buttonName)
+        {
+            buttonObject.transform.Find("Background")?.gameObject.SetActive(false);
+            GameObject SizeLabel = buttonObject.transform.Find("SizeLabel")?.gameObject;
+            GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
+            GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
+            if (icon != null)
+            {
+                icon.SetActive(true);
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning($"Icon not set active for {buttonName}.");
+            }
+        }
+
+        public static void SetButtonIconTransform(string buttonName, Vector3? localScale = null, Vector3? anchoredPosition = null)
+        {
+            if (!buttonCache.TryGetValue(buttonName, out GameObject button))
+            {
+                Plugin.LogSource.LogWarning($"SetButtonIconTransform - Button {buttonName} not found in cache.");
                 return;
             }
 
@@ -67,6 +212,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
             }
         }
+
         public static void ModifyButtonText(FieldInfo buttonField, MenuScreen screen, string newText = null, int fontSize = 0)
         {
             try

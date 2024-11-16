@@ -3,6 +3,7 @@ using EFT.UI;
 using SPT.Reflection.Patching;
 using System.Reflection;
 using UnityEngine;
+using MoxoPixel.MenuOverhaul.Helpers;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
@@ -23,7 +24,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static void Postfix(DefaultUIButtonAnimation __instance, bool animated)
         {
             // Check if the button is part of the MenuScreen
-            if (!IsPartOfMenuScreen(__instance))
+            if (!LayoutHelpers.IsPartOfMenuScreen(__instance))
             {
                 return;
             }
@@ -71,20 +72,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     __instance.ProcessTween(__instance.Icon.DOFade(1f, num), Ease.OutQuad); // Set alpha to 1 instead of 0
                 }
             }
-        }
-
-        private static bool IsPartOfMenuScreen(DefaultUIButtonAnimation buttonAnimation)
-        {
-            Transform currentTransform = buttonAnimation.transform;
-            while (currentTransform != null)
-            {
-                if (currentTransform.name == "MenuScreen")
-                {
-                    return true;
-                }
-                currentTransform = currentTransform.parent;
-            }
-            return false;
         }
     }
 }

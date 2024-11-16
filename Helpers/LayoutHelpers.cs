@@ -22,6 +22,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             { "ExitButton", "exit_status_runner" },
             { "ExitButtonGroup", "exit_status_runner" }
         };
+        private static readonly Dictionary<string, GameObject> gameObjectCache = new Dictionary<string, GameObject>();
+        private static readonly Dictionary<string, Texture2D> textureCache = new Dictionary<string, Texture2D>();
 
         public class EnvironmentObjects
         {
@@ -33,6 +35,11 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         public static GameObject GetGlowCanvas()
         {
+            if (gameObjectCache.TryGetValue("GlowCanvas", out GameObject cachedGlowCanvas))
+            {
+                return cachedGlowCanvas;
+            }
+
             EnvironmentObjects envObjects = FindEnvironmentObjects();
             if (envObjects == null)
             {
@@ -45,12 +52,21 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             {
                 Plugin.LogSource.LogWarning("Glow Canvas GameObject not found.");
             }
+            else
+            {
+                gameObjectCache["GlowCanvas"] = glowCanvas;
+            }
 
             return glowCanvas;
         }
 
         public static GameObject GetBackgroundPlane()
         {
+            if (gameObjectCache.TryGetValue("BackgroundPlane", out GameObject cachedBackgroundPlane))
+            {
+                return cachedBackgroundPlane;
+            }
+
             EnvironmentObjects envObjects = FindEnvironmentObjects();
             if (envObjects == null)
             {
@@ -62,6 +78,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             if (backgroundPlane == null)
             {
                 Plugin.LogSource.LogWarning("CustomPlane GameObject not found.");
+            }
+            else
+            {
+                gameObjectCache["BackgroundPlane"] = backgroundPlane;
             }
 
             return backgroundPlane;
@@ -162,7 +182,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
 
             string[] materialNames = { "part1", "part2", "part3", "part4" };
-            Texture2D texture = new Texture2D(2, 2);
+            Texture2D texture;
 
             // Determine the screen aspect ratio
             float aspectRatio = (float)Screen.width / Screen.height;
@@ -170,15 +190,19 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             // Check if the aspect ratio is ultra-wide
             string textureName = aspectRatio > 2.33f ? "background_ultrawide" : "background";
 
-            texture = iconAssetBundle.LoadAsset<Texture2D>(textureName);
-            if (texture == null)
+            if (!textureCache.TryGetValue(textureName, out texture))
             {
-                Plugin.LogSource.LogWarning($"Texture {textureName} could not be loaded from AssetBundle.");
-                return;
-            }
+                texture = iconAssetBundle.LoadAsset<Texture2D>(textureName);
+                if (texture == null)
+                {
+                    Plugin.LogSource.LogWarning($"Texture {textureName} could not be loaded from AssetBundle.");
+                    return;
+                }
 
-            texture = FlipTextureVertically(texture);
-            texture = FlipTextureHorizontally(texture);
+                texture = FlipTextureVertically(texture);
+                texture = FlipTextureHorizontally(texture);
+                textureCache[textureName] = texture;
+            }
 
             List<Material> materials = new List<Material>();
 
@@ -227,8 +251,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 newPlaneRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
         }
-
-
 
         public static Texture2D FlipTextureVertically(Texture2D original)
         {
@@ -282,25 +304,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             {
                 childTransform.gameObject.SetActive(isActive);
 
-                // Special handling for decal_plane
-                if (childName == "decal_plane" && isActive)
-                {
-                    // Position the main parent decal_plane
-                    childTransform.position = new Vector3(-1.9f, -999.4f, 0f);
-
-                    Transform decalPlanePve = childTransform.Find("decal_plane_pve");
-                    Transform decalPlane = childTransform.Find("decal_plane");
-
-                    if (decalPlanePve != null)
-                    {
-                        decalPlanePve.gameObject.SetActive(true);
-                    }
-
-                    if (decalPlane != null)
-                    {
-                        decalPlane.gameObject.SetActive(false);
-                    }
-                }
                 // Special handling for LampContainer
                 if (childName == "LampContainer" && isActive)
                 {
@@ -491,6 +494,29 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     prismEffects.chromaticDistanceTwo = 0.3f;
                 }
             }
+        }
+        public static bool IsPartOfMenuScreen(DefaultUIButtonAnimation buttonAnimation)
+        {
+            Transform currentTransform = buttonAnimation.transform;
+            while (currentTransform != null)
+            {
+                if (currentTransform.name == "MenuScreen")
+                {
+                    return true;
+                }
+                currentTransform = currentTransform.parent;
+            }
+            return false;
+        }
+        public static bool IsMatchMaker()
+        {
+            GameObject matchmakerScreen = GameObject.Find("Menu UI/UI/Matchmaker Time Has Come");
+            while (matchmakerScreen == null)
+            {
+               return true;
+                
+            }
+            return false;
         }
     }
 }

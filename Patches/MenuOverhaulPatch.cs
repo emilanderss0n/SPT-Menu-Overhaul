@@ -14,137 +14,35 @@ using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
-    internal class MenuOverhaulPatch : ModulePatch // all patches must inherit ModulePatch
+    internal class MenuOverhaulPatch : ModulePatch
     {
         public static bool MenuPlayerCreated = false;
 
         protected override MethodBase GetTargetMethod()
         {
-            // Target the method_3 method in the MenuScreen class
             return typeof(MenuScreen).GetMethod("method_3", BindingFlags.Instance | BindingFlags.Public);
         }
 
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
-            ButtonHelpers.SetButtonIconTransform(__instance, "PlayButton", new Vector3(0.8f, 0.8f, 0.8f), new Vector3(-48f, 0f, 0f));
-            ButtonHelpers.SetButtonIconTransform(__instance, "TradeButton", new Vector3(0.8f, 0.8f, 0.8f));
-            ButtonHelpers.SetButtonIconTransform(__instance, "HideoutButton", new Vector3(0.8f, 0.8f, 0.8f));
-            ButtonHelpers.SetButtonIconTransform(__instance, "ExitButtonGroup", new Vector3(0.8f, 0.8f, 0.8f));
-
+            ButtonHelpers.SetupButtonIcons(__instance);
             await LoadPatchContent(__instance).ConfigureAwait(false);
-
-            // Subscribe to the sceneLoaded event
-            SceneManager.sceneLoaded += OnSceneLoaded;
-            SceneManager.sceneUnloaded += OnSceneUnloaded;
-
-            // Initial check for the active scene
+            InitializeSceneEvents();
             HandleScene(SceneManager.GetActiveScene());
-
-            // List of button names to process
-            string[] buttonNames = { "PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup" };
-
-            foreach (var buttonName in buttonNames)
-            {
-                // Find the button object
-                GameObject buttonObject = __instance.gameObject.transform.Find(buttonName)?.gameObject;
-                if (buttonObject != null)
-                {
-                    // Adjust the RectTransform to position the text on the left side of the screen
-                    RectTransform rectTransform = buttonObject.GetComponent<RectTransform>();
-                    rectTransform.anchorMin = new Vector2(0, 0.5f);
-                    rectTransform.anchorMax = new Vector2(0, 0.5f);
-                    rectTransform.pivot = new Vector2(0, 0.5f);
-
-                    // Calculate the y position based on the index and margin
-                    int index = Array.IndexOf(buttonNames, buttonName);
-                    float yOffset = -index * 60; // margin between buttons
-                    rectTransform.anchoredPosition = new Vector2(250, yOffset); // Adjust the x value as needed
-
-                    LayoutHelpers.SetIconImages(buttonObject, buttonName);
-
-                    // If the button is PlayButton, change the font size using DefaultUIButton
-                    if (buttonName == "PlayButton")
-                    {
-                        FieldInfo playButtonField = typeof(MenuScreen).GetField("_playButton", BindingFlags.NonPublic | BindingFlags.Instance);
-                        if (playButtonField != null)
-                        {
-                            ButtonHelpers.ModifyButtonText(playButtonField, __instance, fontSize: 36);
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning("_playButton field not found in MenuScreen.");
-                        }
-
-                        // Delay the visibility change to ensure it runs last
-                        await Task.Delay(1);
-                        GameObject SizeLabel = buttonObject.transform.Find("SizeLabel")?.gameObject;
-                        GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
-                        if (iconContainer != null)
-                        {
-                            iconContainer.SetActive(true);
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning($"IconContainer not found for {buttonName}.");
-                        }
-                    }
-
-                    // Special handling for ExitButtonGroup
-                    if (buttonName == "ExitButtonGroup")
-                    {
-                        GameObject exitButton = buttonObject.transform.Find("ExitButton")?.gameObject;
-                        if (exitButton != null)
-                        {
-                            exitButton.transform.Find("Background")?.gameObject.SetActive(false);
-                            GameObject SizeLabel = exitButton.transform.Find("SizeLabel")?.gameObject;
-                            GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
-                            GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
-                            if (icon != null)
-                            {
-                                icon.SetActive(true);
-                            }
-                            else
-                            {
-                                Plugin.LogSource.LogWarning($"Icon not found in exitButton.");
-                            }
-                            LayoutHelpers.SetIconImages(exitButton, "ExitButton");
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning("ExitButton not found in ExitButtonGroup.");
-                        }
-                    }
-                    else
-                    {
-                        buttonObject.transform.Find("Background")?.gameObject.SetActive(false);
-                        GameObject SizeLabel = buttonObject.transform.Find("SizeLabel")?.gameObject;
-                        GameObject iconContainer = SizeLabel.transform.Find("IconContainer")?.gameObject;
-                        GameObject icon = iconContainer.transform.Find("Icon")?.gameObject;
-                        GameObject iconIdle = iconContainer.transform.Find("IconIdle")?.gameObject;
-                        if (icon != null)
-                        {
-                            icon.SetActive(true);
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning($"Icon not set active for {buttonName}.");
-                        }
-                    }
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning($"{buttonName} not found in MenuScreen.");
-                }
-
-            }
-
-            // Call AddPlayerModel
+            ButtonHelpers.ProcessButtons(__instance);
             await AddPlayerModel().ConfigureAwait(false);
+            SubscribeToSettingsChanges();
+            UpdateSetElements();
+        }
 
+        private static void SubscribeToSettingsChanges()
+        {
             Settings.EnableTopGlow.SettingChanged += OnSettingsChanged;
             Settings.EnableBackground.SettingChanged += OnSettingsChanged;
-            UpdateSetElements();
+            Settings.EnableExtraShadows.SettingChanged += OnSettingsChanged;
+            Settings.PositionLogotypeHorizontal.SettingChanged += OnSettingsChanged;
+            Settings.PositionLogotypeVertical.SettingChanged += OnSettingsChanged;
         }
 
         private static Task LoadPatchContent(MenuScreen __instance)
@@ -154,6 +52,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             return Task.CompletedTask;
         }
+
         private static void OnSettingsChanged(object sender, EventArgs e)
         {
             UpdateSetElements();
@@ -163,7 +62,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
 
-            // Check if CommonObj is found
             if (environmentObjects.CommonObj != null)
             {
                 LayoutHelpers.SetChildActive(environmentObjects.CommonObj, "Glow Canvas", Settings.EnableTopGlow.Value);
@@ -173,7 +71,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Plugin.LogSource.LogWarning("CommonObj not found.");
             }
 
-            // Check if FactoryLayout is found
             if (environmentObjects.FactoryLayout != null)
             {
                 LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "CustomPlane", Settings.EnableBackground.Value);
@@ -182,6 +79,22 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 Plugin.LogSource.LogWarning("FactoryLayout not found.");
             }
+
+            // Position the main parent decal_plane using settings
+            Transform decalPlaneTransform = environmentObjects.FactoryLayout.transform.Find("decal_plane");
+            if (decalPlaneTransform != null)
+            {
+                decalPlaneTransform.position = new Vector3(
+                    Settings.PositionLogotypeHorizontal.Value,
+                    Settings.PositionLogotypeVertical.Value,
+                    0f);
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("decal_plane GameObject not found.");
+            }
+
+            LightHelpers.UpdateLights();
         }
 
         private static async Task AddPlayerModel()
@@ -203,7 +116,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     if (playerModelViewScript != null)
                     {
                         clonedPlayerModelView.transform.localPosition = new Vector3(400f, -250f, 0f);
-                        clonedPlayerModelView.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f); // Set the scale
+                        clonedPlayerModelView.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
 
 
                         Transform cameraTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
@@ -237,7 +150,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             Plugin.LogSource.LogWarning("Camera_inventory not found.");
                         }
 
-                        // Setup lights using LightHelpers
                         LightHelpers.SetupLights(clonedPlayerModelView);
 
                         Transform bottomFieldTransform = clonedPlayerModelView.transform.Find("BottomField");
@@ -276,7 +188,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             Plugin.LogSource.LogWarning("SideImage GameObject not found.");
                         }
 
-                        // Locate the DragTrigger GameObject and hide it
                         Transform dragTriggerTransform = clonedPlayerModelView.transform.Find("DragTrigger");
                         if (dragTriggerTransform != null)
                         {
@@ -286,8 +197,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         {
                             Plugin.LogSource.LogWarning("DragTrigger GameObject not found.");
                         }
-
-                        await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0, null, true);
+                        // playerModelViewScript default: PlayerVisualRepresentation playerVisual, InventoryController inventoryController = null, Action onCreated = null, float update = 0f, Vector3? position = null, bool animateWeapon = true
+                        await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false);
                     }
                     else
                     {
@@ -308,7 +219,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     if (playerModelViewScript != null)
                     {
                         playerModelViewScript.Close();
-                        await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0, null, true);
+                        await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false);
                     }
                     else
                     {
@@ -391,6 +302,13 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
+        private static void InitializeSceneEvents()
+        {
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+            HandleScene(SceneManager.GetActiveScene());
+        }
+
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             HandleScene(scene);
@@ -403,39 +321,38 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void HandleScene(Scene scene)
         {
+            // MenuUIScene, CommonUIScene, EnvironmentUIScene, PreloaderUIScene
             if (scene.name == "CommonUIScene")
             {
-                // Use the helper method to find environment objects
                 var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
                 if (environmentObjects == null)
                 {
-                    Plugin.LogSource.LogInfo("EnvironmentUI instances not found - Probably starting a game.");
+                    Plugin.LogSource.LogInfo("EnvironmentUI instances not found - Possibly starting a game.");
                     return;
                 }
 
-                // Find and control the visibility of specific children
-                LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "panorama", true);
-                LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "decal_plane", true);
-                LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "LampContainer", true);
-
-                // Find the LampContainer and its children
-                GameObject lampContainer = environmentObjects.FactoryLayout.transform.Find("LampContainer")?.gameObject;
-                if (lampContainer != null)
-                {
-                    LayoutHelpers.SetChildActive(lampContainer, "Lamp", true);
-                    LayoutHelpers.SetChildActive(lampContainer, "MultiFlare", false);
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("LampContainer GameObject not found.");
-                }
-
-                // Load and set the new EmissionMap for the panorama GameObject
-                LayoutHelpers.SetPanoramaEmissionMap(environmentObjects.FactoryLayout);
-
-                // Disable camera movement
+                ActivateSceneElements(environmentObjects);
                 LayoutHelpers.DisableCameraMovement();
             }
+        }
+
+        private static void ActivateSceneElements(LayoutHelpers.EnvironmentObjects environmentObjects)
+        {
+            LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "panorama", false);
+            LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "LampContainer", true);
+
+            GameObject lampContainer = environmentObjects.FactoryLayout.transform.Find("LampContainer")?.gameObject;
+            if (lampContainer != null)
+            {
+                LayoutHelpers.SetChildActive(lampContainer, "Lamp", true);
+                LayoutHelpers.SetChildActive(lampContainer, "MultiFlare", false);
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("LampContainer GameObject not found.");
+            }
+
+            LayoutHelpers.SetPanoramaEmissionMap(environmentObjects.FactoryLayout);
         }
     }
 }
