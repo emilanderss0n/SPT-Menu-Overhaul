@@ -17,6 +17,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
     internal class MenuOverhaulPatch : ModulePatch
     {
         public static bool MenuPlayerCreated = false;
+        private static LayoutHelpers.EnvironmentObjects cachedEnvironmentObjects;
+        private static GameObject cachedPlayerModelView;
 
         protected override MethodBase GetTargetMethod()
         {
@@ -26,6 +28,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
+            // Check if PlayButton is active within the specified path
+            GameObject playButton = GameObject.Find("Common UI/Common UI/MenuScreen/PlayButton")?.gameObject;
+            if (__instance == null || playButton == null || !playButton.activeSelf)
+            {
+                Plugin.LogSource.LogWarning("MenuScreen or PlayButton is null or inactive.");
+                return;
+            }
+
             ButtonHelpers.SetupButtonIcons(__instance);
             await LoadPatchContent(__instance).ConfigureAwait(false);
             InitializeSceneEvents();
@@ -34,6 +44,47 @@ namespace MoxoPixel.MenuOverhaul.Patches
             await AddPlayerModel().ConfigureAwait(false);
             SubscribeToSettingsChanges();
             UpdateSetElements();
+            SubscribeToCharacterLevelUpEvent();
+        }
+
+        public static void ClearCachedObjects()
+        {
+            cachedEnvironmentObjects = null;
+            cachedPlayerModelView = null;
+            MenuPlayerCreated = false;
+        }
+
+        public static void DestroyChanges()
+        {
+            ClearCachedObjects();
+            GameObject mainMenuPlayerModelView = GameObject.Find("Common UI/Common UI/MenuScreen/MainMenuPlayerModelView");
+            if (mainMenuPlayerModelView != null)
+            {
+                GameObject.Destroy(mainMenuPlayerModelView);
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("MainMenuPlayerModelView not found.");
+            }
+        }
+
+        public static void ReapplyChanges(MenuScreen __instance)
+        {
+            if (__instance == null)
+            {
+                Plugin.LogSource.LogWarning("MenuScreen instance is null.");
+                return;
+            }
+
+            ButtonHelpers.SetupButtonIcons(__instance);
+            LoadPatchContent(__instance).ConfigureAwait(false);
+            InitializeSceneEvents();
+            HandleScene(SceneManager.GetActiveScene());
+            ButtonHelpers.ProcessButtons(__instance);
+            AddPlayerModel().ConfigureAwait(false);
+            SubscribeToSettingsChanges();
+            UpdateSetElements();
+            SubscribeToCharacterLevelUpEvent();
         }
 
         private static void SubscribeToSettingsChanges()
@@ -42,7 +93,29 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.EnableBackground.SettingChanged += OnSettingsChanged;
             Settings.EnableExtraShadows.SettingChanged += OnSettingsChanged;
             Settings.PositionLogotypeHorizontal.SettingChanged += OnSettingsChanged;
-            Settings.PositionLogotypeVertical.SettingChanged += OnSettingsChanged;
+            Settings.PositionPlayerModelHorizontal.SettingChanged += OnPlayerModelPositionChanged;
+            Settings.PositionBottomFieldHorizontal.SettingChanged += OnBottomFieldPositionChanged;
+            Settings.PositionBottomFieldVertical.SettingChanged += OnBottomFieldPositionChanged;
+            Settings.scaleBackgroundX.SettingChanged += OnScaleBackgroundChanged;
+            Settings.scaleBackgroundY.SettingChanged += OnScaleBackgroundChanged;
+        }
+
+        private static LayoutHelpers.EnvironmentObjects GetCachedEnvironmentObjects()
+        {
+            if (cachedEnvironmentObjects == null)
+            {
+                cachedEnvironmentObjects = LayoutHelpers.FindEnvironmentObjects();
+            }
+            return cachedEnvironmentObjects;
+        }
+
+        private static GameObject GetCachedPlayerModelView()
+        {
+            if (cachedPlayerModelView == null)
+            {
+                cachedPlayerModelView = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView");
+            }
+            return cachedPlayerModelView;
         }
 
         private static Task LoadPatchContent(MenuScreen __instance)
@@ -60,7 +133,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void UpdateSetElements()
         {
-            var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
+            var environmentObjects = GetCachedEnvironmentObjects();
 
             if (environmentObjects.CommonObj != null)
             {
@@ -68,7 +141,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
             else
             {
-                Plugin.LogSource.LogWarning("CommonObj not found.");
+                Plugin.LogSource.LogWarning("UpdateSetElements - CommonObj not found.");
             }
 
             if (environmentObjects.FactoryLayout != null)
@@ -77,7 +150,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
             else
             {
-                Plugin.LogSource.LogWarning("FactoryLayout not found.");
+                Plugin.LogSource.LogWarning("UpdateSetElements - FactoryLayout not found.");
             }
 
             // Position the main parent decal_plane using settings
@@ -86,22 +159,107 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 decalPlaneTransform.position = new Vector3(
                     Settings.PositionLogotypeHorizontal.Value,
-                    Settings.PositionLogotypeVertical.Value,
+                    -999.4f,
                     0f);
             }
             else
             {
-                Plugin.LogSource.LogWarning("decal_plane GameObject not found.");
+                Plugin.LogSource.LogWarning("UpdateSetElements - decal_plane GameObject not found.");
             }
 
             LightHelpers.UpdateLights();
+        }
+
+        private static void OnPlayerModelPositionChanged(object sender, EventArgs e)
+        {
+            UpdatePlayerModelPosition();
+        }
+        private static void OnBottomFieldPositionChanged(object sender, EventArgs e)
+        {
+            BottomFieldPositionChanged();
+        }
+
+        private static void OnScaleBackgroundChanged(object sender, EventArgs e)
+        {
+            UpdateCustomPlaneScale();
+        }
+
+        private static void UpdatePlayerModelPosition()
+        {
+            GameObject mainMenuPlayerModelView = GameObject.Find("Common UI/Common UI/MenuScreen/MainMenuPlayerModelView");
+            if (mainMenuPlayerModelView != null)
+            {
+                mainMenuPlayerModelView.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -250f, 0f);
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("UpdatePlayerModelPosition - MainMenuPlayerModelView not found.");
+            }
+        }
+
+        private static void BottomFieldPositionChanged()
+        {
+            Transform bottomFieldTransform = GetBottomFieldTransform();
+            if (bottomFieldTransform != null)
+            {
+                bottomFieldTransform.transform.localPosition = new Vector3(Settings.PositionBottomFieldHorizontal.Value, Settings.PositionBottomFieldVertical.Value, 0f);
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("BottomFieldPositionChanged - BottomField GameObject not found.");
+            }
+        }
+
+        private static void UpdateCustomPlaneScale()
+        {
+            var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
+            GameObject customPlane = environmentObjects.FactoryLayout.transform.Find("CustomPlane")?.gameObject;
+            if (customPlane != null)
+            {
+                Vector3 localScale = customPlane.transform.localScale;
+                localScale.x = Settings.scaleBackgroundX.Value;
+                localScale.z = Settings.scaleBackgroundY.Value;
+                customPlane.transform.localScale = localScale;
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("UpdateCustomPlaneScale - CustomPlane not found.");
+            }
+        }
+
+        private static void SubscribeToCharacterLevelUpEvent()
+        {
+            PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged += OnExperienceChanged;
+        }
+
+        private static void OnExperienceChanged(int oldExperience, int newExperience)
+        {
+            // Assuming you have a reference to the bottomFieldTransform
+            Transform bottomFieldTransform = GetBottomFieldTransform();
+            if (bottomFieldTransform != null)
+            {
+                UpdatePlayerStats(bottomFieldTransform);
+            }
+        }
+
+        private static Transform GetBottomFieldTransform()
+        {
+            // Logic to get the bottomFieldTransform
+            GameObject mainMenuPlayerModelView = GameObject.Find("Common UI/Common UI/MenuScreen/MainMenuPlayerModelView");
+            if (mainMenuPlayerModelView != null)
+            {
+                return mainMenuPlayerModelView.transform.Find("BottomField");
+            }
+            return null;
         }
 
         private static async Task AddPlayerModel()
         {
             if (!MenuPlayerCreated)
             {
-                GameObject playerModelView = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView");
+                GameObject playerModelView = GetCachedPlayerModelView();
+                GameObject playerLevelView = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/Level Panel/Level");
+                GameObject playerLevelIconView = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/Level Panel/Level Icon");
                 GameObject menuScreenParent = GameObject.Find("Common UI/Common UI/MenuScreen");
 
                 if (playerModelView != null && menuScreenParent != null)
@@ -115,9 +273,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     PlayerModelView playerModelViewScript = clonedPlayerModelView.GetComponentInChildren<PlayerModelView>();
                     if (playerModelViewScript != null)
                     {
-                        clonedPlayerModelView.transform.localPosition = new Vector3(400f, -250f, 0f);
+                        clonedPlayerModelView.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -250f, 0f);
                         clonedPlayerModelView.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
-
 
                         Transform cameraTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
                         if (cameraTransform != null)
@@ -138,7 +295,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                                 prismEffects.aoMinIntensity = 1f;
                                 prismEffects.aoLightingContribution = 5f;
                                 prismEffects.useLensDirt = false;
-
                             }
                             else
                             {
@@ -160,21 +316,105 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             if (layoutGroup != null)
                             {
                                 layoutGroup.childAlignment = TextAnchor.UpperLeft;
+                                layoutGroup.spacing = 15f; // Add vertical spacing between children
+                                layoutGroup.childForceExpandHeight = false; // Ensure children do not expand vertically
+                                layoutGroup.childControlHeight = false;
                             }
                             else
                             {
                                 Plugin.LogSource.LogWarning("VerticalLayoutGroup component not found on BottomField.");
                             }
 
-                            bottomFieldTransform.localScale = new Vector3(0.7f, 0.7f, 0.7f);
-                            bottomFieldTransform.localPosition = new Vector3(840f, 0f, 0f);
+                            bottomFieldTransform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+                            bottomFieldTransform.localPosition = new Vector3(Settings.PositionBottomFieldHorizontal.Value, Settings.PositionBottomFieldVertical.Value, 0f);
+
+                            // Create a new GameObject to group Level and Level Icon
+                            GameObject levelGroup = new GameObject("LevelGroup");
+                            levelGroup.transform.SetParent(bottomFieldTransform);
+
+                            // Clone components and values from nicknameAndKarmaTransform
+                            Transform nicknameAndKarmaTransform = GameObject.Find("Common UI/Common UI/MenuScreen/MainMenuPlayerModelView/BottomField/NicknameAndKarma")?.transform;
+                            if (nicknameAndKarmaTransform != null)
+                            {
+                                foreach (var component in nicknameAndKarmaTransform.GetComponents<Component>())
+                                {
+                                    Type componentType = component.GetType();
+                                    Component newComponent = levelGroup.AddComponent(componentType);
+                                    foreach (var field in componentType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+                                    {
+                                        field.SetValue(newComponent, field.GetValue(component));
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                Plugin.LogSource.LogWarning("nicknameAndKarmaTransform not found.");
+                            }
+
+                            if (levelGroup != null)
+                            {
+                                RectTransform rectTransform = levelGroup.GetComponent<RectTransform>();
+                                if (rectTransform != null)
+                                {
+                                    rectTransform.anchorMin = new Vector2(0f, 0f); // Left top anchor
+                                    rectTransform.anchorMax = new Vector2(0f, 0f); // Left top anchor
+                                    rectTransform.pivot = new Vector2(0f, 0f); // Left top pivot
+                                }
+                            }
+                            else
+                            {
+                                Plugin.LogSource.LogWarning("Level Panel not found within BottomField.");
+                            }
+
+                            if (playerLevelView != null && playerLevelIconView != null)
+                            {
+                                GameObject clonedPlayerLevelIconView = GameObject.Instantiate(playerLevelIconView, levelGroup.transform);
+                                clonedPlayerLevelIconView.name = "Level Icon";
+                                clonedPlayerLevelIconView.SetActive(true);
+
+                                GameObject clonedPlayerLevelView = GameObject.Instantiate(playerLevelView, levelGroup.transform);
+                                clonedPlayerLevelView.name = "Level";
+                                clonedPlayerLevelView.SetActive(true);
+
+                                // Set the sibling index to ensure Level is after Level Icon
+                                clonedPlayerLevelView.transform.SetSiblingIndex(clonedPlayerLevelIconView.transform.GetSiblingIndex() + 1);
+                            }
+
+                            // Set the sibling index to ensure LevelGroup is before NicknameAndKarma
+                            levelGroup.transform.SetSiblingIndex(0);
+
+                            // Adjust the HorizontalLayoutGroup properties for each child
+                            foreach (Transform child in bottomFieldTransform)
+                            {
+                                HorizontalLayoutGroup horizontalLayoutGroup = child.GetComponent<HorizontalLayoutGroup>();
+                                if (horizontalLayoutGroup != null)
+                                {
+                                    horizontalLayoutGroup.childForceExpandWidth = false; // Ensure children do not expand horizontally
+                                    horizontalLayoutGroup.childForceExpandHeight = false; // Ensure children do not expand vertically
+                                }
+                                else
+                                {
+                                    Plugin.LogSource.LogWarning($"HorizontalLayoutGroup component not found on {child.name}.");
+                                }
+
+                                // Adjust the ContentSizeFitter properties for each child
+                                ContentSizeFitter contentSizeFitter = child.GetComponent<ContentSizeFitter>();
+                                if (contentSizeFitter != null)
+                                {
+                                    contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize; // Ensure the preferred size is used for vertical fitting
+                                }
+                                else
+                                {
+                                    Plugin.LogSource.LogWarning($"ContentSizeFitter component not found on {child.name}.");
+                                }
+                            }
 
                             // Update the nickname and experience count
                             UpdatePlayerStats(bottomFieldTransform);
                         }
                         else
                         {
-                            Plugin.LogSource.LogWarning("BottomField GameObject not found.");
+                            Plugin.LogSource.LogWarning("BottomField not found.");
                         }
 
                         // Locate the SideImage GameObject and hide it
@@ -197,6 +437,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         {
                             Plugin.LogSource.LogWarning("DragTrigger GameObject not found.");
                         }
+
                         // playerModelViewScript default: PlayerVisualRepresentation playerVisual, InventoryController inventoryController = null, Action onCreated = null, float update = 0f, Vector3? position = null, bool animateWeapon = true
                         await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false);
                     }
@@ -234,19 +475,17 @@ namespace MoxoPixel.MenuOverhaul.Patches
             await Task.CompletedTask.ConfigureAwait(false);
         }
 
+
         private static void UpdatePlayerStats(Transform bottomFieldTransform)
         {
-            // Find the NicknameAndKarma object
+            // Update Nickname and Experience
             var nicknameAndKarmaTransform = bottomFieldTransform.Find("NicknameAndKarma");
-
             if (nicknameAndKarmaTransform != null)
             {
-                // Find the Label component
                 var labelTransform = nicknameAndKarmaTransform.Find("Label");
                 if (labelTransform != null)
                 {
                     TextMeshProUGUI nicknameTMP = labelTransform.GetComponent<TextMeshProUGUI>();
-
                     if (nicknameTMP != null)
                     {
                         nicknameTMP.text = PatchConstants.BackEndSession.Profile.Nickname;
@@ -259,7 +498,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     Plugin.LogSource.LogWarning("Label component not found in NicknameAndKarma.");
                 }
 
-                // Hide the icon inside NicknameAndKarma
                 var nicknameIconTransform = nicknameAndKarmaTransform.Find("AccountType");
                 if (nicknameIconTransform != null)
                 {
@@ -271,16 +509,13 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 }
             }
 
-            // Find the Experience object
             var experienceTransform = bottomFieldTransform.Find("Experience");
             if (experienceTransform != null)
             {
-                // Find the ExpValue component
                 var expValueTransform = experienceTransform.Find("ExpValue");
                 if (expValueTransform != null)
                 {
                     TextMeshProUGUI experienceTMP = expValueTransform.GetComponent<TextMeshProUGUI>();
-
                     if (experienceTMP != null)
                     {
                         var numberFormat = new NumberFormatInfo
@@ -299,6 +534,45 @@ namespace MoxoPixel.MenuOverhaul.Patches
             else
             {
                 Plugin.LogSource.LogWarning("Experience GameObject not found in BottomField.");
+            }
+
+            // Update Player Level View
+            var levelGroupTransform = bottomFieldTransform.Find("LevelGroup");
+            if (levelGroupTransform != null)
+            {
+                var levelTextTransform = levelGroupTransform.Find("Level");
+                if (levelTextTransform != null)
+                {
+                    TextMeshProUGUI levelTMP = levelTextTransform.GetComponent<TextMeshProUGUI>();
+                    if (levelTMP != null)
+                    {
+                        levelTMP.text = PatchConstants.BackEndSession.Profile.Info.Level.ToString();
+                    }
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning("LevelText component not found in LevelGroup.");
+                }
+
+                // Update Player Level Icon View
+                var iconImageTransform = levelGroupTransform.Find("Level Icon");
+                if (iconImageTransform != null)
+                {
+                    Image iconImage = iconImageTransform.GetComponent<Image>();
+                    if (iconImage != null)
+                    {
+                        int playerLevel = PatchConstants.BackEndSession.Profile.Info.Level;
+                        PlayerLevelPanel.SetLevelIcon(iconImage, playerLevel);
+                    }
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning("IconImage component not found in LevelGroup.");
+                }
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("LevelGroup GameObject not found in BottomField.");
             }
         }
 

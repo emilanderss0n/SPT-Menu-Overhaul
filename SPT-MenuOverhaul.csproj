@@ -131,6 +131,8 @@
     <Compile Include="Helpers\LayoutHelpers.cs" />
     <Compile Include="Helpers\LightHelpers.cs" />
     <Compile Include="Patches\MenuOverhaulPatch.cs" />
+    <Compile Include="Patches\OnGameEndedPatch.cs" />
+    <Compile Include="Patches\OnGameStartedPatch.cs" />
     <Compile Include="Patches\SetAlphaPatch.cs" />
     <Compile Include="Patches\TweenButtonPatch.cs" />
     <Compile Include="Plugin.cs" />

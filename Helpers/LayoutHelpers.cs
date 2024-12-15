@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
+using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
 {
@@ -13,6 +14,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
     {
         private static AssetBundle iconAssetBundle;
         private static bool isAlignmentCameraMoved = false;
+        private static EnvironmentObjects cachedEnvironmentObjects;
         private static readonly Dictionary<string, string> ButtonNameToFileNameMap = new Dictionary<string, string>
         {
             { "PlayButton", "icon_play" },
@@ -237,7 +239,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 newPlane.transform.position = new Vector3(0f, -999.999f, 5.399f);
                 newPlane.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
                 newPlane.transform.rotation = Quaternion.Euler(-90f, 0f, 0f);
-                newPlane.transform.localScale = new Vector3(1.9f, 1f, 0.92f);
+                newPlane.transform.localScale = new Vector3(Settings.scaleBackgroundX.Value, 1f, Settings.scaleBackgroundY.Value);
 
                 // Transfer other transforms from panorama object
                 newPlane.layer = panorama.layer;
@@ -369,17 +371,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         public static EnvironmentObjects FindEnvironmentObjects()
         {
-            GameObject environmentUI = null;
-
-            for (int i = 0; i < 10; i++)  // Try up to 10 times (1 second total)
+            if (cachedEnvironmentObjects != null)
             {
-                environmentUI = GameObject.Find("Environment UI");
-                if (environmentUI != null)
-                {
-                    break;  // Found the object, break out of the loop
-                }
+                return cachedEnvironmentObjects;
             }
 
+            GameObject environmentUI = GameObject.Find("Environment UI");
             if (environmentUI == null)
             {
                 Plugin.LogSource.LogWarning("Environment UI GameObject not found.");
@@ -407,13 +404,15 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return null;
             }
 
-            return new EnvironmentObjects
+            cachedEnvironmentObjects = new EnvironmentObjects
             {
                 EnvironmentUI = environmentUI,
                 CommonObj = commonObj,
                 EnvironmentUISceneFactory = environmentUISceneFactory,
                 FactoryLayout = factoryLayout
             };
+
+            return cachedEnvironmentObjects;
         }
 
         public static void DisableCameraMovement()
@@ -513,8 +512,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             GameObject matchmakerScreen = GameObject.Find("Menu UI/UI/Matchmaker Time Has Come");
             while (matchmakerScreen == null)
             {
-               return true;
-                
+                return true;
+
             }
             return false;
         }

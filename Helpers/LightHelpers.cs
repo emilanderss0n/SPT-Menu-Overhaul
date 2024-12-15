@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using MoxoPixel.MenuOverhaul.Utils;
 using System;
+using System.Collections.Generic;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
 {
@@ -9,23 +10,33 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         private static Transform mainLightTransform;
         private static Transform hairLightTransform;
         private static Transform mainLightThreeTransform;
+        private static Dictionary<string, Transform> lightTransformsCache = new Dictionary<string, Transform>();
 
         public static void SetupLights(GameObject clonedPlayerModelView)
         {
-            mainLightThreeTransform = SetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Main Light (3)", SetupMainLightThree);
-            mainLightTransform = SetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Main Light", SetupMainLight);
-            hairLightTransform = SetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Hair Light", SetupHairLight);
-            SetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Main Light (1)", SetupMainLightOne);
-            SetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Main Light (2)", SetupMainLightTwo);
-            SetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Main Light (4)", SetupMainLightFour);
-            SetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Fill Light", SetupFillLight);
-            SetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Down Light", SetupDownLight);
+            CacheLightTransforms(clonedPlayerModelView);
+            mainLightThreeTransform = SetupLight("Main Light (3)", SetupMainLightThree);
+            mainLightTransform = SetupLight("Main Light", SetupMainLight);
+            hairLightTransform = SetupLight("Hair Light", SetupHairLight);
+            SetupLight("Main Light (1)", SetupMainLightOne);
+            SetupLight("Main Light (2)", SetupMainLightTwo);
+            SetupLight("Main Light (4)", SetupMainLightFour);
+            SetupLight("Fill Light", SetupFillLight);
+            SetupLight("Down Light", SetupDownLight);
         }
 
-        private static Transform SetupLight(GameObject parent, string path, Action<Light> setupAction)
+        private static void CacheLightTransforms(GameObject parent)
         {
-            Transform lightTransform = parent.transform.Find(path);
-            if (lightTransform != null)
+            lightTransformsCache.Clear();
+            foreach (Transform t in parent.GetComponentsInChildren<Transform>(true))
+            {
+                lightTransformsCache[t.name] = t;
+            }
+        }
+
+        private static Transform SetupLight(string name, Action<Light> setupAction)
+        {
+            if (lightTransformsCache.TryGetValue(name, out Transform lightTransform))
             {
                 Light light = lightTransform.GetComponent<Light>();
                 if (light != null)
@@ -34,12 +45,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
                 else
                 {
-                    Plugin.LogSource.LogWarning($"Light component not found on {path}.");
+                    Plugin.LogSource.LogWarning($"Light component not found on {name}.");
                 }
             }
             else
             {
-                Plugin.LogSource.LogWarning($"{path} GameObject not found.");
+                Plugin.LogSource.LogWarning($"{name} GameObject not found.");
             }
             return lightTransform;
         }

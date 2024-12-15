@@ -5,7 +5,7 @@ using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul
 {
-    [BepInPlugin("moxo.pixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.0.3")]
+    [BepInPlugin("moxo.pixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.0.4")]
     public class Plugin : BaseUnityPlugin
     {
         public static ManualLogSource LogSource;
@@ -18,6 +18,8 @@ namespace MoxoPixel.MenuOverhaul
             new MenuOverhaulPatch().Enable();
             new SetAlphaPatch().Enable();
             new TweenButtonPatch().Enable();
+            new OnGameStartedPatch().Enable();
+            new OnGameEndedPatch().Enable();
 
             LogSource.LogInfo("MenuOverhaul by MoxoPixel loaded");
         }
