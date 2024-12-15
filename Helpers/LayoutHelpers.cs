@@ -14,7 +14,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
     {
         private static AssetBundle iconAssetBundle;
         private static bool isAlignmentCameraMoved = false;
-        private static EnvironmentObjects cachedEnvironmentObjects;
         private static readonly Dictionary<string, string> ButtonNameToFileNameMap = new Dictionary<string, string>
         {
             { "PlayButton", "icon_play" },
@@ -371,12 +370,17 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         public static EnvironmentObjects FindEnvironmentObjects()
         {
-            if (cachedEnvironmentObjects != null)
+            GameObject environmentUI = null;
+
+            for (int i = 0; i < 10; i++)  // Try up to 10 times (1 second total)
             {
-                return cachedEnvironmentObjects;
+                environmentUI = GameObject.Find("Environment UI");
+                if (environmentUI != null)
+                {
+                    break;  // Found the object, break out of the loop
+                }
             }
 
-            GameObject environmentUI = GameObject.Find("Environment UI");
             if (environmentUI == null)
             {
                 Plugin.LogSource.LogWarning("Environment UI GameObject not found.");
@@ -404,15 +408,13 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return null;
             }
 
-            cachedEnvironmentObjects = new EnvironmentObjects
+            return new EnvironmentObjects
             {
                 EnvironmentUI = environmentUI,
                 CommonObj = commonObj,
                 EnvironmentUISceneFactory = environmentUISceneFactory,
                 FactoryLayout = factoryLayout
             };
-
-            return cachedEnvironmentObjects;
         }
 
         public static void DisableCameraMovement()
@@ -512,8 +514,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             GameObject matchmakerScreen = GameObject.Find("Menu UI/UI/Matchmaker Time Has Come");
             while (matchmakerScreen == null)
             {
-                return true;
-
+               return true;
+                
             }
             return false;
         }

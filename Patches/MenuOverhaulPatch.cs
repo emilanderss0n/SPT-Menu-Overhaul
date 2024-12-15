@@ -17,8 +17,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
     internal class MenuOverhaulPatch : ModulePatch
     {
         public static bool MenuPlayerCreated = false;
-        private static LayoutHelpers.EnvironmentObjects cachedEnvironmentObjects;
-        private static GameObject cachedPlayerModelView;
 
         protected override MethodBase GetTargetMethod()
         {
@@ -28,60 +26,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
-            // Check if PlayButton is active within the specified path
-            GameObject playButton = GameObject.Find("Common UI/Common UI/MenuScreen/PlayButton")?.gameObject;
-            if (__instance == null || playButton == null || !playButton.activeSelf)
-            {
-                Plugin.LogSource.LogWarning("MenuScreen or PlayButton is null or inactive.");
-                return;
-            }
-
             ButtonHelpers.SetupButtonIcons(__instance);
             await LoadPatchContent(__instance).ConfigureAwait(false);
             InitializeSceneEvents();
             HandleScene(SceneManager.GetActiveScene());
             ButtonHelpers.ProcessButtons(__instance);
             await AddPlayerModel().ConfigureAwait(false);
-            SubscribeToSettingsChanges();
-            UpdateSetElements();
-            SubscribeToCharacterLevelUpEvent();
-        }
-
-        public static void ClearCachedObjects()
-        {
-            cachedEnvironmentObjects = null;
-            cachedPlayerModelView = null;
-            MenuPlayerCreated = false;
-        }
-
-        public static void DestroyChanges()
-        {
-            ClearCachedObjects();
-            GameObject mainMenuPlayerModelView = GameObject.Find("Common UI/Common UI/MenuScreen/MainMenuPlayerModelView");
-            if (mainMenuPlayerModelView != null)
-            {
-                GameObject.Destroy(mainMenuPlayerModelView);
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("MainMenuPlayerModelView not found.");
-            }
-        }
-
-        public static void ReapplyChanges(MenuScreen __instance)
-        {
-            if (__instance == null)
-            {
-                Plugin.LogSource.LogWarning("MenuScreen instance is null.");
-                return;
-            }
-
-            ButtonHelpers.SetupButtonIcons(__instance);
-            LoadPatchContent(__instance).ConfigureAwait(false);
-            InitializeSceneEvents();
-            HandleScene(SceneManager.GetActiveScene());
-            ButtonHelpers.ProcessButtons(__instance);
-            AddPlayerModel().ConfigureAwait(false);
             SubscribeToSettingsChanges();
             UpdateSetElements();
             SubscribeToCharacterLevelUpEvent();
@@ -98,25 +48,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.PositionBottomFieldVertical.SettingChanged += OnBottomFieldPositionChanged;
             Settings.scaleBackgroundX.SettingChanged += OnScaleBackgroundChanged;
             Settings.scaleBackgroundY.SettingChanged += OnScaleBackgroundChanged;
+            Settings.PositionPlayerLevelViewVertical.SettingChanged += OnPlayerModelPositionChanged;
+            Settings.PositionPlayerLevelViewHorizontal.SettingChanged += OnPlayerModelPositionChanged;
         }
 
-        private static LayoutHelpers.EnvironmentObjects GetCachedEnvironmentObjects()
-        {
-            if (cachedEnvironmentObjects == null)
-            {
-                cachedEnvironmentObjects = LayoutHelpers.FindEnvironmentObjects();
-            }
-            return cachedEnvironmentObjects;
-        }
-
-        private static GameObject GetCachedPlayerModelView()
-        {
-            if (cachedPlayerModelView == null)
-            {
-                cachedPlayerModelView = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView");
-            }
-            return cachedPlayerModelView;
-        }
 
         private static Task LoadPatchContent(MenuScreen __instance)
         {
@@ -133,7 +68,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void UpdateSetElements()
         {
-            var environmentObjects = GetCachedEnvironmentObjects();
+            var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
 
             if (environmentObjects.CommonObj != null)
             {
@@ -199,7 +134,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void BottomFieldPositionChanged()
         {
-            Transform bottomFieldTransform = GetBottomFieldTransform();
+            GameObject bottomFieldTransform = GameObject.Find("Common UI/Common UI/MenuScreen/MainMenuPlayerModelView/BottomField");
             if (bottomFieldTransform != null)
             {
                 bottomFieldTransform.transform.localPosition = new Vector3(Settings.PositionBottomFieldHorizontal.Value, Settings.PositionBottomFieldVertical.Value, 0f);
@@ -257,7 +192,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (!MenuPlayerCreated)
             {
-                GameObject playerModelView = GetCachedPlayerModelView();
+                GameObject playerModelView = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView");
                 GameObject playerLevelView = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/Level Panel/Level");
                 GameObject playerLevelIconView = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/Level Panel/Level Icon");
                 GameObject menuScreenParent = GameObject.Find("Common UI/Common UI/MenuScreen");
