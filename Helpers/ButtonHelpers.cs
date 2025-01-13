@@ -14,24 +14,21 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         private const float ButtonYOffset = 60f;
         private const float ButtonXOffset = 250f;
         private static readonly string[] buttonNames = { "PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup" };
-        private static readonly Dictionary<string, GameObject> buttonCache = new Dictionary<string, GameObject>();
 
         public static void SetupButtonIcons(MenuScreen __instance)
         {
-            CacheButtons(__instance);
-            SetButtonIconTransform("PlayButton", new Vector3(ButtonScale, ButtonScale, ButtonScale), new Vector3(-48f, 0f, 0f));
-            SetButtonIconTransform("TradeButton", new Vector3(ButtonScale, ButtonScale, ButtonScale));
-            SetButtonIconTransform("HideoutButton", new Vector3(ButtonScale, ButtonScale, ButtonScale));
-            SetButtonIconTransform("ExitButtonGroup", new Vector3(ButtonScale, ButtonScale, ButtonScale));
+            SetButtonIconTransform(__instance, "PlayButton", new Vector3(ButtonScale, ButtonScale, ButtonScale), new Vector3(-48f, 0f, 0f));
+            SetButtonIconTransform(__instance, "TradeButton", new Vector3(ButtonScale, ButtonScale, ButtonScale));
+            SetButtonIconTransform(__instance, "HideoutButton", new Vector3(ButtonScale, ButtonScale, ButtonScale));
+            SetButtonIconTransform(__instance, "ExitButtonGroup", new Vector3(ButtonScale, ButtonScale, ButtonScale));
         }
 
         public static void ProcessButtons(MenuScreen __instance)
         {
-            CacheButtons(__instance);
-
             foreach (var buttonName in buttonNames)
             {
-                if (buttonCache.TryGetValue(buttonName, out GameObject buttonObject))
+                GameObject buttonObject = __instance.gameObject.transform.Find(buttonName)?.gameObject;
+                if (buttonObject != null)
                 {
                     SetupButtonTransform(buttonObject, buttonName);
                     LayoutHelpers.SetIconImages(buttonObject, buttonName);
@@ -40,21 +37,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 else
                 {
                     Plugin.LogSource.LogWarning($"{buttonName} not found in MenuScreen.");
-                }
-            }
-        }
-
-        private static void CacheButtons(MenuScreen __instance)
-        {
-            foreach (var buttonName in buttonNames)
-            {
-                if (!buttonCache.ContainsKey(buttonName))
-                {
-                    GameObject buttonObject = __instance.gameObject.transform.Find(buttonName)?.gameObject;
-                    if (buttonObject != null)
-                    {
-                        buttonCache[buttonName] = buttonObject;
-                    }
                 }
             }
         }
@@ -154,11 +136,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
         }
 
-        public static void SetButtonIconTransform(string buttonName, Vector3? localScale = null, Vector3? anchoredPosition = null)
+        public static void SetButtonIconTransform(MenuScreen __instance, string buttonName, Vector3? localScale = null, Vector3? anchoredPosition = null)
         {
-            if (!buttonCache.TryGetValue(buttonName, out GameObject button))
+            GameObject button = __instance.gameObject.transform.Find(buttonName)?.gameObject;
+            if (button == null)
             {
-                Plugin.LogSource.LogWarning($"SetButtonIconTransform - Button {buttonName} not found in cache.");
+                Plugin.LogSource.LogWarning($"SetButtonIconTransform - Button {buttonName} not found.");
                 return;
             }
 

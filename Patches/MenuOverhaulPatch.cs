@@ -17,6 +17,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
     internal class MenuOverhaulPatch : ModulePatch
     {
         public static bool MenuPlayerCreated = false;
+        public static GameObject clonedPlayerModelView;
 
         protected override MethodBase GetTargetMethod()
         {
@@ -26,6 +27,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
+            // Check if PlayButton is active within the specified path
+            GameObject playButton = GameObject.Find("Common UI/Common UI/MenuScreen/PlayButton")?.gameObject;
+            if (__instance == null || playButton == null || !playButton.activeSelf)
+            {
+                Plugin.LogSource.LogWarning("MenuScreen or PlayButton is null or inactive.");
+                return;
+            }
+
             ButtonHelpers.SetupButtonIcons(__instance);
             await LoadPatchContent(__instance).ConfigureAwait(false);
             InitializeSceneEvents();
@@ -48,10 +57,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.PositionBottomFieldVertical.SettingChanged += OnBottomFieldPositionChanged;
             Settings.scaleBackgroundX.SettingChanged += OnScaleBackgroundChanged;
             Settings.scaleBackgroundY.SettingChanged += OnScaleBackgroundChanged;
-            Settings.PositionPlayerLevelViewVertical.SettingChanged += OnPlayerModelPositionChanged;
-            Settings.PositionPlayerLevelViewHorizontal.SettingChanged += OnPlayerModelPositionChanged;
         }
-
 
         private static Task LoadPatchContent(MenuScreen __instance)
         {
@@ -134,7 +140,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void BottomFieldPositionChanged()
         {
-            GameObject bottomFieldTransform = GameObject.Find("Common UI/Common UI/MenuScreen/MainMenuPlayerModelView/BottomField");
+            Transform bottomFieldTransform = GetBottomFieldTransform();
             if (bottomFieldTransform != null)
             {
                 bottomFieldTransform.transform.localPosition = new Vector3(Settings.PositionBottomFieldHorizontal.Value, Settings.PositionBottomFieldVertical.Value, 0f);
@@ -189,7 +195,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         }
 
         private static async Task AddPlayerModel()
-        {
+        {    
             if (!MenuPlayerCreated)
             {
                 GameObject playerModelView = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView");
@@ -199,7 +205,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
                 if (playerModelView != null && menuScreenParent != null)
                 {
-                    GameObject clonedPlayerModelView = GameObject.Instantiate(playerModelView, menuScreenParent.transform);
+                    clonedPlayerModelView = GameObject.Instantiate(playerModelView, menuScreenParent.transform);
                     clonedPlayerModelView.name = "MainMenuPlayerModelView";
                     clonedPlayerModelView.SetActive(true);
 

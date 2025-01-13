@@ -19,8 +19,6 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<float> PositionBottomFieldVertical;
         public static ConfigEntry<float> scaleBackgroundX;
         public static ConfigEntry<float> scaleBackgroundY;
-        public static ConfigEntry<float> PositionPlayerLevelViewVertical;
-        public static ConfigEntry<float> PositionPlayerLevelViewHorizontal;
 
         public static List<ConfigEntryBase> ConfigEntries = new List<ConfigEntryBase>();
 
@@ -86,7 +84,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 0f,
                 new ConfigDescription(
                     "Adjust the vertical position of the player info text in the main menu",
-                    new AcceptableValueRange<float>(-200f, 200f),
+                    new AcceptableValueRange<float>(-300f, 300f),
                     new ConfigurationManagerAttributes { })));
 
             ConfigEntries.Add(scaleBackgroundX = Config.Bind(
@@ -95,7 +93,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 1.9f,
                 new ConfigDescription(
                     "Adjust the horizontal scale of the background image",
-                    new AcceptableValueRange<float>(0f, 3f),
+                    new AcceptableValueRange<float>(0f, 4f),
                     new ConfigurationManagerAttributes { })));
 
             ConfigEntries.Add(scaleBackgroundY = Config.Bind(
@@ -104,25 +102,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 0.92f,
                 new ConfigDescription(
                     "Adjust the vertical scale of the background image",
-                    new AcceptableValueRange<float>(0f, 3f),
-                    new ConfigurationManagerAttributes { })));
-
-            ConfigEntries.Add(PositionPlayerLevelViewVertical = Config.Bind(
-                AdjustmentsSectionTitle,
-                "Position Player Level Vertical",
-                0f,
-                new ConfigDescription(
-                    "Adjust the vertical position of the player level",
-                    new AcceptableValueRange<float>(-1000f, 1000f),
-                    new ConfigurationManagerAttributes { })));
-
-            ConfigEntries.Add(PositionPlayerLevelViewHorizontal = Config.Bind(
-                AdjustmentsSectionTitle,
-                "Position Player Level Horizontal",
-                0f,
-                new ConfigDescription(
-                    "Adjust the horizontal position of the player level",
-                    new AcceptableValueRange<float>(-1000f, 1000f),
+                    new AcceptableValueRange<float>(-1f, 3f),
                     new ConfigurationManagerAttributes { })));
 
             RecalcOrder();

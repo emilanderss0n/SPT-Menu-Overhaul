@@ -23,7 +23,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             { "ExitButton", "exit_status_runner" },
             { "ExitButtonGroup", "exit_status_runner" }
         };
-        private static readonly Dictionary<string, GameObject> gameObjectCache = new Dictionary<string, GameObject>();
         private static readonly Dictionary<string, Texture2D> textureCache = new Dictionary<string, Texture2D>();
 
         public class EnvironmentObjects
@@ -36,11 +35,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         public static GameObject GetGlowCanvas()
         {
-            if (gameObjectCache.TryGetValue("GlowCanvas", out GameObject cachedGlowCanvas))
-            {
-                return cachedGlowCanvas;
-            }
-
             EnvironmentObjects envObjects = FindEnvironmentObjects();
             if (envObjects == null)
             {
@@ -53,21 +47,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             {
                 Plugin.LogSource.LogWarning("Glow Canvas GameObject not found.");
             }
-            else
-            {
-                gameObjectCache["GlowCanvas"] = glowCanvas;
-            }
 
             return glowCanvas;
         }
 
         public static GameObject GetBackgroundPlane()
         {
-            if (gameObjectCache.TryGetValue("BackgroundPlane", out GameObject cachedBackgroundPlane))
-            {
-                return cachedBackgroundPlane;
-            }
-
             EnvironmentObjects envObjects = FindEnvironmentObjects();
             if (envObjects == null)
             {
@@ -79,10 +64,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             if (backgroundPlane == null)
             {
                 Plugin.LogSource.LogWarning("CustomPlane GameObject not found.");
-            }
-            else
-            {
-                gameObjectCache["BackgroundPlane"] = backgroundPlane;
             }
 
             return backgroundPlane;
@@ -370,17 +351,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         public static EnvironmentObjects FindEnvironmentObjects()
         {
-            GameObject environmentUI = null;
-
-            for (int i = 0; i < 10; i++)  // Try up to 10 times (1 second total)
-            {
-                environmentUI = GameObject.Find("Environment UI");
-                if (environmentUI != null)
-                {
-                    break;  // Found the object, break out of the loop
-                }
-            }
-
+            GameObject environmentUI = GameObject.Find("Environment UI");
             if (environmentUI == null)
             {
                 Plugin.LogSource.LogWarning("Environment UI GameObject not found.");
@@ -496,6 +467,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
             }
         }
+
         public static bool IsPartOfMenuScreen(DefaultUIButtonAnimation buttonAnimation)
         {
             Transform currentTransform = buttonAnimation.transform;
@@ -509,13 +481,13 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             return false;
         }
+
         public static bool IsMatchMaker()
         {
             GameObject matchmakerScreen = GameObject.Find("Menu UI/UI/Matchmaker Time Has Come");
             while (matchmakerScreen == null)
             {
-               return true;
-                
+                return true;
             }
             return false;
         }

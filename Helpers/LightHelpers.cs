@@ -22,9 +22,9 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             SetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Down Light", SetupDownLight);
         }
 
-        private static Transform SetupLight(GameObject parent, string path, Action<Light> setupAction)
+        private static Transform SetupLight(GameObject parent, string name, Action<Light> setupAction)
         {
-            Transform lightTransform = parent.transform.Find(path);
+            Transform lightTransform = parent.transform.Find(name);
             if (lightTransform != null)
             {
                 Light light = lightTransform.GetComponent<Light>();
@@ -34,12 +34,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
                 else
                 {
-                    Plugin.LogSource.LogWarning($"Light component not found on {path}.");
+                    Plugin.LogSource.LogWarning($"Light component not found on {name}.");
                 }
             }
             else
             {
-                Plugin.LogSource.LogWarning($"{path} GameObject not found.");
+                Plugin.LogSource.LogWarning($"{name} GameObject not found.");
             }
             return lightTransform;
         }
