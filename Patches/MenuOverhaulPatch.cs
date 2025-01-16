@@ -225,9 +225,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             {
                                 // Set the specified properties
                                 prismEffects.useExposure = true;
-                                prismEffects.useAmbientObscurance = true;
+                                prismEffects.useAmbientObscurance = false;
+                                prismEffects.useRays = true;
                                 prismEffects.tonemapType = Prism.Utils.TonemapType.ACES;
-                                prismEffects.toneValues = new Vector3(4f, 0.28f, 0.5f);
+                                prismEffects.toneValues = new Vector3(9f, 0.28f, 0.5f);
                                 prismEffects.exposureUpperLimit = 0.55f;
                                 prismEffects.aoBias = 0.1f;
                                 prismEffects.aoIntensity = 4f;
