@@ -1,5 +1,6 @@
 ﻿using BepInEx.Configuration;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace MoxoPixel.MenuOverhaul.Utils
 {
@@ -19,6 +20,8 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<float> PositionBottomFieldVertical;
         public static ConfigEntry<float> scaleBackgroundX;
         public static ConfigEntry<float> scaleBackgroundY;
+        public static ConfigEntry<float> RotationPlayerModelHorizontal;
+
 
         public static List<ConfigEntryBase> ConfigEntries = new List<ConfigEntryBase>();
 
@@ -103,6 +106,15 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 new ConfigDescription(
                     "Adjust the vertical scale of the background image",
                     new AcceptableValueRange<float>(-1f, 3f),
+                    new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(RotationPlayerModelHorizontal = Config.Bind(
+                AdjustmentsSectionTitle,
+                "Rotate Player Model",
+                180f,
+                new ConfigDescription(
+                    "Adjust the horizontal rotation of the player model in the main menu",
+                    new AcceptableValueRange<float>(0f, 360f),
                     new ConfigurationManagerAttributes { })));
 
             RecalcOrder();

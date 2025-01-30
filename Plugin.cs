@@ -5,7 +5,7 @@ using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul
 {
-    [BepInPlugin("moxo.pixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.0.4")]
+    [BepInPlugin("moxo.pixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.0.6")]
     public class Plugin : BaseUnityPlugin
     {
         public static ManualLogSource LogSource;

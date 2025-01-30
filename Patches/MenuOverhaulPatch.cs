@@ -44,6 +44,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             SubscribeToSettingsChanges();
             UpdateSetElements();
             SubscribeToCharacterLevelUpEvent();
+            UpdatePlayerModelRotation();
         }
 
         private static void SubscribeToSettingsChanges()
@@ -57,6 +58,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.PositionBottomFieldVertical.SettingChanged += OnBottomFieldPositionChanged;
             Settings.scaleBackgroundX.SettingChanged += OnScaleBackgroundChanged;
             Settings.scaleBackgroundY.SettingChanged += OnScaleBackgroundChanged;
+            Settings.RotationPlayerModelHorizontal.SettingChanged += OnPlayerModelRotationChanged;
         }
 
         private static Task LoadPatchContent(MenuScreen __instance)
@@ -115,6 +117,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             UpdatePlayerModelPosition();
         }
+
+        private static void OnPlayerModelRotationChanged(object sender, EventArgs e)
+        {
+            UpdatePlayerModelRotation();
+        }
+
         private static void OnBottomFieldPositionChanged(object sender, EventArgs e)
         {
             BottomFieldPositionChanged();
@@ -135,6 +143,22 @@ namespace MoxoPixel.MenuOverhaul.Patches
             else
             {
                 Plugin.LogSource.LogWarning("UpdatePlayerModelPosition - MainMenuPlayerModelView not found.");
+            }
+        }
+
+        private static void UpdatePlayerModelRotation()
+        {
+            if (clonedPlayerModelView != null)
+            {
+                Transform playerModelTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/MenuPlayer");
+                if (playerModelTransform != null)
+                {
+                    playerModelTransform.localRotation = Quaternion.Euler(0, Settings.RotationPlayerModelHorizontal.Value, 0);
+                }
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("Cloned player model view not found.");
             }
         }
 
@@ -210,6 +234,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     clonedPlayerModelView.SetActive(true);
 
                     MenuPlayerCreated = true;
+                    UpdatePlayerModelRotation();
 
                     PlayerModelView playerModelViewScript = clonedPlayerModelView.GetComponentInChildren<PlayerModelView>();
                     if (playerModelViewScript != null)
@@ -224,19 +249,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             if (prismEffects != null)
                             {
                                 // Set the specified properties
-                                prismEffects.useExposure = true;
-                                prismEffects.useAmbientObscurance = false;
-                                prismEffects.useRays = true;
-                                prismEffects.tonemapType = Prism.Utils.TonemapType.ACES;
-                                prismEffects.toneValues = new Vector3(9f, 0.28f, 0.5f);
+                                prismEffects.toneValues = new Vector3(7f, 1.25f, 1.25f);
                                 prismEffects.exposureUpperLimit = 0.55f;
-                                prismEffects.aoBias = 0.1f;
-                                prismEffects.aoIntensity = 4f;
-                                prismEffects.aoRadius = 0.2f;
-                                prismEffects.aoBlurFilterDistance = 1.25f;
-                                prismEffects.aoMinIntensity = 1f;
-                                prismEffects.aoLightingContribution = 5f;
-                                prismEffects.useLensDirt = false;
+                                prismEffects.useExposure = true;
                             }
                             else
                             {
@@ -382,6 +397,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
                         // playerModelViewScript default: PlayerVisualRepresentation playerVisual, InventoryController inventoryController = null, Action onCreated = null, float update = 0f, Vector3? position = null, bool animateWeapon = true
                         await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false);
+
+                        GameObject clonedPlayerModelViewInner = clonedPlayerModelView.transform.Find("PlayerMVObject/MenuPlayer").gameObject;
+                        clonedPlayerModelViewInner.transform.localPosition = new Vector3(0f, -1.1f, 5f);
                     }
                     else
                     {
@@ -403,6 +421,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     {
                         playerModelViewScript.Close();
                         await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false);
+
+                        GameObject clonedPlayerModelViewInner = clonedPlayerModelView.transform.Find("PlayerMVObject/MenuPlayer").gameObject;
+                        clonedPlayerModelViewInner.transform.localPosition = new Vector3(0f, -1.1f, 5f);
                     }
                     else
                     {
