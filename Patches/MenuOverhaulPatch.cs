@@ -564,7 +564,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
                 if (environmentObjects == null)
                 {
-                    Plugin.LogSource.LogInfo("EnvironmentUI instances not found - Possibly starting a game.");
                     return;
                 }
 
