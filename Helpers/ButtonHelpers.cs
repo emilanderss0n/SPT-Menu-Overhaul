@@ -3,7 +3,6 @@ using System.Reflection;
 using System;
 using TMPro;
 using UnityEngine;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MoxoPixel.MenuOverhaul.Helpers

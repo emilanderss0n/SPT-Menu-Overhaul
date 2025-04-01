@@ -1,7 +1,6 @@
 ﻿using EFT;
 using SPT.Reflection.Patching;
 using System.Reflection;
-using Comfort.Common;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {

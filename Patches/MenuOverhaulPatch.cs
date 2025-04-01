@@ -11,6 +11,7 @@ using TMPro;
 using System.Globalization;
 using MoxoPixel.MenuOverhaul.Helpers;
 using MoxoPixel.MenuOverhaul.Utils;
+using EFT;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
@@ -21,7 +22,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(MenuScreen).GetMethod("method_3", BindingFlags.Instance | BindingFlags.Public);
+            return typeof(MenuScreen).GetMethod("Show", new[] { typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode) });
         }
 
         [PatchPostfix]
@@ -375,7 +376,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         }
 
                         // Locate the SideImage GameObject and hide it
-                        Transform sideImageTransform = clonedPlayerModelView.transform.Find("SideImage");
+                        Transform sideImageTransform = clonedPlayerModelView.transform.Find("IconsContainer");
                         if (sideImageTransform != null)
                         {
                             sideImageTransform.gameObject.SetActive(false);
