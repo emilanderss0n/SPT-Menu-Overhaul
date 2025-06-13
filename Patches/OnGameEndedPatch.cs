@@ -1,10 +1,6 @@
 ﻿using EFT;
 using SPT.Reflection.Patching;
 using System.Reflection;
-using Comfort.Common;
-using EFT.UI;
-using UnityEngine;
-using System.Threading.Tasks;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
@@ -21,8 +17,13 @@ namespace MoxoPixel.MenuOverhaul.Patches
             new MenuOverhaulPatch().Enable();
             new SetAlphaPatch().Enable();
             new TweenButtonPatch().Enable();
+            new PlayerProfileFeaturesPatch().Enable();
 
-            MenuOverhaulPatch.clonedPlayerModelView?.SetActive(true);
+            // Access clonedPlayerModelView from PlayerProfileFeaturesPatch
+            if (PlayerProfileFeaturesPatch.clonedPlayerModelView != null)
+            {
+                PlayerProfileFeaturesPatch.clonedPlayerModelView.SetActive(true);
+            }
 
             Plugin.LogSource.LogInfo("Patches re-enabled after game session end");
         }

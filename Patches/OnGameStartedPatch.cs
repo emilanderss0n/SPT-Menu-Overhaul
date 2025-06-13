@@ -1,7 +1,6 @@
 ﻿using EFT;
 using SPT.Reflection.Patching;
 using System.Reflection;
-using Comfort.Common;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
@@ -16,11 +15,16 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static void PatchPostfix(GameWorld __instance)
         {
-            MenuOverhaulPatch.clonedPlayerModelView?.SetActive(false);
+            // Access clonedPlayerModelView from PlayerProfileFeaturesPatch
+            if (PlayerProfileFeaturesPatch.clonedPlayerModelView != null)
+            {
+                PlayerProfileFeaturesPatch.clonedPlayerModelView.SetActive(false);
+            }
 
             new MenuOverhaulPatch().Disable();
             new SetAlphaPatch().Disable();
             new TweenButtonPatch().Disable();
+            new PlayerProfileFeaturesPatch().Disable();
 
             Plugin.LogSource.LogInfo("Patches disabled and changes destroyed on game start");
         }

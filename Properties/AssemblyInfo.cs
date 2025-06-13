@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("MenuOverhaul")]
-[assembly: AssemblyCopyright("Copyright © MoxoPixel 2024")]
+[assembly: AssemblyCopyright("Copyright © MoxoPixel")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
