@@ -4,12 +4,12 @@ MenuOverhaul is a BepInEx plugin designed to enhance and customize the main menu
 
 Install the mod by dragging the first folder in the zip into your SPT install directory. Huge thanks to GrooveypenguinX for all the help and ability to look at your initial version of this menu. I also want to thank the SPT modding community in Discord. This is a WTT release.
 
+![image](https://i.imgur.com/UVo352O.jpeg)
+
 > [!IMPORTANT]
 > Make sure to apply the Factory theme in the game menu before installing this mod.
 
 [Go to the mod page](https://hub.sp-tarkov.com/files/file/2412-wtt-menu-overhaul)
-
-![image](https://i.imgur.com/UVo352O.jpeg)
 
 ## Features
 
