@@ -1,4 +1,4 @@
-![image](https://i.imgur.com/YMAtT5k.png)
+![image](https://i.imgur.com/UVo352O.jpeg)
 
 # MenuOverhaul
 
@@ -95,4 +95,4 @@ Contributions are welcome! If you have suggestions, bug reports, or want to cont
 
 ---
 
-![image](https://i.imgur.com/UVo352O.jpeg)
+![image](https://i.imgur.com/YMAtT5k.png)
