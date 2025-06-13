@@ -44,7 +44,7 @@ Install the mod by dragging the first folder in the zip into your SPT install di
 
 ## Configuration
 
-This plugin can be configured through the BepInEx ConfigurationManager interface (often accessible by pressing F1 in-game, if ConfigurationManager is installed) or by editing the configuration file directly. The configuration file is typically located at `BepInEx/config/MoxoPixel.MenuOverhaul.cfg` after the first run.
+This plugin can be configured through the BepInEx ConfigurationManager interface (accessible by pressing F12 in-game) or by editing the configuration file directly. The configuration file is located at `BepInEx/config/MoxoPixel.MenuOverhaul.cfg` after the first run.
 
 Key settings include:
 
