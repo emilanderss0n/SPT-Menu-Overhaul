@@ -6,7 +6,7 @@ Install the mod by dragging the first folder in the zip into your SPT install di
 
 ![image](https://i.imgur.com/UVo352O.jpeg)
 
-> [!IMPORTANT]
+> [!NOTE]
 > Make sure to apply the Factory theme in the game menu before installing this mod.
 
 [Go to the mod page](https://hub.sp-tarkov.com/files/file/2412-wtt-menu-overhaul)
