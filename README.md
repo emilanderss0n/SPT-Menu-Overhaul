@@ -38,14 +38,6 @@ Install the mod by dragging the first folder in the zip into your SPT install di
 *   **BepInEx.ConfigurationManager:** (Recommended) For in-game configuration of the plugin settings.
 *   **Target Game:** This plugin is designed for a specific Unity game (likely a modded client of Escape From Tarkov, such as SPT-AKI, based on class names like `EFT.UI.MenuScreen`). Ensure compatibility with your game version.
 
-## Installation
-
-1.  Ensure BepInEx is installed and configured for your game.
-2.  If you don't have it, install the [BepInEx.ConfigurationManager](https://github.com/BepInEx/BepInEx.ConfigurationManager) plugin (usually by placing its DLL into the `BepInEx/plugins` folder).
-3.  Download the latest release of `MenuOverhaul.dll`.
-4.  Place the `MenuOverhaul.dll` file into your game's `BepInEx/plugins` folder.
-5.  Launch the game. If installed correctly, the plugin will load, and its effects will be visible in the main menu.
-
 ## Configuration
 
 This plugin can be configured through the BepInEx ConfigurationManager interface (often accessible by pressing F1 in-game, if ConfigurationManager is installed) or by editing the configuration file directly. The configuration file is typically located at `BepInEx/config/MoxoPixel.MenuOverhaul.cfg` after the first run.
