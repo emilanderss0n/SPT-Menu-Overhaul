@@ -1,4 +1,4 @@
-[image](https://imgur.com/YMAtT5k)
+![image](https://imgur.com/YMAtT5k)
 
 Replace the extremely uninspiring main menu that's in the game by default. Your player is added to the first menu screen. Comes with a lot of options in the F12 menu to place things where you want. You can also rotate the player through this menu. It will remember your settings for when you load the main menu again.
 
