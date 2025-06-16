@@ -59,7 +59,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 -1.9f,
                 new ConfigDescription(
                     "Adjust the horizontal position of the logotype",
-                    new AcceptableValueRange<float>(-10f, 1f),
+                    new AcceptableValueRange<float>(-10f, 2f),
                     new ConfigurationManagerAttributes { })));
 
             ConfigEntries.Add(PositionPlayerModelHorizontal = Config.Bind(
@@ -68,16 +68,16 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 400f,
                 new ConfigDescription(
                     "Adjust the horizontal position of the player model in the main menu",
-                    new AcceptableValueRange<float>(-600f, 600f),
+                    new AcceptableValueRange<float>(-600f, 1800f),
                     new ConfigurationManagerAttributes { })));
 
             ConfigEntries.Add(PositionBottomFieldHorizontal = Config.Bind(
                 AdjustmentsSectionTitle,
                 "Position Player Info Horizontal",
-                840f,
+                250f,
                 new ConfigDescription(
                     "Adjust the horizontal position of the player info text in the main menu",
-                    new AcceptableValueRange<float>(0f, 1200f),
+                    new AcceptableValueRange<float>(-800f, 1200f),
                     new ConfigurationManagerAttributes { })));
 
             ConfigEntries.Add(PositionBottomFieldVertical = Config.Bind(

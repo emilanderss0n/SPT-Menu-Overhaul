@@ -10,7 +10,7 @@ using System.Globalization;
 using MoxoPixel.MenuOverhaul.Helpers;
 using MoxoPixel.MenuOverhaul.Utils;
 using EFT;
-using SPT.Reflection.Utils; // Added this using directive
+using SPT.Reflection.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
@@ -30,35 +30,27 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
-            // Ensure MenuOverhaulPatch's core setup (like ButtonHelpers) has a chance to run if there are dependencies.
-            // For now, assuming this patch can run its logic based on the state of MenuScreen.Show
-            // and doesn't have hard dependencies on MenuOverhaulPatch.Postfix completing first for its own elements.
-
             if (__instance == null)
             {
                 Plugin.LogSource.LogWarning("PlayerProfileFeaturesPatch.Postfix: MenuScreen instance is null.");
                 return;
             }
-            
-            // It's possible MenuOverhaulPatch's Postfix check for playButton is also relevant here
-            // if AddPlayerModel or other logic depends on the menu being fully ready.
+
             GameObject playButton = GameObject.Find("Common UI/Common UI/MenuScreen/PlayButton")?.gameObject;
             if (playButton == null || !playButton.activeSelf)
             {
                 Plugin.LogSource.LogDebug("PlayerProfileFeaturesPatch.Postfix: PlayButton is null or inactive. Profile features might not apply if menu is not fully shown.");
-                // Depending on requirements, might return here or proceed cautiously.
             }
 
-            await AddPlayerModel().ConfigureAwait(false); // Handles creation and refresh
+            await AddPlayerModel().ConfigureAwait(false);
             SubscribeToProfileSettingsChanges();
             SubscribeToCharacterLevelUpEvent();
 
-            // Initial updates after model creation/potential refresh
             if (clonedPlayerModelView != null)
             {
                 UpdatePlayerModelPosition();
-                UpdatePlayerModelRotation(); // AddPlayerModel calls this, but if settings changed before it ran, this ensures latest.
-                BottomFieldPositionChanged(); 
+                UpdatePlayerModelRotation();
+                BottomFieldPositionChanged();
             }
         }
 
@@ -70,7 +62,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.PositionBottomFieldHorizontal.SettingChanged += OnBottomFieldPositionChanged;
             Settings.PositionBottomFieldVertical.SettingChanged += OnBottomFieldPositionChanged;
             Settings.RotationPlayerModelHorizontal.SettingChanged += OnPlayerModelRotationChanged;
-            // Note: EnableExtraShadows is handled by MenuOverhaulPatch as it affects LightHelpers.UpdateLights which is general.
 
             _profileSettingsSubscribed = true;
             Plugin.LogSource.LogDebug("Profile-specific settings changes subscribed.");
@@ -80,7 +71,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static void OnPlayerModelRotationChanged(object sender, EventArgs e) => UpdatePlayerModelRotation();
         private static void OnBottomFieldPositionChanged(object sender, EventArgs e) => BottomFieldPositionChanged();
 
-        public static void UpdatePlayerModelPosition() // Made public static for potential external calls if needed by other patches
+        public static void UpdatePlayerModelPosition()
         {
             if (clonedPlayerModelView != null)
             {
@@ -92,7 +83,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        public static void UpdatePlayerModelRotation() // Made public static
+        public static void UpdatePlayerModelRotation()
         {
             if (clonedPlayerModelView != null)
             {
@@ -108,7 +99,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        public static void BottomFieldPositionChanged() // Made public static
+        public static void BottomFieldPositionChanged()
         {
             Transform bottomFieldTransform = GetBottomFieldTransform();
             if (bottomFieldTransform != null)
@@ -155,7 +146,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 return clonedPlayerModelView.transform.Find("BottomField");
             }
-            Plugin.LogSource.LogDebug("GetBottomFieldTransform - clonedPlayerModelView is null."); // Changed to Debug as it might be called before creation
+            Plugin.LogSource.LogDebug("GetBottomFieldTransform - clonedPlayerModelView is null.");
             return null;
         }
 
@@ -169,7 +160,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (MenuPlayerCreated)
             {
                 Plugin.LogSource.LogWarning("AddPlayerModel - MenuPlayerCreated is true, but clonedPlayerModelView is null. Attempting to recreate.");
-                MenuPlayerCreated = false; // Reset to allow recreation
+                MenuPlayerCreated = false;
             }
 
             GameObject playerModelViewPrefab = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView");
@@ -194,7 +185,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (playerModelViewScript == null)
             {
                 Plugin.LogSource.LogError("AddPlayerModel - PlayerModelView script not found on the cloned PlayerModelViewObject.");
-                GameObject.Destroy(clonedPlayerModelView); // Clean up
+                GameObject.Destroy(clonedPlayerModelView);
                 MenuPlayerCreated = false;
                 clonedPlayerModelView = null;
                 return;
@@ -257,8 +248,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
             else { Plugin.LogSource.LogWarning("ConfigurePlayerModelVisuals - Camera_inventory not found in player model instance."); }
 
-            LightHelpers.SetupLights(modelInstance); // Setup lights for this specific player model
-            UpdatePlayerModelRotation(); // Apply initial rotation
+            LightHelpers.SetupLights(modelInstance);
+            UpdatePlayerModelRotation();
         }
 
         private static void SetupBottomField(GameObject modelInstance, GameObject playerLevelViewPrefab, GameObject playerLevelIconViewPrefab)
@@ -272,86 +263,274 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 return;
             }
 
-            VerticalLayoutGroup layoutGroup = bottomFieldTransform.GetComponent<VerticalLayoutGroup>();
-            if (layoutGroup != null)
+            // Configure BottomField's RectTransform first
+            RectTransform bftRect = bottomFieldTransform.GetComponent<RectTransform>();
+            if (bftRect == null)
             {
-                layoutGroup.childAlignment = TextAnchor.UpperLeft;
-                layoutGroup.spacing = 15f;
-                layoutGroup.childForceExpandHeight = false;
-                layoutGroup.childControlHeight = false;
+                Plugin.LogSource.LogError("SetupBottomField - RectTransform not found on BottomField. Cannot configure layout.");
+                return;
             }
-            else { Plugin.LogSource.LogWarning("SetupBottomField - VerticalLayoutGroup component not found on BottomField."); }
+            bftRect.anchorMin = new Vector2(0, 1); // Top
+            bftRect.anchorMax = new Vector2(0, 1); // Top
+            bftRect.pivot = new Vector2(0, 1);     // Top-Left pivot
+            bftRect.sizeDelta = new Vector2(0, 0); // Reset sizeDelta, ContentSizeFitter will control it
+
+            // Add ContentSizeFitter to BottomField itself
+            ContentSizeFitter bftCSF = bottomFieldTransform.GetComponent<ContentSizeFitter>();
+            if (bftCSF == null) bftCSF = bottomFieldTransform.gameObject.AddComponent<ContentSizeFitter>();
+            bftCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            bftCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            VerticalLayoutGroup bftVLG = bottomFieldTransform.GetComponent<VerticalLayoutGroup>();
+            if (bftVLG != null)
+            {
+                bftVLG.childAlignment = TextAnchor.UpperRight;
+                bftVLG.spacing = 15f; // Increase spacing between rows for better readability
+                bftVLG.padding = new RectOffset(0, 0, 0, 0);
+                bftVLG.childForceExpandHeight = false;
+                bftVLG.childControlHeight = true; // Let children control their height
+                bftVLG.childForceExpandWidth = false;
+                bftVLG.childControlWidth = true; // Let children control their width
+            }
+            else { Plugin.LogSource.LogWarning("SetupBottomField - VerticalLayoutGroup component not found on BottomField. Row layout might be incorrect."); }
 
             bottomFieldTransform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
             bottomFieldTransform.localPosition = new Vector3(Settings.PositionBottomFieldHorizontal.Value, Settings.PositionBottomFieldVertical.Value, 0f);
 
-            // Destroy existing "LevelGroup" if it was somehow duplicated or from a previous incorrect setup
-            Transform existingLevelGroup = bottomFieldTransform.Find("LevelGroup");
-            if (existingLevelGroup != null)
+            // Destroy existing dynamic elements to prevent duplication
+            Action<string> DestroyChildIfExists = (name) => {
+                Transform child = bottomFieldTransform.Find(name);
+                if (child != null) {
+                    Plugin.LogSource.LogDebug($"SetupBottomField - Destroying existing {name}.");
+                    GameObject.Destroy(child.gameObject);
+                }
+            };
+
+            DestroyChildIfExists("LevelGroup");
+            DestroyChildIfExists("LevelInfoRow");
+            DestroyChildIfExists("NicknameText");
+            DestroyChildIfExists("ExperienceRow");
+            DestroyChildIfExists("Spacer_LevelInfo_Nickname");
+            DestroyChildIfExists("Spacer_Nickname_Experience");
+
+            // Clean up the existing Experience panel if it exists
+            Transform existingExperience = bottomFieldTransform.Find("Experience");
+            if (existingExperience != null)
             {
-                Plugin.LogSource.LogDebug("SetupBottomField - Destroying existing LevelGroup before creating a new one.");
-                GameObject.Destroy(existingLevelGroup.gameObject);
+                GameObject.Destroy(existingExperience.gameObject);
+                Plugin.LogSource.LogDebug("SetupBottomField - Destroying existing Experience panel to recreate it.");
             }
-            
-            GameObject levelGroup = new GameObject("LevelGroup");
-            levelGroup.transform.SetParent(bottomFieldTransform, false);
-            RectTransform rectTransformLG = levelGroup.AddComponent<RectTransform>(); // Add RectTransform if not present
-            rectTransformLG.anchorMin = Vector2.zero;
-            rectTransformLG.anchorMax = Vector2.zero;
-            rectTransformLG.pivot = Vector2.zero;
-            rectTransformLG.anchoredPosition = Vector2.zero;
 
+            // ====== ROW 1: Level Icon + Level Text ======
+            GameObject levelInfoRow = new GameObject("LevelInfoRow");
+            levelInfoRow.transform.SetParent(bottomFieldTransform, false);
+            RectTransform levelInfoRect = levelInfoRow.AddComponent<RectTransform>();
+            levelInfoRect.anchorMin = new Vector2(1, 1);
+            levelInfoRect.anchorMax = new Vector2(1, 1);
+            levelInfoRect.pivot = new Vector2(1, 1);
 
-            // Attempt to find original NicknameAndKarma to copy components from.
-            // This path is fragile if the original UI structure changes.
-            Transform nicknameAndKarmaSourceOriginal = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView/BottomField/NicknameAndKarma")?.transform;
-            if (nicknameAndKarmaSourceOriginal != null)
+            LayoutElement levelInfoRowLE = levelInfoRow.AddComponent<LayoutElement>();
+            levelInfoRowLE.minHeight = 56f; // Make it taller to match new icon size
+            levelInfoRowLE.preferredHeight = 56f;
+            levelInfoRowLE.flexibleHeight = 0f;
+
+            HorizontalLayoutGroup levelInfoHLG = levelInfoRow.AddComponent<HorizontalLayoutGroup>();
+            levelInfoHLG.padding = new RectOffset(0, 0, 0, 0);
+            levelInfoHLG.childAlignment = TextAnchor.MiddleRight;
+            levelInfoHLG.spacing = 0f; // Eliminate horizontal spacing between icon and text
+            levelInfoHLG.childForceExpandWidth = false;
+            levelInfoHLG.childForceExpandHeight = false;
+            levelInfoHLG.childControlWidth = true;
+            levelInfoHLG.childControlHeight = true;
+            levelInfoHLG.reverseArrangement = true; // This ensures right alignment while maintaining order
+
+            ContentSizeFitter levelInfoCSF = levelInfoRow.AddComponent<ContentSizeFitter>();
+            levelInfoCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            levelInfoCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            // Add level text first (will appear on the right due to reverseArrangement)
+            GameObject clonedLevel = null;
+            if (playerLevelViewPrefab != null)
             {
-                 // Copying components by reflection is complex and error-prone.
-                 // It's better to recreate the structure or instantiate a prefab if possible.
-                 // For now, let's assume it's primarily for layout and TextMeshPro.
-                 // A simple TextMeshProUGUI for nickname might be more robust if copying is problematic.
-                 // This simplified version just adds a new TextMeshPro for nickname.
-                var labelObj = new GameObject("Label");
-                labelObj.transform.SetParent(levelGroup.transform, false);
-                var nicknameTMP = labelObj.AddComponent<TextMeshProUGUI>();
-                // Configure nicknameTMP (font, size, etc.) as needed, or copy from a source if available and safe.
-                // For now, it will use default TMP settings.
-                // Example: nicknameTMP.font = Resources.Load<TMP_FontAsset>("PathToSomeFontAsset");
-                nicknameTMP.fontSize = 36; // From original UpdateNicknameDisplay
-                nicknameTMP.color = new Color(1f, 0.75f, 0.3f, 1f); // From original
+                clonedLevel = GameObject.Instantiate(playerLevelViewPrefab, levelInfoRow.transform);
+                clonedLevel.name = "Level";
+                clonedLevel.SetActive(true);
 
-                // If other components from NicknameAndKarma are essential, they need specific handling.
+                RectTransform levelRect = clonedLevel.GetComponent<RectTransform>();
+                if (levelRect != null)
+                {
+                    levelRect.anchorMin = new Vector2(1, 0.5f);
+                    levelRect.anchorMax = new Vector2(1, 0.5f);
+                    levelRect.pivot = new Vector2(1, 0.5f);
+                }
+
+                // Check if it has TMP component and set alignment
+                TextMeshProUGUI levelTMP = clonedLevel.GetComponent<TextMeshProUGUI>();
+                if (levelTMP != null)
+                {
+                    levelTMP.alignment = TextAlignmentOptions.Right; // Right alignment works better with reverseArrangement
+                    levelTMP.fontSize = 54f; // Increased font size for level
+                    levelTMP.enableWordWrapping = false;
+                    levelTMP.margin = Vector4.zero;
+                }
+                
+                LayoutElement levelTextLE = clonedLevel.GetComponent<LayoutElement>();
+                if (levelTextLE == null) levelTextLE = clonedLevel.AddComponent<LayoutElement>();
+                levelTextLE.minHeight = 56f;
+                levelTextLE.preferredHeight = 56f;
             }
-            else { Plugin.LogSource.LogWarning("SetupBottomField - Original NicknameAndKarma source for component copy not found. Nickname display might be basic."); }
+            else { Plugin.LogSource.LogWarning("SetupBottomField - playerLevelViewPrefab is null. Level text will be missing."); }
 
-
-            if (playerLevelViewPrefab != null && playerLevelIconViewPrefab != null)
+            // Add level icon (will appear on the left of text due to reverseArrangement)
+            if (playerLevelIconViewPrefab != null)
             {
-                GameObject clonedIcon = GameObject.Instantiate(playerLevelIconViewPrefab, levelGroup.transform);
+                GameObject clonedIcon = GameObject.Instantiate(playerLevelIconViewPrefab, levelInfoRow.transform);
                 clonedIcon.name = "Level Icon";
                 clonedIcon.SetActive(true);
 
-                GameObject clonedLevel = GameObject.Instantiate(playerLevelViewPrefab, levelGroup.transform);
-                clonedLevel.name = "Level";
-                clonedLevel.SetActive(true);
-                clonedLevel.transform.SetSiblingIndex(clonedIcon.transform.GetSiblingIndex() + 1);
+                RectTransform iconRect = clonedIcon.GetComponent<RectTransform>();
+                if (iconRect != null)
+                {
+                    iconRect.anchorMin = new Vector2(1, 0.5f);
+                    iconRect.anchorMax = new Vector2(1, 0.5f);
+                    iconRect.pivot = new Vector2(1, 0.5f);
+                    iconRect.sizeDelta = new Vector2(56f, 56f); // Increased icon size
+                    // Use a negative right margin to move the icon closer to the text
+                    iconRect.offsetMax = new Vector2(-5f, iconRect.offsetMax.y);
+                }
+
+                LayoutElement iconLE = clonedIcon.GetComponent<LayoutElement>();
+                if (iconLE == null) iconLE = clonedIcon.AddComponent<LayoutElement>();
+                iconLE.minHeight = 56f; // Increased size
+                iconLE.minWidth = 56f; // Increased size
+                iconLE.preferredHeight = 56f;
+                iconLE.preferredWidth = 56f;
+
+                // Ensure image stretches to fill the space
+                Image iconImage = clonedIcon.GetComponent<Image>();
+                if (iconImage != null)
+                {
+                    iconImage.preserveAspect = true;
+                }
             }
-            else { Plugin.LogSource.LogWarning("SetupBottomField - PlayerLevelViewPrefab or PlayerLevelIconViewPrefab is null. Level display will be missing."); }
+            else { Plugin.LogSource.LogWarning("SetupBottomField - playerLevelIconViewPrefab is null. Level Icon will be missing."); }
 
-            levelGroup.transform.SetAsFirstSibling(); // Make it the first child
+            // ====== ROW 2: Nickname ======
+            GameObject nicknameTextGO = new GameObject("NicknameText");
+            nicknameTextGO.transform.SetParent(bottomFieldTransform, false);
+            RectTransform nicknameRect = nicknameTextGO.AddComponent<RectTransform>();
+            nicknameRect.anchorMin = new Vector2(1, 1);
+            nicknameRect.anchorMax = new Vector2(1, 1);
+            nicknameRect.pivot = new Vector2(1, 1);
+            
+            LayoutElement nicknameTextGOLE = nicknameTextGO.AddComponent<LayoutElement>();
+            nicknameTextGOLE.minHeight = 40f; // Slightly taller for better appearance
+            nicknameTextGOLE.preferredHeight = 40f;
+            nicknameTextGOLE.flexibleHeight = 0f;
 
-            // Adjust existing children if necessary (e.g. the original NicknameAndKarma, Experience if they are still direct children)
-            foreach (Transform child in bottomFieldTransform)
+            TextMeshProUGUI nicknameTMP = nicknameTextGO.AddComponent<TextMeshProUGUI>();
+            nicknameTMP.fontSize = 36f * 1.6f;
+            nicknameTMP.color = new Color(1f, 0.75f, 0.3f, 1f);
+            nicknameTMP.margin = Vector4.zero;
+            nicknameTMP.lineSpacing = 0;
+            nicknameTMP.alignment = TextAlignmentOptions.Right;
+            nicknameTMP.enableWordWrapping = false;
+
+            Transform nicknameAndKarmaSourceOriginal = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView/BottomField/NicknameAndKarma")?.transform;
+            if (nicknameAndKarmaSourceOriginal != null)
             {
-                if(child == levelGroup.transform) continue; // Skip the one we just added
-
-                HorizontalLayoutGroup hlg = child.GetComponent<HorizontalLayoutGroup>();
-                if (hlg != null) { hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false; }
-
-                ContentSizeFitter csf = child.GetComponent<ContentSizeFitter>();
-                if (csf != null) { csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize; }
+                TextMeshProUGUI originalNicknameTMP = nicknameAndKarmaSourceOriginal.GetComponentInChildren<TextMeshProUGUI>();
+                if (originalNicknameTMP != null)
+                {
+                    if (originalNicknameTMP.font != null)
+                    {
+                        nicknameTMP.font = originalNicknameTMP.font;
+                    }
+                    nicknameTMP.fontSize = originalNicknameTMP.fontSize * 1.6f;
+                    nicknameTMP.color = originalNicknameTMP.color;
+                    Plugin.LogSource.LogDebug("SetupBottomField - Applied original NicknameAndKarma style to NicknameText.");
+                }
             }
+
+            ContentSizeFitter nicknameCSF = nicknameTextGO.AddComponent<ContentSizeFitter>();
+            nicknameCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            nicknameCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            // ====== ROW 3: Experience ======
+            GameObject experienceRow = new GameObject("ExperienceRow");
+            experienceRow.transform.SetParent(bottomFieldTransform, false);
+            RectTransform expRect = experienceRow.AddComponent<RectTransform>();
+            expRect.anchorMin = new Vector2(1, 1);
+            expRect.anchorMax = new Vector2(1, 1);
+            expRect.pivot = new Vector2(1, 1);
+            
+            LayoutElement expRowLE = experienceRow.AddComponent<LayoutElement>();
+            expRowLE.minHeight = 35f; // Slightly taller
+            expRowLE.preferredHeight = 35f;
+            expRowLE.flexibleHeight = 0f;
+            
+            HorizontalLayoutGroup expHLG = experienceRow.AddComponent<HorizontalLayoutGroup>();
+            expHLG.padding = new RectOffset(0, 0, 0, 0);
+            expHLG.childAlignment = TextAnchor.MiddleRight;
+            expHLG.spacing = 5f;
+            expHLG.childForceExpandWidth = false;
+            expHLG.childForceExpandHeight = false;
+            expHLG.childControlWidth = true;
+            expHLG.childControlHeight = true;
+            
+            ContentSizeFitter expCSF = experienceRow.AddComponent<ContentSizeFitter>();
+            expCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            expCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            
+            // Add "EXP:" label
+            GameObject expLabelGO = new GameObject("ExpLabel");
+            expLabelGO.transform.SetParent(experienceRow.transform, false);
+            
+            TextMeshProUGUI expLabelTMP = expLabelGO.AddComponent<TextMeshProUGUI>();
+            expLabelTMP.text = "EXP:";
+            expLabelTMP.fontSize = 24f;
+            expLabelTMP.color = Color.white;
+            expLabelTMP.alignment = TextAlignmentOptions.Right;
+            expLabelTMP.margin = Vector4.zero;
+            expLabelTMP.enableWordWrapping = false;
+            
+            // Add experience value
+            GameObject expValueGO = new GameObject("ExpValue");
+            expValueGO.transform.SetParent(experienceRow.transform, false);
+            
+            TextMeshProUGUI expValueTMP = expValueGO.AddComponent<TextMeshProUGUI>();
+            expValueTMP.fontSize = 24f;
+            expValueTMP.color = new Color(1f, 0.75f, 0.3f, 1f);
+            expValueTMP.alignment = TextAlignmentOptions.Right;
+            expValueTMP.margin = Vector4.zero;
+            expValueTMP.enableWordWrapping = false;
+            
+            // Look for existing font references to keep consistent styling
+            Transform experienceOriginal = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView/BottomField/Experience")?.transform;
+            if (experienceOriginal != null)
+            {
+                TextMeshProUGUI originalExpTMP = experienceOriginal.GetComponentInChildren<TextMeshProUGUI>();
+                if (originalExpTMP != null && originalExpTMP.font != null)
+                {
+                    expLabelTMP.font = originalExpTMP.font;
+                    expValueTMP.font = originalExpTMP.font;
+                    Plugin.LogSource.LogDebug("SetupBottomField - Applied original Experience font to new experience elements.");
+                }
+            }
+            
+            // Hide original experience and nickname panels if they exist
+            Transform originalNicknameAndKarma = bottomFieldTransform.Find("NicknameAndKarma");
+            if (originalNicknameAndKarma != null)
+            {
+                originalNicknameAndKarma.gameObject.SetActive(false);
+            }
+            
+            // Set sibling order (top to bottom)
+            levelInfoRow.transform.SetAsFirstSibling();
+            nicknameTextGO.transform.SetSiblingIndex(1);
+            experienceRow.transform.SetSiblingIndex(2);
+            
+            // Update the stats immediately
             UpdatePlayerStats(bottomFieldTransform);
         }
 
@@ -393,7 +572,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (PatchConstants.BackEndSession?.Profile != null)
                 {
                     await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false).ConfigureAwait(false);
-                    AdjustInnerPlayerModelPosition(clonedPlayerModelView); // Re-adjust position
+                    AdjustInnerPlayerModelPosition(clonedPlayerModelView);
                 }
                 else { Plugin.LogSource.LogWarning("RefreshPlayerModel - BackEndSession.Profile is null. Cannot show player model."); }
             }
@@ -403,7 +582,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static void UpdatePlayerStats(Transform bottomFieldTransform)
         {
             if (bottomFieldTransform == null) { Plugin.LogSource.LogWarning("UpdatePlayerStats - bottomFieldTransform is null."); return; }
-            
+
             Profile profile = PatchConstants.BackEndSession?.Profile;
             if (profile == null)
             {
@@ -417,50 +596,59 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void UpdateNicknameDisplay(Transform bottomField, Profile profile)
         {
-            // Assumes LevelGroup/Label structure from the modified SetupBottomField
-            Transform levelGroup = bottomField.Find("LevelGroup");
-            if (levelGroup != null)
+            TextMeshProUGUI nicknameTMP = bottomField.Find("NicknameText")?.GetComponent<TextMeshProUGUI>();
+            if (nicknameTMP != null)
             {
-                TextMeshProUGUI nicknameTMP = levelGroup.Find("Label")?.GetComponent<TextMeshProUGUI>();
-                if (nicknameTMP != null)
-                {
-                    nicknameTMP.text = profile.Nickname;
-                    // Font size and color already set during creation in SetupBottomField or needs to be reapplied if dynamic
-                }
-                else { Plugin.LogSource.LogWarning("UpdateNicknameDisplay - Nickname TMP (Label) component not found in LevelGroup."); }
+                nicknameTMP.text = profile.Nickname;
             }
-            else { Plugin.LogSource.LogWarning("UpdateNicknameDisplay - LevelGroup transform not found for Nickname."); }
-            
-            // Hide original NicknameAndKarma if it still exists as a direct child of bottomField
+            else { Plugin.LogSource.LogWarning("UpdateNicknameDisplay - NicknameText TMP component not found in BottomField."); }
+
             Transform originalNicknameAndKarma = bottomField.Find("NicknameAndKarma");
-            if(originalNicknameAndKarma != null)
+            if (originalNicknameAndKarma != null)
             {
                 originalNicknameAndKarma.gameObject.SetActive(false);
-                 Plugin.LogSource.LogDebug("UpdateNicknameDisplay - Deactivated original NicknameAndKarma in BottomField.");
+                Plugin.LogSource.LogDebug("UpdateNicknameDisplay - Deactivated original NicknameAndKarma in BottomField.");
             }
         }
 
         private static void UpdateExperienceDisplay(Transform bottomField, Profile profile)
         {
-            // This assumes "Experience" is still a direct child of bottomField and not part of the new "LevelGroup"
-            Transform experienceTransform = bottomField.Find("Experience");
-            if (experienceTransform != null)
+            Transform experienceRow = bottomField.Find("ExperienceRow");
+            if (experienceRow != null)
             {
-                TextMeshProUGUI experienceTMP = experienceTransform.Find("ExpValue")?.GetComponent<TextMeshProUGUI>();
+                TextMeshProUGUI experienceTMP = experienceRow.Find("ExpValue")?.GetComponent<TextMeshProUGUI>();
                 if (experienceTMP != null)
                 {
                     var numberFormat = new NumberFormatInfo { NumberGroupSeparator = " ", NumberDecimalDigits = 0 };
                     experienceTMP.text = profile.Experience.ToString("N", numberFormat);
                 }
-                else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - Experience TMP component (ExpValue) not found."); }
+                else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExpValue TMP component not found in ExperienceRow."); }
             }
-            else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - Experience transform not found in BottomField."); }
+            else 
+            {
+                // Check for original Experience panel for backward compatibility
+                Transform experienceTransform = bottomField.Find("Experience");
+                if (experienceTransform != null)
+                {
+                    TextMeshProUGUI experienceTMP = experienceTransform.Find("ExpValue")?.GetComponent<TextMeshProUGUI>();
+                    if (experienceTMP != null)
+                    {
+                        experienceTMP.alignment = TextAlignmentOptions.Right;
+                        experienceTMP.margin = Vector4.zero;
+                        experienceTMP.lineSpacing = 0;
+                        var numberFormat = new NumberFormatInfo { NumberGroupSeparator = " ", NumberDecimalDigits = 0 };
+                        experienceTMP.text = profile.Experience.ToString("N", numberFormat);
+                    }
+                    else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - Experience TMP component (ExpValue) not found."); }
+                }
+                else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - Neither ExperienceRow nor Experience transform found in BottomField."); }
+            }
         }
 
         private static void UpdateLevelDisplay(Transform bottomField, Profile profile)
         {
-            Transform levelGroup = bottomField.Find("LevelGroup"); // Level and Icon are now children of LevelGroup
-            if (levelGroup != null)
+            Transform levelInfoRow = bottomField.Find("LevelInfoRow");
+            if (levelInfoRow != null)
             {
                 if (profile.Info == null)
                 {
@@ -468,21 +656,62 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     return;
                 }
 
-                TextMeshProUGUI levelTMP = levelGroup.Find("Level")?.GetComponent<TextMeshProUGUI>();
+                TextMeshProUGUI levelTMP = levelInfoRow.Find("Level")?.GetComponent<TextMeshProUGUI>();
                 if (levelTMP != null)
                 {
+                    levelTMP.alignment = TextAlignmentOptions.Right; // Right alignment with reverseArrangement
+                    levelTMP.margin = Vector4.zero; // Ensure no internal margins
+                    levelTMP.lineSpacing = 0; // Ensure minimal line spacing
+                    levelTMP.fontSize = 54f; // Maintain the larger font size during updates
+                    levelTMP.enableWordWrapping = false;
                     levelTMP.text = profile.Info.Level.ToString();
                 }
-                else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level TMP component not found in LevelGroup."); }
+                else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level TMP component not found in LevelInfoRow."); }
 
-                Image iconImage = levelGroup.Find("Level Icon")?.GetComponent<Image>();
-                if (iconImage != null)
+                Transform iconTransform = levelInfoRow.Find("Level Icon");
+                if (iconTransform != null)
                 {
-                    PlayerLevelPanel.SetLevelIcon(iconImage, profile.Info.Level);
+                    Image iconImage = iconTransform.GetComponent<Image>();
+                    if (iconImage != null)
+                    {
+                        // Apply appropriate level icon
+                        PlayerLevelPanel.SetLevelIcon(iconImage, profile.Info.Level);
+                        // Make sure image fills its container while preserving aspect ratio
+                        iconImage.preserveAspect = true;
+                    }
+                    
+                    // Ensure icon stays at the proper size and position
+                    RectTransform iconRect = iconTransform.GetComponent<RectTransform>();
+                    if (iconRect != null)
+                    {
+                        iconRect.sizeDelta = new Vector2(56f, 56f); // Keep larger icon size
+                        // Maintain the negative right margin to keep icon close to text
+                        iconRect.offsetMax = new Vector2(-5f, iconRect.offsetMax.y);
+                    }
+
+                    LayoutElement iconLE = iconTransform.GetComponent<LayoutElement>();
+                    if (iconLE != null)
+                    {
+                        iconLE.minWidth = 56f;
+                        iconLE.minHeight = 56f;
+                        iconLE.preferredWidth = 56f;
+                        iconLE.preferredHeight = 56f;
+                    }
                 }
-                else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level Icon Image component not found in LevelGroup."); }
+                else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level Icon transform not found in LevelInfoRow."); }
+
+                // Make sure the HorizontalLayoutGroup has reverseArrangement set and zero spacing
+                HorizontalLayoutGroup hlg = levelInfoRow.GetComponent<HorizontalLayoutGroup>();
+                if (hlg != null)
+                {
+                    if (!hlg.reverseArrangement)
+                    {
+                        hlg.reverseArrangement = true;
+                    }
+                    hlg.spacing = 0f; // Make sure spacing stays at zero
+                }
             }
-            else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - LevelGroup transform not found for Level/Icon."); }
+            else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - LevelInfoRow transform not found in BottomField."); }
         }
     }
 }

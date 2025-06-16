@@ -144,10 +144,8 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-      mkdir "$(ProjectDir)\..\..\BepInEx\plugins\MenuOverhaul\Resources"
-      copy "$(TargetPath)" "$(ProjectDir)\..\..\BepInEx\plugins\MenuOverhaul\$(TargetFileName)"
-      xcopy /E /I "$(ProjectDir)Resources" "$(ProjectDir)\..\..\BepInEx\plugins\MenuOverhaul\Resources"
-    </PostBuildEvent>
+    <PostBuildEvent>mkdir "$(ProjectDir)\..\..\BepInEx\plugins\MenuOverhaul\Resources"
+copy "$(TargetPath)" "$(ProjectDir)\..\..\BepInEx\plugins\MenuOverhaul\$(TargetFileName)"
+xcopy /E /I "$(ProjectDir)Resources" "$(ProjectDir)\..\..\BepInEx\plugins\MenuOverhaul\Resources"</PostBuildEvent>
   </PropertyGroup>
 </Project>
