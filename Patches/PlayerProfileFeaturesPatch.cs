@@ -67,6 +67,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Plugin.LogSource.LogDebug("Profile-specific settings changes subscribed.");
         }
 
+        public static void UnsubscribeFromProfileSettingsChanges()
+        {
+            if (!_profileSettingsSubscribed) return;
+
+            Settings.PositionPlayerModelHorizontal.SettingChanged -= OnPlayerModelPositionChanged;
+            Settings.PositionBottomFieldHorizontal.SettingChanged -= OnBottomFieldPositionChanged;
+            Settings.PositionBottomFieldVertical.SettingChanged -= OnBottomFieldPositionChanged;
+            Settings.RotationPlayerModelHorizontal.SettingChanged -= OnPlayerModelRotationChanged;
+
+            _profileSettingsSubscribed = false;
+            Plugin.LogSource.LogDebug("Profile-specific settings changes unsubscribed.");
+        }
+
         private static void OnPlayerModelPositionChanged(object sender, EventArgs e) => UpdatePlayerModelPosition();
         private static void OnPlayerModelRotationChanged(object sender, EventArgs e) => UpdatePlayerModelRotation();
         private static void OnBottomFieldPositionChanged(object sender, EventArgs e) => BottomFieldPositionChanged();
@@ -124,6 +137,17 @@ namespace MoxoPixel.MenuOverhaul.Patches
             else
             {
                 Plugin.LogSource.LogWarning("SubscribeToCharacterLevelUpEvent - BackEndSession.Profile.Info is null.");
+            }
+        }
+
+        public static void UnsubscribeFromCharacterLevelUpEvent()
+        {
+            if (!_experienceEventsSubscribed) return;
+            if (PatchConstants.BackEndSession?.Profile?.Info != null)
+            {
+                PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged -= OnExperienceChanged;
+                _experienceEventsSubscribed = false;
+                Plugin.LogSource.LogDebug("Character experience events unsubscribed.");
             }
         }
 
@@ -712,6 +736,23 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 }
             }
             else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - LevelInfoRow transform not found in BottomField."); }
+        }
+
+        public static void CleanupClonedPlayerModel()
+        {
+            if (clonedPlayerModelView != null)
+            {
+                GameObject.Destroy(clonedPlayerModelView);
+                clonedPlayerModelView = null;
+                MenuPlayerCreated = false;
+                Plugin.LogSource.LogDebug("Cloned player model view destroyed.");
+            }
+        }
+
+        public void CleanupBeforeDisable()
+        {
+            UnsubscribeFromProfileSettingsChanges();
+            UnsubscribeFromCharacterLevelUpEvent();
         }
     }
 }

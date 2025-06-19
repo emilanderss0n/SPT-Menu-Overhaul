@@ -173,32 +173,59 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         private static void CreateCustomPlaneForPanorama(GameObject factoryLayout, GameObject panoramaSource, List<Material> materialsToApply)
         {
-            if (factoryLayout == null || panoramaSource == null || materialsToApply == null || !materialsToApply.Any()) return;
+            if (factoryLayout == null || panoramaSource == null || materialsToApply == null || !materialsToApply.Any()) 
+            {
+                Plugin.LogSource.LogError($"CreateCustomPlaneForPanorama - Invalid input parameters: factoryLayout={factoryLayout!=null}, panoramaSource={panoramaSource!=null}, materialsToApply={materialsToApply?.Count ?? 0}");
+                return;
+            }
 
+            // Create a new plane primitive
             GameObject newPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
             newPlane.name = "CustomPlane";
             newPlane.transform.SetParent(factoryLayout.transform);
 
+            // Position and rotate the plane
             newPlane.transform.localPosition = new Vector3(0f, 0f, 5.399f);
             newPlane.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
             newPlane.transform.localScale = new Vector3(Settings.scaleBackgroundX.Value, 1f, Settings.scaleBackgroundY.Value);
 
+            // Set layer and tag to match the source
             newPlane.layer = panoramaSource.layer;
             newPlane.tag = panoramaSource.tag;
 
+            // Get and configure the renderer
             Renderer newPlaneRenderer = newPlane.GetComponent<Renderer>();
             if (newPlaneRenderer != null)
             {
+                // Apply materials
                 newPlaneRenderer.materials = materialsToApply.ToArray();
                 newPlaneRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                
+                // Set additional renderer properties for better appearance
+                newPlaneRenderer.receiveShadows = false;
+                newPlaneRenderer.allowOcclusionWhenDynamic = false;
+                
+                // Log information about the materials
+                for (int i = 0; i < materialsToApply.Count; i++)
+                {
+                    Material mat = materialsToApply[i];
+                    if (mat != null)
+                    {
+                        bool hasEmission = mat.IsKeywordEnabled("_EMISSION");
+                        Texture2D emissionMap = mat.GetTexture("_EmissionMap") as Texture2D;
+                        Plugin.LogSource.LogDebug($"Material {i}: HasEmission={hasEmission}, HasEmissionMap={emissionMap!=null}");
+                    }
+                }
             }
             else
             {
                 Plugin.LogSource.LogError("Failed to get Renderer on newly created CustomPlane.");
             }
+
+            Plugin.LogSource.LogDebug($"CustomPlane created successfully with {materialsToApply.Count} materials");
         }
 
-        public static void SetPanoramaEmissionMap(GameObject factoryLayout)
+        public static void SetPanoramaEmissionMap(GameObject factoryLayout, bool forceReload = false)
         {
             if (factoryLayout == null)
             {
@@ -206,8 +233,35 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
+            // If forceReload is true, we clear the texture cache and unload the asset bundle to force a fresh load
+            if (forceReload)
+            {
+                Plugin.LogSource.LogDebug("SetPanoramaEmissionMap - Force reloading textures and materials");
+                // Clear texture cache to force reloading textures
+                foreach (var texture in textureCache.Values)
+                {
+                    if (texture != null)
+                    {
+                        UnityEngine.Object.Destroy(texture);
+                    }
+                }
+                textureCache.Clear();
+                
+                // Unload asset bundle to force reloading
+                if (iconAssetBundle != null)
+                {
+                    iconAssetBundle.Unload(false); // false = don't unload assets, just the bundle reference
+                    iconAssetBundle = null;
+                }
+            }
+
+            // Make sure we have a fresh AssetBundle reference
             AssetBundle bundle = GetIconAssetBundle();
-            if (bundle == null) return;
+            if (bundle == null)
+            {
+                Plugin.LogSource.LogError("Failed to get asset bundle for panorama emission map.");
+                return;
+            }
 
             GameObject panorama = factoryLayout.transform.Find("panorama")?.gameObject;
             if (panorama == null)
@@ -216,25 +270,86 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
+            // Ensure panorama is active while we work with it, but remember its state
+            bool wasActive = panorama.activeSelf;
+            if (!wasActive)
+            {
+                Plugin.LogSource.LogDebug("SetPanoramaEmissionMap - Temporarily activating panorama for material access");
+            }
+            panorama.SetActive(true);
+
             Renderer panoramaRenderer = panorama.GetComponent<Renderer>();
             if (panoramaRenderer == null)
             {
                 Plugin.LogSource.LogWarning("Renderer component not found on panorama.");
+                panorama.SetActive(wasActive); // Restore original state
                 return;
             }
 
             Texture2D preparedTexture = LoadAndPreparePanoramaTexture(bundle);
-            if (preparedTexture == null) return;
+            if (preparedTexture == null)
+            {
+                Plugin.LogSource.LogWarning("Failed to prepare panorama texture.");
+                panorama.SetActive(wasActive); // Restore original state
+                return;
+            }
 
             List<Material> appliedMaterials = ApplyEmissionToPanoramaMaterials(panoramaRenderer, preparedTexture);
+            if (!appliedMaterials.Any())
+            {
+                Plugin.LogSource.LogWarning("Failed to apply emission to any panorama materials. Will recreate materials.");
+                // If we can't find proper materials, let's see if we can create new ones
+                appliedMaterials = CreateDefaultMaterialsWithEmission(preparedTexture);
+                Plugin.LogSource.LogDebug($"Created {appliedMaterials.Count} default materials with emission");
+            }
 
-            panorama.SetActive(false);
+            // Clean up any existing CustomPlane before creating a new one
+            GameObject existingCustomPlane = factoryLayout.transform.Find("CustomPlane")?.gameObject;
+            if (existingCustomPlane != null)
+            {
+                UnityEngine.Object.Destroy(existingCustomPlane);
+                Plugin.LogSource.LogDebug("Destroyed existing CustomPlane before creating new one.");
+            }
 
-            GameObject customPlane = factoryLayout.transform.Find("CustomPlane")?.gameObject;
-            if (customPlane == null)
+            // Create the new custom plane
+            if (appliedMaterials.Any())
             {
                 CreateCustomPlaneForPanorama(factoryLayout, panorama, appliedMaterials);
+                Plugin.LogSource.LogDebug($"Created new CustomPlane with {appliedMaterials.Count} materials");
             }
+            else
+            {
+                Plugin.LogSource.LogError("SetPanoramaEmissionMap - Failed to create any materials for the custom plane!");
+            }
+            
+            // Always hide the panorama mesh which we've replaced with our custom plane regardless of original state
+            panorama.SetActive(false);
+            Plugin.LogSource.LogDebug("SetPanoramaEmissionMap - Ensured panorama is disabled and completed successfully");
+        }
+
+        // Helper method to create default materials with emission if we can't find the original materials
+        private static List<Material> CreateDefaultMaterialsWithEmission(Texture2D emissionTexture)
+        {
+            if (emissionTexture == null) return new List<Material>();
+            
+            List<Material> materials = new List<Material>();
+            Material defaultMaterial = new Material(Shader.Find("Standard"));
+            
+            if (defaultMaterial != null)
+            {
+                defaultMaterial.SetTexture("_EmissionMap", emissionTexture);
+                defaultMaterial.SetTexture("_MainTex", emissionTexture); 
+                defaultMaterial.EnableKeyword("_EMISSION");
+                defaultMaterial.SetColor("_EmissionColor", Color.white);
+                materials.Add(defaultMaterial);
+                Plugin.LogSource.LogDebug("Created default material with emission");
+            }
+            else
+            {
+                Plugin.LogSource.LogError("Failed to create default material - Standard shader not found");
+            }
+            
+            return materials;
         }
 
         public static Texture2D FlipTextureVertically(Texture2D original)
@@ -391,7 +506,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
             if (alignmentCameraTransform == null)
             {
-                Plugin.LogSource.LogInfo("AlignmentCamera not found in FactoryLayout, creating new one.");
+                Plugin.LogSource.LogDebug("AlignmentCamera not found in FactoryLayout, creating new one.");
                 alignmentCamera = new GameObject("AlignmentCamera");
                 alignmentCamera.transform.SetParent(factoryLayout.transform);
                 alignmentCamera.transform.localPosition = Vector3.zero;
@@ -444,6 +559,72 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             GameObject matchmakerScreen = GameObject.Find("Menu UI/UI/Matchmaker Time Has Come");
             return matchmakerScreen != null && matchmakerScreen.activeInHierarchy;
+        }
+
+        // Method to clean up all GameObjects created by the mod when game starts
+        public static void CleanupGameObjects()
+        {
+            Plugin.LogSource.LogDebug("Cleaning up menu overhaul GameObjects...");
+            
+            try {
+                EnvironmentObjects envObjects = FindEnvironmentObjects();
+                if (envObjects == null || envObjects.FactoryLayout == null)
+                {
+                    Plugin.LogSource.LogWarning("CleanupGameObjects - Could not find environment objects.");
+                    return;
+                }
+
+                // Hide decal_plane and its child objects
+                GameObject decalPlane = envObjects.FactoryLayout.transform.Find("decal_plane")?.gameObject;
+                if (decalPlane != null)
+                {
+                    // Disable main decal_plane
+                    decalPlane.SetActive(false);
+                    Plugin.LogSource.LogDebug("CleanupGameObjects - Hiding decal_plane GameObject");
+                    
+                    // Also disable child objects - decal_plane_pve
+                    Transform pveTransform = decalPlane.transform.Find("decal_plane_pve");
+                    if (pveTransform != null)
+                    {
+                        pveTransform.gameObject.SetActive(false);
+                        Plugin.LogSource.LogDebug("CleanupGameObjects - Hiding decal_plane_pve child GameObject");
+                    }
+                    
+                    // Also disable child objects - decal_plane
+                    Transform decalPlaneChildTransform = decalPlane.transform.Find("decal_plane");
+                    if (decalPlaneChildTransform != null)
+                    {
+                        decalPlaneChildTransform.gameObject.SetActive(false);
+                        Plugin.LogSource.LogDebug("CleanupGameObjects - Hiding decal_plane child GameObject");
+                    }
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning("CleanupGameObjects - decal_plane GameObject not found");
+                }
+
+                // Hide CustomPlane if it exists
+                GameObject customPlane = envObjects.FactoryLayout.transform.Find("CustomPlane")?.gameObject;
+                if (customPlane != null)
+                {
+                    customPlane.SetActive(false);
+                    Plugin.LogSource.LogDebug("CleanupGameObjects - Hiding CustomPlane GameObject");
+                }
+                
+                // Keep panorama disabled
+                GameObject panorama = envObjects.FactoryLayout.transform.Find("panorama")?.gameObject;
+                if (panorama != null)
+                {
+                    panorama.SetActive(false);
+                    Plugin.LogSource.LogDebug("CleanupGameObjects - Ensuring panorama GameObject is disabled");
+                }
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"Error during GameObject cleanup: {ex}");
+            }
+
+            Plugin.LogSource.LogDebug("Menu overhaul GameObjects cleanup completed");
         }
     }
 }

@@ -59,6 +59,31 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Plugin.LogSource.LogDebug("Layout-specific settings changes subscribed.");
         }
 
+        public static void UnsubscribeFromLayoutSettingsChanges()
+        {
+            if (!_layoutSettingsSubscribed) return;
+
+            Settings.EnableTopGlow.SettingChanged -= OnLayoutSettingsChanged;
+            Settings.EnableBackground.SettingChanged -= OnLayoutSettingsChanged;
+            Settings.PositionLogotypeHorizontal.SettingChanged -= OnLayoutSettingsChanged;
+            Settings.scaleBackgroundX.SettingChanged -= OnScaleBackgroundChanged;
+            Settings.scaleBackgroundY.SettingChanged -= OnScaleBackgroundChanged;
+            Settings.EnableExtraShadows.SettingChanged -= OnLayoutSettingsChanged;
+
+            _layoutSettingsSubscribed = false;
+            Plugin.LogSource.LogDebug("Layout-specific settings changes unsubscribed.");
+        }
+
+        public static void CleanupSceneEvents()
+        {
+            if (!_sceneEventsInitialized) return;
+
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+            _sceneEventsInitialized = false;
+            Plugin.LogSource.LogDebug("Scene events cleaned up by MenuOverhaulPatch.");
+        }
+
         private static Task LoadPatchContent(MenuScreen menuScreenInstance)
         {
             if (menuScreenInstance == null) return Task.CompletedTask;
@@ -70,7 +95,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static void OnLayoutSettingsChanged(object sender, EventArgs e) => UpdateLayoutElements();
         private static void OnScaleBackgroundChanged(object sender, EventArgs e) => UpdateCustomPlaneScale();
 
-        private static void UpdateLayoutElements()
+        public static void UpdateLayoutElements()
         {
             var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
             if (environmentObjects == null)
@@ -94,7 +119,38 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Transform decalPlaneTransform = environmentObjects.FactoryLayout.transform.Find("decal_plane");
                 if (decalPlaneTransform != null)
                 {
-                    decalPlaneTransform.position = new Vector3(Settings.PositionLogotypeHorizontal.Value, -999.4f, 0f);
+                    // We no longer unconditionally call DisableDecalPlaneIfInGame()
+                    // Instead, we're checking if we're in a game and only then disabling the plane
+                    // This allows decal_plane to remain enabled when game ends
+
+                    // Only update position if decal_plane is active
+                    if (decalPlaneTransform.gameObject.activeSelf)
+                    {
+                        decalPlaneTransform.position = new Vector3(Settings.PositionLogotypeHorizontal.Value, -999.4f, 0f);
+
+                        // Ensure decal_plane_pve is active when parent is active
+                        Transform pveTransform = decalPlaneTransform.Find("decal_plane_pve");
+                        if (pveTransform != null)
+                        {
+                            if (!pveTransform.gameObject.activeSelf)
+                            {
+                                pveTransform.gameObject.SetActive(true);
+                                Plugin.LogSource.LogDebug("UpdateLayoutElements - Activated decal_plane_pve child object");
+                            }
+                        }
+                        else
+                        {
+                            Plugin.LogSource.LogWarning("UpdateLayoutElements - Could not find decal_plane_pve child GameObject");
+                        }
+
+                        // And ensure child decal_plane is disabled
+                        Transform childDecalPlane = decalPlaneTransform.Find("decal_plane");
+                        if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
+                        {
+                            childDecalPlane.gameObject.SetActive(false);
+                            Plugin.LogSource.LogDebug("UpdateLayoutElements - Disabled child decal_plane GameObject");
+                        }
+                    }
                 }
                 else
                 {
@@ -109,7 +165,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             LightHelpers.UpdateLights();
         }
 
-        private static void UpdateCustomPlaneScale()
+        public static void UpdateCustomPlaneScale()
         {
             var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
             if (environmentObjects?.FactoryLayout == null)
@@ -163,10 +219,64 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void ActivateSceneLayoutElements(LayoutHelpers.EnvironmentObjects envObjects)
         {
-            LayoutHelpers.SetChildActive(envObjects.FactoryLayout, "panorama", false);
+            // First make sure panorama is disabled - this needs to happen before creating custom plane
+            GameObject panorama = envObjects.FactoryLayout.transform.Find("panorama")?.gameObject;
+            if (panorama != null)
+            {
+                panorama.SetActive(false);
+                Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Explicitly disabled panorama");
+            }
+
+            // Then activate the lamp container for lighting
             LayoutHelpers.SetChildActive(envObjects.FactoryLayout, "LampContainer", true);
+
+            // Now set up the custom plane with panorama emission map
             LayoutHelpers.SetPanoramaEmissionMap(envObjects.FactoryLayout);
-            LayoutHelpers.SetChildActive(envObjects.FactoryLayout, "CustomPlane", Settings.EnableBackground.Value);
+
+            // Finally, set the custom plane visibility based on settings
+            GameObject customPlane = envObjects.FactoryLayout.transform.Find("CustomPlane")?.gameObject;
+            if (customPlane != null)
+            {
+                customPlane.SetActive(Settings.EnableBackground.Value);
+                Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Set CustomPlane active state: " + Settings.EnableBackground.Value);
+            }
+
+            // Make sure decal_plane and decal_plane_pve are correctly set up
+            GameObject decalPlane = envObjects.FactoryLayout.transform.Find("decal_plane")?.gameObject;
+            if (decalPlane != null)
+            {
+                // Make sure parent decal_plane is active
+                if (!decalPlane.activeSelf)
+                {
+                    decalPlane.SetActive(true);
+                    Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Activated decal_plane GameObject");
+                }
+
+                // Make sure decal_plane_pve is active
+                Transform pveTransform = decalPlane.transform.Find("decal_plane_pve");
+                if (pveTransform != null)
+                {
+                    if (!pveTransform.gameObject.activeSelf)
+                    {
+                        pveTransform.gameObject.SetActive(true);
+                        Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Activated decal_plane_pve child object");
+                    }
+                }
+
+                // Ensure child decal_plane stays disabled
+                Transform childDecalPlane = decalPlane.transform.Find("decal_plane");
+                if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
+                {
+                    childDecalPlane.gameObject.SetActive(false);
+                    Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Disabled child decal_plane GameObject");
+                }
+            }
+        }
+
+        public void CleanupBeforeDisable()
+        {
+            UnsubscribeFromLayoutSettingsChanges();
+            CleanupSceneEvents();
         }
     }
 }

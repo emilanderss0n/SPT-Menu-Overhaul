@@ -46,5 +46,44 @@ namespace MoxoPixel.MenuOverhaul
                 }
             }
         }
+
+        private void OnDestroy()
+        {
+            // Clean up all resources when plugin is being unloaded
+            try
+            {
+                // Create patch instances for cleanup
+                MenuOverhaulPatch menuPatch = new MenuOverhaulPatch();
+                PlayerProfileFeaturesPatch profilePatch = new PlayerProfileFeaturesPatch();
+                
+                // Clean up event subscriptions
+                menuPatch.CleanupBeforeDisable();
+                profilePatch.CleanupBeforeDisable();
+                
+                // Clean up game objects
+                PlayerProfileFeaturesPatch.CleanupClonedPlayerModel();
+                
+                Helpers.LightHelpers.Cleanup();
+                
+                // Disable all patches
+                foreach (var patch in _patches)
+                {
+                    try
+                    {
+                        patch.Disable();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogSource.LogError($"Failed to disable patch {patch.GetType().Name} during plugin unload: {ex}");
+                    }
+                }
+                
+                LogSource.LogDebug($"Plugin {Info.Metadata.Name} version {Info.Metadata.Version} unloaded.");
+            }
+            catch (Exception ex)
+            {
+                LogSource.LogError($"Error during plugin cleanup: {ex}");
+            }
+        }
     }
 }
