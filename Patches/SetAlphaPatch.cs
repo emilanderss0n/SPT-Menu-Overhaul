@@ -12,7 +12,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static FieldInfo _normalIconColorField;
         private static FieldInfo _normalLabelColorField;
         private static FieldInfo _normalImageColorField;
-        private static FieldInfo _backgroundNormalStateAlphaField; // Corrected spelling
+        private static FieldInfo _backgroundNormalStateAlphaField;
 
         protected override MethodBase GetTargetMethod()
         {
@@ -20,7 +20,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             _normalIconColorField = typeof(DefaultUIButtonAnimation).GetField("_normalIconColor", BindingFlags.Instance | BindingFlags.NonPublic);
             _normalLabelColorField = typeof(DefaultUIButtonAnimation).GetField("_normalLabelColor", BindingFlags.Instance | BindingFlags.NonPublic);
             _normalImageColorField = typeof(DefaultUIButtonAnimation).GetField("_normalImageColor", BindingFlags.Instance | BindingFlags.NonPublic);
-            _backgroundNormalStateAlphaField = typeof(DefaultUIButtonAnimation).GetField("_backgorundNormalStateAplha", BindingFlags.Instance | BindingFlags.NonPublic); // Original spelling
+            _backgroundNormalStateAlphaField = typeof(DefaultUIButtonAnimation).GetField("_backgorundNormalStateAplha", BindingFlags.Instance | BindingFlags.NonPublic);
 
             if (_normalIconColorField == null || _normalLabelColorField == null || _normalImageColorField == null || _backgroundNormalStateAlphaField == null)
             {
@@ -36,24 +36,23 @@ namespace MoxoPixel.MenuOverhaul.Patches
         }
 
         [PatchPostfix]
-        private static void Postfix(DefaultUIButtonAnimation __instance, bool animated) // Parameter name __instance is conventional for Harmony patches
+        private static void Postfix(DefaultUIButtonAnimation __instance, bool animated)
         {
-            if (!LayoutHelpers.IsPartOfMenuScreen(__instance)) // Assuming LayoutHelpers.IsPartOfMenuScreen is reliable
+            if (!LayoutHelpers.IsPartOfMenuScreen(__instance))
             {
                 return;
             }
 
-            __instance.Stop(); // Stop any ongoing animations
+            __instance.Stop();
 
-            // Retrieve values using cached FieldInfo
-            Color normalIconColor = _normalIconColorField != null ? (Color)_normalIconColorField.GetValue(__instance) : Color.white; // Default if field not found
+            Color normalIconColor = _normalIconColorField != null ? (Color)_normalIconColorField.GetValue(__instance) : Color.white;
             Color normalLabelColor = _normalLabelColorField != null ? (Color)_normalLabelColorField.GetValue(__instance) : Color.white;
             Color normalImageColor = _normalImageColorField != null ? (Color)_normalImageColorField.GetValue(__instance) : Color.clear;
             float backgroundNormalStateAlpha = _backgroundNormalStateAlphaField != null ? (float)_backgroundNormalStateAlphaField.GetValue(__instance) : 1f;
 
             if (__instance.Icon != null)
             {
-                __instance.Icon.color = normalIconColor.SetAlpha(1f); // Ensure full alpha for icon
+                __instance.Icon.color = normalIconColor.SetAlpha(1f);
             }
 
             if (__instance.Label != null)
@@ -61,7 +60,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 __instance.Label.color = normalLabelColor;
             }
 
-            if (__instance.Image != null) // Ensure Image exists before trying to modify it
+            if (__instance.Image != null)
             {
                 if (!animated)
                 {
@@ -70,16 +69,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 else
                 {
                     float duration = 0.15f;
-                    __instance.Image.color = normalImageColor.SetAlpha(0f); // Start transparent
-                    // Use a new Tween sequence for clarity if multiple tweens are complex
-                    // For a single tween, ProcessTween is fine if it exists and works as expected.
-                    // If ProcessMultipleTweens is standard, ensure it handles single tweens correctly.
+                    __instance.Image.color = normalImageColor.SetAlpha(0f);
                     __instance.ProcessMultipleTweens(new Tween[] { __instance.Image.DOFade(1f, duration) }); 
 
                     if (__instance.Icon != null)
                     {
-                        // Assuming ProcessTween is a helper in DefaultUIButtonAnimation or its base
-                        // If not, __instance.Icon.DOFade(1f, duration).SetEase(Ease.OutQuad); might be more direct
                         __instance.ProcessTween(__instance.Icon.DOFade(1f, duration), Ease.OutQuad); 
                     }
                 }

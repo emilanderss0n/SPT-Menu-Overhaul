@@ -119,9 +119,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Transform decalPlaneTransform = environmentObjects.FactoryLayout.transform.Find("decal_plane");
                 if (decalPlaneTransform != null)
                 {
-                    // We no longer unconditionally call DisableDecalPlaneIfInGame()
-                    // Instead, we're checking if we're in a game and only then disabling the plane
-                    // This allows decal_plane to remain enabled when game ends
 
                     // Only update position if decal_plane is active
                     if (decalPlaneTransform.gameObject.activeSelf)
@@ -142,7 +139,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             Plugin.LogSource.LogWarning("UpdateLayoutElements - Could not find decal_plane_pve child GameObject");
                         }
 
-                        // And ensure child decal_plane is disabled
+                        // Ensure child decal_plane is disabled
                         Transform childDecalPlane = decalPlaneTransform.Find("decal_plane");
                         if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
                         {

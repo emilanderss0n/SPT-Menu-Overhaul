@@ -343,19 +343,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
             levelInfoRect.pivot = new Vector2(1, 1);
 
             LayoutElement levelInfoRowLE = levelInfoRow.AddComponent<LayoutElement>();
-            levelInfoRowLE.minHeight = 56f; // Make it taller to match new icon size
+            levelInfoRowLE.minHeight = 56f;
             levelInfoRowLE.preferredHeight = 56f;
             levelInfoRowLE.flexibleHeight = 0f;
 
             HorizontalLayoutGroup levelInfoHLG = levelInfoRow.AddComponent<HorizontalLayoutGroup>();
             levelInfoHLG.padding = new RectOffset(0, 0, 0, 0);
             levelInfoHLG.childAlignment = TextAnchor.MiddleRight;
-            levelInfoHLG.spacing = 0f; // Eliminate horizontal spacing between icon and text
+            levelInfoHLG.spacing = 0f;
             levelInfoHLG.childForceExpandWidth = false;
             levelInfoHLG.childForceExpandHeight = false;
             levelInfoHLG.childControlWidth = true;
             levelInfoHLG.childControlHeight = true;
-            levelInfoHLG.reverseArrangement = true; // This ensures right alignment while maintaining order
+            levelInfoHLG.reverseArrangement = true;
 
             ContentSizeFitter levelInfoCSF = levelInfoRow.AddComponent<ContentSizeFitter>();
             levelInfoCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -377,12 +377,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     levelRect.pivot = new Vector2(1, 0.5f);
                 }
 
-                // Check if it has TMP component and set alignment
                 TextMeshProUGUI levelTMP = clonedLevel.GetComponent<TextMeshProUGUI>();
                 if (levelTMP != null)
                 {
-                    levelTMP.alignment = TextAlignmentOptions.Right; // Right alignment works better with reverseArrangement
-                    levelTMP.fontSize = 54f; // Increased font size for level
+                    levelTMP.alignment = TextAlignmentOptions.Right;
+                    levelTMP.fontSize = 54f;
                     levelTMP.enableWordWrapping = false;
                     levelTMP.margin = Vector4.zero;
                 }
@@ -718,7 +717,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     {
                         hlg.reverseArrangement = true;
                     }
-                    hlg.spacing = 0f; // Make sure spacing stays at zero
+                    hlg.spacing = 0f;
                 }
             }
             else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - LevelInfoRow transform not found in BottomField."); }

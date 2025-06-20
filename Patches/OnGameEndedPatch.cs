@@ -18,23 +18,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static void PatchPostfix()
         {
-            // Reset the game state in LightHelpers to indicate we're no longer in a game
             LightHelpers.SetGameStarted(false);
             
-            // Re-enable all patches
             MenuOverhaulPatch menuPatch = new MenuOverhaulPatch();
             menuPatch.Enable();
             new SetAlphaPatch().Enable();
             new TweenButtonPatch().Enable();
             new PlayerProfileFeaturesPatch().Enable();
 
-            // If the player model was created before, make it visible again
             if (PlayerProfileFeaturesPatch.clonedPlayerModelView != null)
             {
                 PlayerProfileFeaturesPatch.clonedPlayerModelView.SetActive(true);
             }
             
-            // Handle any active scene to reinitialize UI elements
             var currentScene = SceneManager.GetActiveScene();
             if (currentScene.name == "CommonUIScene")
             {
@@ -55,13 +51,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     return;
                 }
                 
-                // Reset the original hierarchy state
                 ResetOriginalState(environmentObjects);
-                
-                // Now rebuild our custom elements in the correct order
                 RebuildCustomElements(environmentObjects);
-
-                // Force a check of decal_plane_pve visibility as a final check
                 ForceCheckDecalPlaneVisibility(environmentObjects);
 
                 Plugin.LogSource.LogDebug("Menu UI elements successfully restored after game session end");
@@ -79,13 +70,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
             GameObject decalPlane = environmentObjects.FactoryLayout.transform.Find("decal_plane")?.gameObject;
             if (decalPlane != null)
             {
-                // First check if parent is active
                 if (!decalPlane.activeSelf)
                 {
                     decalPlane.SetActive(true);
                 }
                 
-                // Now check decal_plane_pve
                 Transform pveTransform = decalPlane.transform.Find("decal_plane_pve");
                 if (pveTransform != null)
                 {
@@ -99,7 +88,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     Plugin.LogSource.LogWarning("ForceCheckDecalPlaneVisibility - Could not find decal_plane_pve child object");
                 }
                 
-                // Make sure child decal_plane stays disabled
                 Transform childDecalPlane = decalPlane.transform.Find("decal_plane");
                 if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
                 {
@@ -114,27 +102,20 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void ResetOriginalState(LayoutHelpers.EnvironmentObjects environmentObjects)
         {
-            // Reactivate all original elements first
             if (environmentObjects.FactoryLayout != null)
             {
-                // DO NOT re-enable panorama - we want it to stay disabled
                 GameObject panorama = environmentObjects.FactoryLayout.transform.Find("panorama")?.gameObject;
                 if (panorama != null)
                 {
                     panorama.SetActive(false);
                 }
 
-                // Reset and reactivate decal_plane
                 GameObject decalPlaneObject = environmentObjects.FactoryLayout.transform.Find("decal_plane")?.gameObject;
                 if (decalPlaneObject != null)
                 {
-                    // Make sure it's active
                     decalPlaneObject.SetActive(true);
-                    
-                    // Reset its position
                     decalPlaneObject.transform.position = new Vector3(0f, -999.4f, 0f);
                     
-                    // Explicitly activate decal_plane_pve child here to ensure it's active
                     Transform pveTransform = decalPlaneObject.transform.Find("decal_plane_pve");
                     if (pveTransform != null)
                     {
@@ -145,7 +126,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         Plugin.LogSource.LogWarning("ResetOriginalState - Could not find decal_plane_pve child GameObject");
                     }
                     
-                    // Make sure child decal_plane is still disabled
                     Transform decalPlaneChildTransform = decalPlaneObject.transform.Find("decal_plane");
                     if (decalPlaneChildTransform != null)
                     {
@@ -157,7 +137,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     Plugin.LogSource.LogWarning("ResetOriginalState - decal_plane GameObject not found");
                 }
 
-                // Reset LampContainer
                 GameObject lampContainer = environmentObjects.FactoryLayout.transform.Find("LampContainer")?.gameObject;
                 if (lampContainer != null)
                 {
@@ -199,13 +178,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
             GameObject decalPlaneObject = environmentObjects.FactoryLayout.transform.Find("decal_plane")?.gameObject;
             if (decalPlaneObject != null)
             {
-                // Ensure it's active first
                 if (!decalPlaneObject.activeSelf)
                 {
                     decalPlaneObject.SetActive(true);
                 }
                 
-                // Now configure it
                 ConfigureDecalPlane(decalPlaneObject.transform);
             }
             else
@@ -254,14 +231,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 return;
             }
 
-            // Ensure the game object is active
             GameObject decalPlaneObject = decalPlaneTransform.gameObject;
             if (!decalPlaneObject.activeSelf)
             {
                 decalPlaneObject.SetActive(true);
             }
 
-            // Set position according to user settings
             decalPlaneTransform.position = new Vector3(Utils.Settings.PositionLogotypeHorizontal.Value, -999.4f, 0f);
             
             // Configure materials with emission
@@ -282,8 +257,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Plugin.LogSource.LogWarning("ConfigureDecalPlane - No Renderer component found on decal_plane");
             }
 
-            // Configure only specific child objects
-            // Configure the decal_plane_pve child object - THIS SHOULD BE ACTIVE
             Transform pveTransform = decalPlaneObject.transform.Find("decal_plane_pve");
             if (pveTransform != null)
             {
@@ -294,7 +267,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Plugin.LogSource.LogWarning("ConfigureDecalPlane - Could not find decal_plane_pve child object");
             }
 
-            // The child decal_plane should remain INACTIVE (both during and after game)
             Transform decalPlaneChildTransform = decalPlaneObject.transform.Find("decal_plane");
             if (decalPlaneChildTransform != null)
             {

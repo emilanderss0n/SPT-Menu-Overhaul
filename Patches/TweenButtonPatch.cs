@@ -11,11 +11,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
     {
         private static FieldInfo _highlightedIconColorField;
         private static FieldInfo _highlightedImageColorField;
-        // _highlightedLabelColor is hardcoded in Postfix, so no FieldInfo needed for it.
 
         protected override MethodBase GetTargetMethod()
         {
-            // Cache FieldInfo instances for performance
             _highlightedIconColorField = typeof(DefaultUIButtonAnimation).GetField("_highlightedIconColor", BindingFlags.Instance | BindingFlags.NonPublic);
             _highlightedImageColorField = typeof(DefaultUIButtonAnimation).GetField("_highlightedImageColor", BindingFlags.Instance | BindingFlags.NonPublic);
 
@@ -35,17 +33,16 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static void Postfix(DefaultUIButtonAnimation __instance, bool animated)
         {
-            if (!LayoutHelpers.IsPartOfMenuScreen(__instance)) // Ensure this helper is robust
+            if (!LayoutHelpers.IsPartOfMenuScreen(__instance))
             {
                 return;
             }
 
-            __instance.Stop(); // Stop any ongoing animations
+            __instance.Stop();
 
-            // Retrieve values using cached FieldInfo, with defaults
             Color highlightedIconColor = _highlightedIconColorField != null ? (Color)_highlightedIconColorField.GetValue(__instance) : Color.white;
             Color highlightedImageColor = _highlightedImageColorField != null ? (Color)_highlightedImageColorField.GetValue(__instance) : Color.white;
-            Color highlightedLabelColor = new Color(1f, 0.75f, 0.3f, 1f); // Hardcoded as per original logic
+            Color highlightedLabelColor = new Color(1f, 0.75f, 0.3f, 1f);
 
             if (__instance.Icon != null)
             {
@@ -62,9 +59,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (!animated)
                 {
                     __instance.Image.color = highlightedImageColor;
-                    if (__instance.Icon != null) // Icon color might also need alpha adjustment here
+                    if (__instance.Icon != null)
                     {
-                        __instance.Icon.color = highlightedIconColor.SetAlpha(1f); // Ensure full alpha
+                        __instance.Icon.color = highlightedIconColor.SetAlpha(1f);
                     }
                 }
                 else
@@ -72,7 +69,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     float imageFadeDuration = 0.2f;
                     float iconFadeDuration = 0.1f;
 
-                    __instance.Image.color = highlightedImageColor.SetAlpha(0f); // Start transparent
+                    __instance.Image.color = highlightedImageColor.SetAlpha(0f);
                     __instance.ProcessMultipleTweens(new Tween[]
                     {
                         __instance.Image.DOFade(1f, imageFadeDuration)
@@ -80,9 +77,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
                     if (__instance.Icon != null)
                     {
-                        // Ensure icon starts transparent if it's meant to fade in with the image, or handle its initial state appropriately.
-                        // If Icon should also start transparent:
-                        // __instance.Icon.color = highlightedIconColor.SetAlpha(0f);
                         __instance.ProcessTween(__instance.Icon.DOFade(1f, iconFadeDuration), Ease.OutQuad);
                     }
                 }
