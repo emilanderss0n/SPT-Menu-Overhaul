@@ -37,10 +37,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
 
             GameObject playButton = GameObject.Find("Common UI/Common UI/MenuScreen/PlayButton")?.gameObject;
-            if (playButton == null || !playButton.activeSelf)
-            {
-                Plugin.LogSource.LogDebug("PlayerProfileFeaturesPatch.Postfix: PlayButton is null or inactive. Profile features might not apply if menu is not fully shown.");
-            }
 
             await AddPlayerModel().ConfigureAwait(false);
             SubscribeToProfileSettingsChanges();
@@ -64,7 +60,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.RotationPlayerModelHorizontal.SettingChanged += OnPlayerModelRotationChanged;
 
             _profileSettingsSubscribed = true;
-            Plugin.LogSource.LogDebug("Profile-specific settings changes subscribed.");
         }
 
         public static void UnsubscribeFromProfileSettingsChanges()
@@ -77,7 +72,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.RotationPlayerModelHorizontal.SettingChanged -= OnPlayerModelRotationChanged;
 
             _profileSettingsSubscribed = false;
-            Plugin.LogSource.LogDebug("Profile-specific settings changes unsubscribed.");
         }
 
         private static void OnPlayerModelPositionChanged(object sender, EventArgs e) => UpdatePlayerModelPosition();
@@ -132,7 +126,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged += OnExperienceChanged;
                 _experienceEventsSubscribed = true;
-                Plugin.LogSource.LogDebug("Character experience events subscribed.");
             }
             else
             {
@@ -147,7 +140,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged -= OnExperienceChanged;
                 _experienceEventsSubscribed = false;
-                Plugin.LogSource.LogDebug("Character experience events unsubscribed.");
             }
         }
 
@@ -170,7 +162,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 return clonedPlayerModelView.transform.Find("BottomField");
             }
-            Plugin.LogSource.LogDebug("GetBottomFieldTransform - clonedPlayerModelView is null.");
             return null;
         }
 
@@ -325,7 +316,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Action<string> DestroyChildIfExists = (name) => {
                 Transform child = bottomFieldTransform.Find(name);
                 if (child != null) {
-                    Plugin.LogSource.LogDebug($"SetupBottomField - Destroying existing {name}.");
                     GameObject.Destroy(child.gameObject);
                 }
             };
@@ -342,7 +332,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (existingExperience != null)
             {
                 GameObject.Destroy(existingExperience.gameObject);
-                Plugin.LogSource.LogDebug("SetupBottomField - Destroying existing Experience panel to recreate it.");
             }
 
             // ====== ROW 1: Level Icon + Level Text ======
@@ -472,7 +461,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     }
                     nicknameTMP.fontSize = originalNicknameTMP.fontSize * 1.6f;
                     nicknameTMP.color = originalNicknameTMP.color;
-                    Plugin.LogSource.LogDebug("SetupBottomField - Applied original NicknameAndKarma style to NicknameText.");
                 }
             }
 
@@ -538,7 +526,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 {
                     expLabelTMP.font = originalExpTMP.font;
                     expValueTMP.font = originalExpTMP.font;
-                    Plugin.LogSource.LogDebug("SetupBottomField - Applied original Experience font to new experience elements.");
                 }
             }
             
@@ -631,7 +618,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (originalNicknameAndKarma != null)
             {
                 originalNicknameAndKarma.gameObject.SetActive(false);
-                Plugin.LogSource.LogDebug("UpdateNicknameDisplay - Deactivated original NicknameAndKarma in BottomField.");
             }
         }
 
@@ -745,7 +731,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 GameObject.Destroy(clonedPlayerModelView);
                 clonedPlayerModelView = null;
                 MenuPlayerCreated = false;
-                Plugin.LogSource.LogDebug("Cloned player model view destroyed.");
             }
         }
 

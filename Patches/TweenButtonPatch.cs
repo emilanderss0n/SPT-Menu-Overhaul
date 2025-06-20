@@ -56,7 +56,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 __instance.Label.color = highlightedLabelColor;
             }
-            // else { Plugin.LogSource.LogDebug("TweenButtonPatch: Label not found on button."); }
 
             if (__instance.Image != null)
             {
@@ -88,7 +87,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     }
                 }
             }
-            // else { Plugin.LogSource.LogDebug("TweenButtonPatch: Image not found on button."); }
         }
     }
 }

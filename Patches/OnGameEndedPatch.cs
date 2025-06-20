@@ -18,8 +18,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static void PatchPostfix()
         {
-            Plugin.LogSource.LogDebug("Game session ended, re-enabling Menu Overhaul features...");
-            
             // Reset the game state in LightHelpers to indicate we're no longer in a game
             LightHelpers.SetGameStarted(false);
             
@@ -40,12 +38,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             var currentScene = SceneManager.GetActiveScene();
             if (currentScene.name == "CommonUIScene")
             {
-                Plugin.LogSource.LogDebug("OnGameEndedPatch - Detected CommonUIScene, restoring menu UI elements");
                 RestoreMenuUIElements();
-            }
-            else
-            {
-                Plugin.LogSource.LogDebug($"OnGameEndedPatch - Current scene is not CommonUIScene: {currentScene.name}");
             }
 
             Plugin.LogSource.LogDebug("Menu overhaul patches and GameObjects re-enabled after game session end");
@@ -61,8 +54,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     Plugin.LogSource.LogError("RestoreMenuUIElements - Could not find environment objects or FactoryLayout is null.");
                     return;
                 }
-                
-                Plugin.LogSource.LogDebug("Restoring menu UI elements after game session end...");
                 
                 // Reset the original hierarchy state
                 ResetOriginalState(environmentObjects);
@@ -92,7 +83,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (!decalPlane.activeSelf)
                 {
                     decalPlane.SetActive(true);
-                    Plugin.LogSource.LogDebug("ForceCheckDecalPlaneVisibility - Had to activate parent decal_plane");
                 }
                 
                 // Now check decal_plane_pve
@@ -102,11 +92,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     if (!pveTransform.gameObject.activeSelf)
                     {
                         pveTransform.gameObject.SetActive(true);
-                        Plugin.LogSource.LogDebug("ForceCheckDecalPlaneVisibility - Had to force activate decal_plane_pve child object");
-                    }
-                    else
-                    {
-                        Plugin.LogSource.LogDebug("ForceCheckDecalPlaneVisibility - decal_plane_pve was already active");
                     }
                 }
                 else
@@ -119,7 +104,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
                 {
                     childDecalPlane.gameObject.SetActive(false);
-                    Plugin.LogSource.LogDebug("ForceCheckDecalPlaneVisibility - Had to disable child decal_plane object");
                 }
             }
             else
@@ -138,7 +122,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (panorama != null)
                 {
                     panorama.SetActive(false);
-                    Plugin.LogSource.LogDebug("ResetOriginalState - Ensuring panorama stays disabled");
                 }
 
                 // Reset and reactivate decal_plane
@@ -147,7 +130,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 {
                     // Make sure it's active
                     decalPlaneObject.SetActive(true);
-                    Plugin.LogSource.LogDebug("ResetOriginalState - decal_plane GameObject reactivated");
                     
                     // Reset its position
                     decalPlaneObject.transform.position = new Vector3(0f, -999.4f, 0f);
@@ -157,7 +139,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     if (pveTransform != null)
                     {
                         pveTransform.gameObject.SetActive(true); 
-                        Plugin.LogSource.LogDebug("ResetOriginalState - Explicitly activated decal_plane_pve child object");
                     }
                     else
                     {
@@ -169,7 +150,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     if (decalPlaneChildTransform != null)
                     {
                         decalPlaneChildTransform.gameObject.SetActive(false);
-                        Plugin.LogSource.LogDebug("ResetOriginalState - Ensuring child decal_plane GameObject stays disabled");
                     }
                 }
                 else
@@ -189,7 +169,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (existingCustomPlane != null)
                 {
                     UnityEngine.Object.Destroy(existingCustomPlane);
-                    Plugin.LogSource.LogDebug("ResetOriginalState - Removed existing CustomPlane to allow proper recreation");
                 }
             }
 
@@ -224,7 +203,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (!decalPlaneObject.activeSelf)
                 {
                     decalPlaneObject.SetActive(true);
-                    Plugin.LogSource.LogDebug("RebuildCustomElements - Activated decal_plane GameObject");
                 }
                 
                 // Now configure it
@@ -242,13 +220,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (panorama.activeSelf)
                 {
                     panorama.SetActive(false);
-                    Plugin.LogSource.LogDebug("RebuildCustomElements - Disabled panorama GameObject");
                 }
             }
 
             // Step 3: Force recreation of custom plane with materials
             LayoutHelpers.SetPanoramaEmissionMap(environmentObjects.FactoryLayout, true);
-            Plugin.LogSource.LogDebug("RebuildCustomElements - Recreated CustomPlane with emission materials");
 
             // Step 4: Setup lights and lamp container
             LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "LampContainer", true);
@@ -260,7 +236,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 customPlane.SetActive(Settings.EnableBackground.Value);
                 customPlane.transform.localScale = new Vector3(Settings.scaleBackgroundX.Value, 1f, Settings.scaleBackgroundY.Value);
-                Plugin.LogSource.LogDebug("RebuildCustomElements - Updated CustomPlane visibility and scale");
             }
             else
             {
@@ -284,7 +259,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (!decalPlaneObject.activeSelf)
             {
                 decalPlaneObject.SetActive(true);
-                Plugin.LogSource.LogDebug("ConfigureDecalPlane - Activated decal_plane GameObject");
             }
 
             // Set position according to user settings
@@ -302,7 +276,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         mat.SetColor("_EmissionColor", Color.white);
                     }
                 }
-                Plugin.LogSource.LogDebug("ConfigureDecalPlane - Applied emission to decal_plane materials");
             }
             else
             {
@@ -315,7 +288,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (pveTransform != null)
             {
                 pveTransform.gameObject.SetActive(true);
-                Plugin.LogSource.LogDebug("ConfigureDecalPlane - Activated decal_plane_pve child object");
             }
             else
             {
@@ -327,11 +299,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (decalPlaneChildTransform != null)
             {
                 decalPlaneChildTransform.gameObject.SetActive(false);
-                Plugin.LogSource.LogDebug("ConfigureDecalPlane - Ensuring child decal_plane object stays disabled");
-            }
-            else
-            {
-                Plugin.LogSource.LogDebug("ConfigureDecalPlane - No child decal_plane object found");
             }
         }
     }

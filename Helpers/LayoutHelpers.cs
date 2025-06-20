@@ -213,7 +213,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     {
                         bool hasEmission = mat.IsKeywordEnabled("_EMISSION");
                         Texture2D emissionMap = mat.GetTexture("_EmissionMap") as Texture2D;
-                        Plugin.LogSource.LogDebug($"Material {i}: HasEmission={hasEmission}, HasEmissionMap={emissionMap!=null}");
                     }
                 }
             }
@@ -221,8 +220,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             {
                 Plugin.LogSource.LogError("Failed to get Renderer on newly created CustomPlane.");
             }
-
-            Plugin.LogSource.LogDebug($"CustomPlane created successfully with {materialsToApply.Count} materials");
         }
 
         public static void SetPanoramaEmissionMap(GameObject factoryLayout, bool forceReload = false)
@@ -236,7 +233,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             // If forceReload is true, we clear the texture cache and unload the asset bundle to force a fresh load
             if (forceReload)
             {
-                Plugin.LogSource.LogDebug("SetPanoramaEmissionMap - Force reloading textures and materials");
                 // Clear texture cache to force reloading textures
                 foreach (var texture in textureCache.Values)
                 {
@@ -270,12 +266,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            // Ensure panorama is active while we work with it, but remember its state
             bool wasActive = panorama.activeSelf;
-            if (!wasActive)
-            {
-                Plugin.LogSource.LogDebug("SetPanoramaEmissionMap - Temporarily activating panorama for material access");
-            }
             panorama.SetActive(true);
 
             Renderer panoramaRenderer = panorama.GetComponent<Renderer>();
@@ -300,7 +291,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 Plugin.LogSource.LogWarning("Failed to apply emission to any panorama materials. Will recreate materials.");
                 // If we can't find proper materials, let's see if we can create new ones
                 appliedMaterials = CreateDefaultMaterialsWithEmission(preparedTexture);
-                Plugin.LogSource.LogDebug($"Created {appliedMaterials.Count} default materials with emission");
             }
 
             // Clean up any existing CustomPlane before creating a new one
@@ -308,14 +298,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             if (existingCustomPlane != null)
             {
                 UnityEngine.Object.Destroy(existingCustomPlane);
-                Plugin.LogSource.LogDebug("Destroyed existing CustomPlane before creating new one.");
             }
 
             // Create the new custom plane
             if (appliedMaterials.Any())
             {
                 CreateCustomPlaneForPanorama(factoryLayout, panorama, appliedMaterials);
-                Plugin.LogSource.LogDebug($"Created new CustomPlane with {appliedMaterials.Count} materials");
             }
             else
             {
@@ -324,7 +312,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             
             // Always hide the panorama mesh which we've replaced with our custom plane regardless of original state
             panorama.SetActive(false);
-            Plugin.LogSource.LogDebug("SetPanoramaEmissionMap - Ensured panorama is disabled and completed successfully");
         }
 
         // Helper method to create default materials with emission if we can't find the original materials
@@ -342,7 +329,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 defaultMaterial.EnableKeyword("_EMISSION");
                 defaultMaterial.SetColor("_EmissionColor", Color.white);
                 materials.Add(defaultMaterial);
-                Plugin.LogSource.LogDebug("Created default material with emission");
             }
             else
             {
@@ -563,9 +549,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         // Method to clean up all GameObjects created by the mod when game starts
         public static void CleanupGameObjects()
-        {
-            Plugin.LogSource.LogDebug("Cleaning up menu overhaul GameObjects...");
-            
+        {           
             try {
                 EnvironmentObjects envObjects = FindEnvironmentObjects();
                 if (envObjects == null || envObjects.FactoryLayout == null)
@@ -580,14 +564,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 {
                     // Disable main decal_plane
                     decalPlane.SetActive(false);
-                    Plugin.LogSource.LogDebug("CleanupGameObjects - Hiding decal_plane GameObject");
                     
                     // Also disable child objects - decal_plane_pve
                     Transform pveTransform = decalPlane.transform.Find("decal_plane_pve");
                     if (pveTransform != null)
                     {
                         pveTransform.gameObject.SetActive(false);
-                        Plugin.LogSource.LogDebug("CleanupGameObjects - Hiding decal_plane_pve child GameObject");
                     }
                     
                     // Also disable child objects - decal_plane
@@ -595,7 +577,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     if (decalPlaneChildTransform != null)
                     {
                         decalPlaneChildTransform.gameObject.SetActive(false);
-                        Plugin.LogSource.LogDebug("CleanupGameObjects - Hiding decal_plane child GameObject");
                     }
                 }
                 else
@@ -608,7 +589,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 if (customPlane != null)
                 {
                     customPlane.SetActive(false);
-                    Plugin.LogSource.LogDebug("CleanupGameObjects - Hiding CustomPlane GameObject");
                 }
                 
                 // Keep panorama disabled
@@ -616,7 +596,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 if (panorama != null)
                 {
                     panorama.SetActive(false);
-                    Plugin.LogSource.LogDebug("CleanupGameObjects - Ensuring panorama GameObject is disabled");
                 }
             }
             catch (Exception ex)

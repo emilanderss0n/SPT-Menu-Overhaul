@@ -60,7 +60,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 __instance.Label.color = normalLabelColor;
             }
-            // else { Plugin.LogSource.LogDebug("SetAlphaPatch: Label not found on button."); } // Debug level might be more appropriate
 
             if (__instance.Image != null) // Ensure Image exists before trying to modify it
             {
@@ -85,7 +84,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     }
                 }
             }
-            // else { Plugin.LogSource.LogDebug("SetAlphaPatch: Image not found on button."); }
         }
     }
 }

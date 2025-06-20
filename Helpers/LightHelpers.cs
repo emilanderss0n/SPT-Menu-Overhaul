@@ -77,12 +77,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             if (isInGame)
             {
                 DisableDecalPlaneIfInGame();
-                Plugin.LogSource.LogDebug("UpdateLights - isInGame is true, calling DisableDecalPlaneIfInGame");
-            }
-            else
-            {
-                // We're not in game, let any active decal planes stay active
-                Plugin.LogSource.LogDebug("UpdateLights - isInGame is false, not disabling decal planes");
             }
         }
 
@@ -95,12 +89,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             if (started)
             {
                 DisableDecalPlaneIfInGame();
-                Plugin.LogSource.LogDebug("SetGameStarted - Game started, disabled decal planes");
-            } 
-            else if (wasInGame)
-            {
-                // We just exited the game, log this state change explicitly
-                Plugin.LogSource.LogDebug("SetGameStarted - Game ended, decal planes can be shown again");
             }
         }
 
@@ -109,7 +97,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (!isInGame) 
             {
-                Plugin.LogSource.LogDebug("DisableDecalPlaneIfInGame - Not in game, doing nothing");
                 return;
             }
             
@@ -124,7 +111,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 if (decalPlane.activeSelf)
                 {
                     decalPlane.SetActive(false);
-                    Plugin.LogSource.LogDebug("DisableDecalPlaneIfInGame - Disabled decal_plane because we're in game");
                 }
                 
                 // Now check and disable the child objects - decal_plane_pve
@@ -132,7 +118,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 if (pveTransform != null && pveTransform.gameObject.activeSelf)
                 {
                     pveTransform.gameObject.SetActive(false);
-                    Plugin.LogSource.LogDebug("DisableDecalPlaneIfInGame - Disabled decal_plane_pve child object");
                 }
                 
                 // Check and disable the decal_plane child object
@@ -140,7 +125,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 if (decalPlaneChildTransform != null && decalPlaneChildTransform.gameObject.activeSelf)
                 {
                     decalPlaneChildTransform.gameObject.SetActive(false);
-                    Plugin.LogSource.LogDebug("DisableDecalPlaneIfInGame - Disabled decal_plane child object");
                 }
             }
         }

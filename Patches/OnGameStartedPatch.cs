@@ -15,9 +15,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         [PatchPostfix]
         private static void PatchPostfix(GameWorld __instance)
-        {
-            Plugin.LogSource.LogDebug("Game started, disabling Menu Overhaul features...");
-            
+        {           
             // Set the game state in LightHelpers to track that we're in a game
             LightHelpers.SetGameStarted(true);
             
@@ -25,7 +23,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (PlayerProfileFeaturesPatch.clonedPlayerModelView != null)
             {
                 PlayerProfileFeaturesPatch.clonedPlayerModelView.SetActive(false);
-                Plugin.LogSource.LogDebug("OnGameStarted - Disabled player model view");
             }
 
             // Create instances of the patches we need to disable and clean up
@@ -60,7 +57,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
             if (environmentObjects?.FactoryLayout == null)
             {
-                Plugin.LogSource.LogWarning("EnsureUIElementsDisabled - Could not find environment objects or FactoryLayout.");
                 return;
             }
             
@@ -69,7 +65,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (panorama != null && panorama.activeSelf)
             {
                 panorama.SetActive(false);
-                Plugin.LogSource.LogDebug("EnsureUIElementsDisabled - Forced panorama to be disabled");
             }
             
             // Double-check that CustomPlane is disabled
@@ -77,7 +72,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (customPlane != null && customPlane.activeSelf) 
             {
                 customPlane.SetActive(false);
-                Plugin.LogSource.LogDebug("EnsureUIElementsDisabled - Forced CustomPlane to be disabled");
             }
             
             // Ensure decal_plane and its children are disabled
@@ -87,7 +81,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (decalPlane.activeSelf)
                 {
                     decalPlane.SetActive(false);
-                    Plugin.LogSource.LogDebug("EnsureUIElementsDisabled - Forced decal_plane to be disabled");
                 }
                 
                 // Also ensure child objects are disabled - decal_plane_pve
@@ -95,7 +88,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (pveTransform != null && pveTransform.gameObject.activeSelf)
                 {
                     pveTransform.gameObject.SetActive(false);
-                    Plugin.LogSource.LogDebug("EnsureUIElementsDisabled - Forced decal_plane_pve child object to be disabled");
                 }
                 
                 // Also ensure child objects are disabled - decal_plane
@@ -103,7 +95,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (decalPlaneChildTransform != null && decalPlaneChildTransform.gameObject.activeSelf)
                 {
                     decalPlaneChildTransform.gameObject.SetActive(false);
-                    Plugin.LogSource.LogDebug("EnsureUIElementsDisabled - Forced decal_plane child object to be disabled");
                 }
             }
         }

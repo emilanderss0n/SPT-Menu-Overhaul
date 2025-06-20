@@ -135,7 +135,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                             if (!pveTransform.gameObject.activeSelf)
                             {
                                 pveTransform.gameObject.SetActive(true);
-                                Plugin.LogSource.LogDebug("UpdateLayoutElements - Activated decal_plane_pve child object");
                             }
                         }
                         else
@@ -148,7 +147,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
                         {
                             childDecalPlane.gameObject.SetActive(false);
-                            Plugin.LogSource.LogDebug("UpdateLayoutElements - Disabled child decal_plane GameObject");
                         }
                     }
                 }
@@ -203,7 +201,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (scene.name == "CommonUIScene")
             {
-                Plugin.LogSource.LogDebug($"MenuOverhaulPatch: Handling CommonUIScene (Loaded: {scene.isLoaded})");
                 var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
                 if (environmentObjects?.FactoryLayout != null)
                 {
@@ -224,7 +221,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (panorama != null)
             {
                 panorama.SetActive(false);
-                Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Explicitly disabled panorama");
             }
 
             // Then activate the lamp container for lighting
@@ -238,7 +234,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (customPlane != null)
             {
                 customPlane.SetActive(Settings.EnableBackground.Value);
-                Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Set CustomPlane active state: " + Settings.EnableBackground.Value);
             }
 
             // Make sure decal_plane and decal_plane_pve are correctly set up
@@ -249,7 +244,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (!decalPlane.activeSelf)
                 {
                     decalPlane.SetActive(true);
-                    Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Activated decal_plane GameObject");
                 }
 
                 // Make sure decal_plane_pve is active
@@ -259,7 +253,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     if (!pveTransform.gameObject.activeSelf)
                     {
                         pveTransform.gameObject.SetActive(true);
-                        Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Activated decal_plane_pve child object");
                     }
                 }
 
@@ -268,7 +261,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
                 {
                     childDecalPlane.gameObject.SetActive(false);
-                    Plugin.LogSource.LogDebug("ActivateSceneLayoutElements - Disabled child decal_plane GameObject");
                 }
             }
         }

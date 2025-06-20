@@ -77,8 +77,6 @@ namespace MoxoPixel.MenuOverhaul
                         LogSource.LogError($"Failed to disable patch {patch.GetType().Name} during plugin unload: {ex}");
                     }
                 }
-                
-                LogSource.LogDebug($"Plugin {Info.Metadata.Name} version {Info.Metadata.Version} unloaded.");
             }
             catch (Exception ex)
             {
