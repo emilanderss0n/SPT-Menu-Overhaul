@@ -53,6 +53,30 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             return iconAssetBundle;
         }
 
+
+        public static EnvironmentObjects FindEnvironmentObjects()
+        {
+            GameObject environmentUI = GameObject.Find("Environment UI");
+            if (environmentUI == null) { Plugin.LogSource.LogWarning("Environment UI GameObject not found."); return null; }
+
+            GameObject commonObj = environmentUI.transform.Find("Common")?.gameObject;
+            if (commonObj == null) { Plugin.LogSource.LogWarning("Common GameObject not found in Environment UI."); return null; }
+
+            GameObject environmentUISceneFactory = environmentUI.transform.Find("EnvironmentUISceneFactory")?.gameObject;
+            if (environmentUISceneFactory == null) { Plugin.LogSource.LogWarning("EnvironmentUISceneFactory GameObject not found in Environment UI."); return null; }
+
+            GameObject factoryLayout = environmentUISceneFactory.transform.Find("FactoryLayout")?.gameObject;
+            if (factoryLayout == null) { Plugin.LogSource.LogWarning("FactoryLayout GameObject not found in EnvironmentUISceneFactory."); return null; }
+
+            return new EnvironmentObjects
+            {
+                EnvironmentUI = environmentUI,
+                CommonObj = commonObj,
+                EnvironmentUISceneFactory = environmentUISceneFactory,
+                FactoryLayout = factoryLayout
+            };
+        }
+
         public static GameObject GetGlowCanvas()
         {
             EnvironmentObjects envObjects = FindEnvironmentObjects();
@@ -78,6 +102,45 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             if (backgroundPlane == null) Plugin.LogSource.LogWarning("CustomPlane GameObject not found in FactoryLayout.");
             return backgroundPlane;
         }
+
+        public static void HideGameObject(MenuScreen instance, string fieldName)
+        {
+            if (instance == null || string.IsNullOrEmpty(fieldName)) return;
+            var field = typeof(MenuScreen).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            if (field != null)
+            {
+                var gameObject = field.GetValue(instance) as GameObject;
+                if (gameObject != null)
+                {
+                    gameObject.SetActive(false);
+                }
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning($"Field '{fieldName}' not found in MenuScreen for HideGameObject.");
+            }
+        }
+
+
+        public static void SetChildActive(GameObject parent, string childName, bool isActive)
+        {
+            if (parent == null || string.IsNullOrEmpty(childName)) return;
+            
+            Transform childTransform = parent.transform.Find(childName);
+            if (childTransform != null)
+            {
+                childTransform.gameObject.SetActive(isActive);
+                if (childName == "LampContainer" && isActive)
+                {
+                    ConfigureLampContainer(childTransform);
+                }
+            }
+            else
+            {
+                Plugin.LogSource.LogDebug($"{childName} not found in {parent.name}.");
+            }
+        }
+
 
         public static void SetIconImages(GameObject buttonObject, string buttonName)
         {
@@ -121,6 +184,25 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 image.overrideSprite = sprite;
             }
         }
+
+        public static bool IsPartOfMenuScreen(DefaultUIButtonAnimation buttonAnimation)
+        {
+            if (buttonAnimation == null) return false;
+            Transform currentTransform = buttonAnimation.transform;
+            while (currentTransform != null)
+            {
+                if (currentTransform.name == "MenuScreen") return true;
+                currentTransform = currentTransform.parent;
+            }
+            return false;
+        }
+
+        public static bool IsMatchMaker()
+        {
+            GameObject matchmakerScreen = GameObject.Find("Menu UI/UI/Matchmaker Time Has Come");
+            return matchmakerScreen != null && matchmakerScreen.activeInHierarchy;
+        }
+
 
         private static Texture2D LoadAndPreparePanoramaTexture(AssetBundle bundle)
         {
@@ -179,7 +261,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            // Create a new plane primitive
             GameObject newPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
             newPlane.name = "CustomPlane";
             newPlane.transform.SetParent(factoryLayout.transform);
@@ -187,11 +268,9 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             newPlane.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
             newPlane.transform.localScale = new Vector3(Settings.scaleBackgroundX.Value, 1f, Settings.scaleBackgroundY.Value);
 
-            // Set layer and tag to match the source
             newPlane.layer = panoramaSource.layer;
             newPlane.tag = panoramaSource.tag;
 
-            // Get and configure the renderer
             Renderer newPlaneRenderer = newPlane.GetComponent<Renderer>();
             if (newPlaneRenderer != null)
             {
@@ -199,7 +278,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 newPlaneRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 newPlaneRenderer.receiveShadows = false;
                 newPlaneRenderer.allowOcclusionWhenDynamic = false;
-                
             }
             else
             {
@@ -215,28 +293,11 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            // If forceReload is true, we clear the texture cache and unload the asset bundle to force a fresh load
             if (forceReload)
             {
-                // Clear texture cache to force reloading textures
-                foreach (var texture in textureCache.Values)
-                {
-                    if (texture != null)
-                    {
-                        UnityEngine.Object.Destroy(texture);
-                    }
-                }
-                textureCache.Clear();
-                
-                // Unload asset bundle to force reloading
-                if (iconAssetBundle != null)
-                {
-                    iconAssetBundle.Unload(false); // false = don't unload assets, just the bundle reference
-                    iconAssetBundle = null;
-                }
+                ClearTextureCache();
             }
 
-            // Make sure we have a fresh AssetBundle reference
             AssetBundle bundle = GetIconAssetBundle();
             if (bundle == null)
             {
@@ -295,7 +356,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             panorama.SetActive(false);
         }
 
-        // Helper method to create default materials with emission if we can't find the original materials
         private static List<Material> CreateDefaultMaterialsWithEmission(Texture2D emissionTexture)
         {
             if (emissionTexture == null) return new List<Material>();
@@ -351,24 +411,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             return flipped;
         }
 
-        public static void HideGameObject(MenuScreen instance, string fieldName)
-        {
-            if (instance == null || string.IsNullOrEmpty(fieldName)) return;
-            var field = typeof(MenuScreen).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
-            if (field != null)
-            {
-                var gameObject = field.GetValue(instance) as GameObject;
-                if (gameObject != null)
-                {
-                    gameObject.SetActive(false);
-                }
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning($"Field '{fieldName}' not found in MenuScreen for HideGameObject.");
-            }
-        }
-
         private static void ConfigureLampContainer(Transform lampContainerTransform)
         {
             if (lampContainerTransform == null) return;
@@ -392,53 +434,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     }
                     else { Plugin.LogSource.LogWarning("Point light_bulb not found in nested Lamp."); }
 
-                    LayoutHelpers.SetChildActive(nestedLampTransform.gameObject, "bulb", false);
-                    LayoutHelpers.SetChildActive(nestedLampTransform.gameObject, "flare_lampmenu", false);
+                    SetChildActive(nestedLampTransform.gameObject, "bulb", false);
+                    SetChildActive(nestedLampTransform.gameObject, "flare_lampmenu", false);
                 }
                 else { Plugin.LogSource.LogWarning("Nested Lamp GameObject not found within Lamp."); }
             }
             else { Plugin.LogSource.LogWarning("Lamp GameObject not found within LampContainer."); }
-        }
-
-        public static void SetChildActive(GameObject parent, string childName, bool isActive)
-        {
-            if (parent == null || string.IsNullOrEmpty(childName)) return;
-            Transform childTransform = parent.transform.Find(childName);
-            if (childTransform != null)
-            {
-                childTransform.gameObject.SetActive(isActive);
-                if (childName == "LampContainer" && isActive)
-                {
-                    ConfigureLampContainer(childTransform);
-                }
-            }
-            else
-            {
-                Plugin.LogSource.LogDebug($"{childName} not found in {parent.name}.");
-            }
-        }
-
-        public static EnvironmentObjects FindEnvironmentObjects()
-        {
-            GameObject environmentUI = GameObject.Find("Environment UI");
-            if (environmentUI == null) { Plugin.LogSource.LogWarning("Environment UI GameObject not found."); return null; }
-
-            GameObject commonObj = environmentUI.transform.Find("Common")?.gameObject;
-            if (commonObj == null) { Plugin.LogSource.LogWarning("Common GameObject not found in Environment UI."); return null; }
-
-            GameObject environmentUISceneFactory = environmentUI.transform.Find("EnvironmentUISceneFactory")?.gameObject;
-            if (environmentUISceneFactory == null) { Plugin.LogSource.LogWarning("EnvironmentUISceneFactory GameObject not found in Environment UI."); return null; }
-
-            GameObject factoryLayout = environmentUISceneFactory.transform.Find("FactoryLayout")?.gameObject;
-            if (factoryLayout == null) { Plugin.LogSource.LogWarning("FactoryLayout GameObject not found in EnvironmentUISceneFactory."); return null; }
-
-            return new EnvironmentObjects
-            {
-                EnvironmentUI = environmentUI,
-                CommonObj = commonObj,
-                EnvironmentUISceneFactory = environmentUISceneFactory,
-                FactoryLayout = factoryLayout
-            };
         }
 
         private static void DeactivateDefaultMainMenuCamera(GameObject environmentUISceneFactory)
@@ -510,24 +511,31 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             SetupCustomAlignmentCamera(envObjects.EnvironmentUI, envObjects.FactoryLayout);
         }
 
-        public static bool IsPartOfMenuScreen(DefaultUIButtonAnimation buttonAnimation)
+
+        /// <summary>
+        /// Clears the texture cache and unloads the asset bundle to free memory
+        /// </summary>
+        public static void ClearTextureCache()
         {
-            if (buttonAnimation == null) return false;
-            Transform currentTransform = buttonAnimation.transform;
-            while (currentTransform != null)
+            foreach (var texture in textureCache.Values)
             {
-                if (currentTransform.name == "MenuScreen") return true;
-                currentTransform = currentTransform.parent;
+                if (texture != null)
+                {
+                    UnityEngine.Object.Destroy(texture);
+                }
             }
-            return false;
+            textureCache.Clear();
+            
+            if (iconAssetBundle != null)
+            {
+                iconAssetBundle.Unload(false);
+                iconAssetBundle = null;
+            }
         }
 
-        public static bool IsMatchMaker()
-        {
-            GameObject matchmakerScreen = GameObject.Find("Menu UI/UI/Matchmaker Time Has Come");
-            return matchmakerScreen != null && matchmakerScreen.activeInHierarchy;
-        }
-
+        /// <summary>
+        /// Performs cleanup of game objects related to the menu overhaul
+        /// </summary>
         public static void CleanupGameObjects()
         {           
             try {
@@ -538,36 +546,16 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     return;
                 }
 
-                GameObject decalPlane = envObjects.FactoryLayout.transform.Find("decal_plane")?.gameObject;
-                if (decalPlane != null)
-                {
-                    decalPlane.SetActive(false);
-                    
-                    Transform pveTransform = decalPlane.transform.Find("decal_plane_pve");
-                    if (pveTransform != null)
-                    {
-                        pveTransform.gameObject.SetActive(false);
-                    }
-                    
-                    Transform decalPlaneChildTransform = decalPlane.transform.Find("decal_plane");
-                    if (decalPlaneChildTransform != null)
-                    {
-                        decalPlaneChildTransform.gameObject.SetActive(false);
-                    }
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("CleanupGameObjects - decal_plane GameObject not found");
-                }
-
+                Utility.ConfigureDecalPlane(false);
+                
                 GameObject customPlane = envObjects.FactoryLayout.transform.Find("CustomPlane")?.gameObject;
-                if (customPlane != null)
+                if (customPlane != null && customPlane.activeSelf)
                 {
                     customPlane.SetActive(false);
                 }
                 
                 GameObject panorama = envObjects.FactoryLayout.transform.Find("panorama")?.gameObject;
-                if (panorama != null)
+                if (panorama != null && panorama.activeSelf)
                 {
                     panorama.SetActive(false);
                 }
@@ -579,5 +567,13 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
             Plugin.LogSource.LogDebug("Menu overhaul GameObjects cleanup completed");
         }
+
+        public static void DisposeResources()
+        {
+            ClearTextureCache();
+            isAlignmentCameraMoved = false;
+            Plugin.LogSource.LogDebug("LayoutHelpers resources disposed");
+        }
+
     }
 }

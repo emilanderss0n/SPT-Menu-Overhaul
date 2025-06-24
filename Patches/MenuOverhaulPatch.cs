@@ -26,7 +26,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (__instance == null)
             {
-                Plugin.LogSource.LogWarning("PlayerProfileFeaturesPatch.Postfix: MenuScreen instance is null.");
+                Plugin.LogSource.LogWarning("MenuScreen instance is null.");
                 return;
             }
 
@@ -37,11 +37,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
             HandleScene(SceneManager.GetActiveScene());
 
             ButtonHelpers.ProcessButtons(__instance);
-
             SubscribeToLayoutSettingsChanges();
-
             UpdateLayoutElements();
-
             LayoutHelpers.DisableCameraMovement();
         }
 
@@ -105,6 +102,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 return;
             }
 
+            // Handle top glow
             if (environmentObjects.CommonObj != null)
             {
                 LayoutHelpers.SetChildActive(environmentObjects.CommonObj, "Glow Canvas", Settings.EnableTopGlow.Value);
@@ -116,41 +114,15 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             if (environmentObjects.FactoryLayout != null)
             {
+                // Handle custom plane
                 LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "CustomPlane", Settings.EnableBackground.Value);
-                Transform decalPlaneTransform = environmentObjects.FactoryLayout.transform.Find("decal_plane");
-                if (decalPlaneTransform != null)
+                
+                // Only update decal plane if we're not in game
+                if (!Utility.IsInGame())
                 {
-
-                    // Only update position if decal_plane is active
-                    if (decalPlaneTransform.gameObject.activeSelf)
-                    {
-                        decalPlaneTransform.position = new Vector3(Settings.PositionLogotypeHorizontal.Value, -999.4f, 0f);
-
-                        // Ensure decal_plane_pve is active when parent is active
-                        Transform pveTransform = decalPlaneTransform.Find("decal_plane_pve");
-                        if (pveTransform != null)
-                        {
-                            if (!pveTransform.gameObject.activeSelf)
-                            {
-                                pveTransform.gameObject.SetActive(true);
-                            }
-                        }
-                        else
-                        {
-                            Plugin.LogSource.LogWarning("UpdateLayoutElements - Could not find decal_plane_pve child GameObject");
-                        }
-
-                        // Ensure child decal_plane is disabled
-                        Transform childDecalPlane = decalPlaneTransform.Find("decal_plane");
-                        if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
-                        {
-                            childDecalPlane.gameObject.SetActive(false);
-                        }
-                    }
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("UpdateLayoutElements - decal_plane GameObject not found in FactoryLayout.");
+                    // Update decal plane position and ensure it's active
+                    Utility.ConfigureDecalPlane(true);
+                    Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value);
                 }
             }
             else
@@ -158,17 +130,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Plugin.LogSource.LogWarning("UpdateLayoutElements - FactoryLayout not found.");
             }
 
+            // Update lighting
             LightHelpers.UpdateLights();
         }
 
         public static void UpdateCustomPlaneScale()
         {
-            var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
-            if (environmentObjects?.FactoryLayout == null)
-            {
-                Plugin.LogSource.LogWarning("UpdateCustomPlaneScale - FactoryLayout not found.");
-                return;
-            }
             GameObject customPlane = LayoutHelpers.GetBackgroundPlane();
             if (customPlane != null)
             {
@@ -213,52 +180,30 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void ActivateSceneLayoutElements(LayoutHelpers.EnvironmentObjects envObjects)
         {
-            // First make sure panorama is disabled - this needs to happen before creating custom plane
             GameObject panorama = envObjects.FactoryLayout.transform.Find("panorama")?.gameObject;
             if (panorama != null)
             {
                 panorama.SetActive(false);
             }
 
-            // Then activate the lamp container for lighting
             LayoutHelpers.SetChildActive(envObjects.FactoryLayout, "LampContainer", true);
 
-            // Now set up the custom plane with panorama emission map
             LayoutHelpers.SetPanoramaEmissionMap(envObjects.FactoryLayout);
 
-            // Finally, set the custom plane visibility based on settings
-            GameObject customPlane = envObjects.FactoryLayout.transform.Find("CustomPlane")?.gameObject;
+            GameObject customPlane = LayoutHelpers.GetBackgroundPlane();
             if (customPlane != null)
             {
                 customPlane.SetActive(Settings.EnableBackground.Value);
             }
-
-            // Make sure decal_plane and decal_plane_pve are correctly set up
-            GameObject decalPlane = envObjects.FactoryLayout.transform.Find("decal_plane")?.gameObject;
-            if (decalPlane != null)
+            else
             {
-                // Make sure parent decal_plane is active
-                if (!decalPlane.activeSelf)
-                {
-                    decalPlane.SetActive(true);
-                }
+                Plugin.LogSource.LogWarning("ActivateSceneLayoutElements - CustomPlane not found after setup");
+            }
 
-                // Make sure decal_plane_pve is active
-                Transform pveTransform = decalPlane.transform.Find("decal_plane_pve");
-                if (pveTransform != null)
-                {
-                    if (!pveTransform.gameObject.activeSelf)
-                    {
-                        pveTransform.gameObject.SetActive(true);
-                    }
-                }
-
-                // Ensure child decal_plane stays disabled
-                Transform childDecalPlane = decalPlane.transform.Find("decal_plane");
-                if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
-                {
-                    childDecalPlane.gameObject.SetActive(false);
-                }
+            if (!Utility.IsInGame())
+            {
+                Utility.ConfigureDecalPlane(true);
+                Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value);
             }
         }
 

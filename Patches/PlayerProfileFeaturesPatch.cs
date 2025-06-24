@@ -32,7 +32,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (__instance == null)
             {
-                Plugin.LogSource.LogWarning("PlayerProfileFeaturesPatch.Postfix: MenuScreen instance is null.");
+                Plugin.LogSource.LogWarning("MenuScreen instance is null.");
                 return;
             }
 

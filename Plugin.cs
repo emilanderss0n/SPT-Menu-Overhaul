@@ -2,6 +2,7 @@
 using BepInEx;
 using MoxoPixel.MenuOverhaul.Patches;
 using MoxoPixel.MenuOverhaul.Utils;
+using MoxoPixel.MenuOverhaul.Helpers;
 using System.Collections.Generic;
 using System;
 using SPT.Reflection.Patching;
@@ -46,29 +47,40 @@ namespace MoxoPixel.MenuOverhaul
                 }
             }
         }
-
+        
+        private void OnDisable()
+        {
+            CleanupResources();
+        }
+        
         private void OnDestroy()
+        {
+            CleanupResources();
+        }
+        
+        private void CleanupResources()
         {
             try
             {
-                MenuOverhaulPatch menuPatch = new MenuOverhaulPatch();
-                PlayerProfileFeaturesPatch profilePatch = new PlayerProfileFeaturesPatch();
-                menuPatch.CleanupBeforeDisable();
-                profilePatch.CleanupBeforeDisable();
-                PlayerProfileFeaturesPatch.CleanupClonedPlayerModel();
-                Helpers.LightHelpers.Cleanup();
-                
+                // Unsubscribe from events
                 foreach (var patch in _patches)
                 {
-                    try
+                    if (patch is MenuOverhaulPatch menuPatch)
                     {
-                        patch.Disable();
+                        menuPatch.CleanupBeforeDisable();
                     }
-                    catch (Exception ex)
+                    else if (patch is PlayerProfileFeaturesPatch profilePatch)
                     {
-                        LogSource.LogError($"Failed to disable patch {patch.GetType().Name} during plugin unload: {ex}");
+                        profilePatch.CleanupBeforeDisable();
                     }
                 }
+                
+                // Cleanup static helpers
+                LayoutHelpers.DisposeResources();
+                LightHelpers.Cleanup();
+                MoxoPixel.MenuOverhaul.Utils.Utility.ResetGameState();
+                
+                LogSource.LogDebug("MenuOverhaul plugin resources cleaned up.");
             }
             catch (Exception ex)
             {
