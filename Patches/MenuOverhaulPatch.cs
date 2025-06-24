@@ -24,10 +24,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
-            GameObject playButton = GameObject.Find("Common UI/Common UI/MenuScreen/PlayButton")?.gameObject;
-            if (__instance == null || playButton == null || !playButton.activeSelf)
+            if (__instance == null)
             {
-                Plugin.LogSource.LogWarning("MenuOverhaulPatch.Postfix: MenuScreen or PlayButton is null or inactive. Postfix will not run.");
+                Plugin.LogSource.LogWarning("PlayerProfileFeaturesPatch.Postfix: MenuScreen instance is null.");
                 return;
             }
 
@@ -42,6 +41,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
             SubscribeToLayoutSettingsChanges();
 
             UpdateLayoutElements();
+
+            LayoutHelpers.DisableCameraMovement();
         }
 
         private static void SubscribeToLayoutSettingsChanges()
@@ -202,7 +203,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (environmentObjects?.FactoryLayout != null)
                 {
                     ActivateSceneLayoutElements(environmentObjects);
-                    LayoutHelpers.DisableCameraMovement();
                 }
                 else
                 {

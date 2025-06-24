@@ -36,8 +36,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 return;
             }
 
-            GameObject playButton = GameObject.Find("Common UI/Common UI/MenuScreen/PlayButton")?.gameObject;
-
             await AddPlayerModel().ConfigureAwait(false);
             SubscribeToProfileSettingsChanges();
             SubscribeToCharacterLevelUpEvent();

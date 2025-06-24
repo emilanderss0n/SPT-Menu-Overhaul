@@ -238,24 +238,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
 
             decalPlaneTransform.position = new Vector3(Utils.Settings.PositionLogotypeHorizontal.Value, -999.4f, 0f);
-            
-            // Configure materials with emission
-            Renderer decalRenderer = decalPlaneTransform.GetComponent<Renderer>();
-            if (decalRenderer != null)
-            {
-                foreach (Material mat in decalRenderer.materials)
-                {
-                    if (mat != null)
-                    {
-                        mat.EnableKeyword("_EMISSION");
-                        mat.SetColor("_EmissionColor", Color.white);
-                    }
-                }
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("ConfigureDecalPlane - No Renderer component found on decal_plane");
-            }
 
             Transform pveTransform = decalPlaneObject.transform.Find("decal_plane_pve");
             if (pveTransform != null)
