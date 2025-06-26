@@ -70,11 +70,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 {
                     float duration = 0.15f;
                     __instance.Image.color = normalImageColor.SetAlpha(0f);
-                    __instance.ProcessMultipleTweens(new Tween[] { __instance.Image.DOFade(1f, duration) }); 
+                    __instance.ProcessMultipleTweens(new Tween[] { __instance.Image.DOFade(1f, duration) });
 
                     if (__instance.Icon != null)
                     {
-                        __instance.ProcessTween(__instance.Icon.DOFade(1f, duration), Ease.OutQuad); 
+                        __instance.ProcessTween(__instance.Icon.DOFade(1f, duration), Ease.OutQuad);
                     }
                 }
             }

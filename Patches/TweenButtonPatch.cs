@@ -3,7 +3,9 @@ using EFT.UI;
 using SPT.Reflection.Patching;
 using System.Reflection;
 using UnityEngine;
+using TMPro;
 using MoxoPixel.MenuOverhaul.Helpers;
+using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
@@ -42,7 +44,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             Color highlightedIconColor = _highlightedIconColorField != null ? (Color)_highlightedIconColorField.GetValue(__instance) : Color.white;
             Color highlightedImageColor = _highlightedImageColorField != null ? (Color)_highlightedImageColorField.GetValue(__instance) : Color.white;
-            Color highlightedLabelColor = new Color(1f, 0.75f, 0.3f, 1f);
+            // Use the shared accent color from settings
+            Color highlightedLabelColor = Settings.AccentColor.Value;
 
             if (__instance.Icon != null)
             {

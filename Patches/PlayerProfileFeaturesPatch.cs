@@ -45,6 +45,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 UpdatePlayerModelPosition();
                 UpdatePlayerModelRotation();
                 BottomFieldPositionChanged();
+                UpdateTextColors();
             }
         }
 
@@ -56,6 +57,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.PositionBottomFieldHorizontal.SettingChanged += OnBottomFieldPositionChanged;
             Settings.PositionBottomFieldVertical.SettingChanged += OnBottomFieldPositionChanged;
             Settings.RotationPlayerModelHorizontal.SettingChanged += OnPlayerModelRotationChanged;
+            Settings.AccentColor.SettingChanged += OnAccentColorChanged;
 
             _profileSettingsSubscribed = true;
         }
@@ -68,6 +70,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.PositionBottomFieldHorizontal.SettingChanged -= OnBottomFieldPositionChanged;
             Settings.PositionBottomFieldVertical.SettingChanged -= OnBottomFieldPositionChanged;
             Settings.RotationPlayerModelHorizontal.SettingChanged -= OnPlayerModelRotationChanged;
+            Settings.AccentColor.SettingChanged -= OnAccentColorChanged;
 
             _profileSettingsSubscribed = false;
         }
@@ -75,6 +78,35 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static void OnPlayerModelPositionChanged(object sender, EventArgs e) => UpdatePlayerModelPosition();
         private static void OnPlayerModelRotationChanged(object sender, EventArgs e) => UpdatePlayerModelRotation();
         private static void OnBottomFieldPositionChanged(object sender, EventArgs e) => BottomFieldPositionChanged();
+        private static void OnAccentColorChanged(object sender, EventArgs e)
+        {
+            UpdateTextColors();
+            LightHelpers.UpdateAccentLightColor();
+        }
+
+        private static void UpdateTextColors()
+        {
+            Transform bottomFieldTransform = GetBottomFieldTransform();
+            if (bottomFieldTransform == null) return;
+
+            Color accentColor = Settings.AccentColor.Value;
+
+            TextMeshProUGUI nicknameTMP = bottomFieldTransform.Find("NicknameText")?.GetComponent<TextMeshProUGUI>();
+            if (nicknameTMP != null)
+            {
+                nicknameTMP.color = accentColor;
+            }
+
+            Transform experienceRow = bottomFieldTransform.Find("ExperienceRow");
+            if (experienceRow != null)
+            {
+                TextMeshProUGUI expValueTMP = experienceRow.Find("ExpValue")?.GetComponent<TextMeshProUGUI>();
+                if (expValueTMP != null)
+                {
+                    expValueTMP.color = accentColor;
+                }
+            }
+        }
 
         public static void UpdatePlayerModelPosition()
         {
@@ -276,17 +308,16 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 return;
             }
 
-            // Configure BottomField's RectTransform first
             RectTransform bftRect = bottomFieldTransform.GetComponent<RectTransform>();
             if (bftRect == null)
             {
                 Plugin.LogSource.LogError("SetupBottomField - RectTransform not found on BottomField. Cannot configure layout.");
                 return;
             }
-            bftRect.anchorMin = new Vector2(0, 1); // Top
-            bftRect.anchorMax = new Vector2(0, 1); // Top
-            bftRect.pivot = new Vector2(0, 1);     // Top-Left pivot
-            bftRect.sizeDelta = new Vector2(0, 0); // Reset sizeDelta, ContentSizeFitter will control it
+            bftRect.anchorMin = new Vector2(0, 1);
+            bftRect.anchorMax = new Vector2(0, 1);
+            bftRect.pivot = new Vector2(0, 1);
+            bftRect.sizeDelta = new Vector2(0, 0);
 
             // Add ContentSizeFitter to BottomField itself
             ContentSizeFitter bftCSF = bottomFieldTransform.GetComponent<ContentSizeFitter>();
@@ -298,12 +329,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (bftVLG != null)
             {
                 bftVLG.childAlignment = TextAnchor.UpperRight;
-                bftVLG.spacing = 15f; // Increase spacing between rows for better readability
+                bftVLG.spacing = 15f;
                 bftVLG.padding = new RectOffset(0, 0, 0, 0);
                 bftVLG.childForceExpandHeight = false;
-                bftVLG.childControlHeight = true; // Let children control their height
+                bftVLG.childControlHeight = true;
                 bftVLG.childForceExpandWidth = false;
-                bftVLG.childControlWidth = true; // Let children control their width
+                bftVLG.childControlWidth = true;
             }
             else { Plugin.LogSource.LogWarning("SetupBottomField - VerticalLayoutGroup component not found on BottomField. Row layout might be incorrect."); }
 
@@ -332,7 +363,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 GameObject.Destroy(existingExperience.gameObject);
             }
 
-            // ====== ROW 1: Level Icon + Level Text ======
             GameObject levelInfoRow = new GameObject("LevelInfoRow");
             levelInfoRow.transform.SetParent(bottomFieldTransform, false);
             RectTransform levelInfoRect = levelInfoRow.AddComponent<RectTransform>();
@@ -383,7 +413,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     levelTMP.enableWordWrapping = false;
                     levelTMP.margin = Vector4.zero;
                 }
-                
+
                 LayoutElement levelTextLE = clonedLevel.GetComponent<LayoutElement>();
                 if (levelTextLE == null) levelTextLE = clonedLevel.AddComponent<LayoutElement>();
                 levelTextLE.minHeight = 56f;
@@ -404,15 +434,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     iconRect.anchorMin = new Vector2(1, 0.5f);
                     iconRect.anchorMax = new Vector2(1, 0.5f);
                     iconRect.pivot = new Vector2(1, 0.5f);
-                    iconRect.sizeDelta = new Vector2(56f, 56f); // Increased icon size
-                    // Use a negative right margin to move the icon closer to the text
+                    iconRect.sizeDelta = new Vector2(56f, 56f);
                     iconRect.offsetMax = new Vector2(-5f, iconRect.offsetMax.y);
                 }
 
                 LayoutElement iconLE = clonedIcon.GetComponent<LayoutElement>();
                 if (iconLE == null) iconLE = clonedIcon.AddComponent<LayoutElement>();
-                iconLE.minHeight = 56f; // Increased size
-                iconLE.minWidth = 56f; // Increased size
+                iconLE.minHeight = 56f;
+                iconLE.minWidth = 56f;
                 iconLE.preferredHeight = 56f;
                 iconLE.preferredWidth = 56f;
 
@@ -425,22 +454,21 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
             else { Plugin.LogSource.LogWarning("SetupBottomField - playerLevelIconViewPrefab is null. Level Icon will be missing."); }
 
-            // ====== ROW 2: Nickname ======
             GameObject nicknameTextGO = new GameObject("NicknameText");
             nicknameTextGO.transform.SetParent(bottomFieldTransform, false);
             RectTransform nicknameRect = nicknameTextGO.AddComponent<RectTransform>();
             nicknameRect.anchorMin = new Vector2(1, 1);
             nicknameRect.anchorMax = new Vector2(1, 1);
             nicknameRect.pivot = new Vector2(1, 1);
-            
+
             LayoutElement nicknameTextGOLE = nicknameTextGO.AddComponent<LayoutElement>();
-            nicknameTextGOLE.minHeight = 40f; // Slightly taller for better appearance
+            nicknameTextGOLE.minHeight = 40f;
             nicknameTextGOLE.preferredHeight = 40f;
             nicknameTextGOLE.flexibleHeight = 0f;
 
             TextMeshProUGUI nicknameTMP = nicknameTextGO.AddComponent<TextMeshProUGUI>();
             nicknameTMP.fontSize = 36f * 1.6f;
-            nicknameTMP.color = new Color(1f, 0.75f, 0.3f, 1f);
+            nicknameTMP.color = Settings.AccentColor.Value;
             nicknameTMP.margin = Vector4.zero;
             nicknameTMP.lineSpacing = 0;
             nicknameTMP.alignment = TextAlignmentOptions.Right;
@@ -457,7 +485,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         nicknameTMP.font = originalNicknameTMP.font;
                     }
                     nicknameTMP.fontSize = originalNicknameTMP.fontSize * 1.6f;
-                    nicknameTMP.color = originalNicknameTMP.color;
                 }
             }
 
@@ -465,19 +492,18 @@ namespace MoxoPixel.MenuOverhaul.Patches
             nicknameCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             nicknameCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            // ====== ROW 3: Experience ======
             GameObject experienceRow = new GameObject("ExperienceRow");
             experienceRow.transform.SetParent(bottomFieldTransform, false);
             RectTransform expRect = experienceRow.AddComponent<RectTransform>();
             expRect.anchorMin = new Vector2(1, 1);
             expRect.anchorMax = new Vector2(1, 1);
             expRect.pivot = new Vector2(1, 1);
-            
+
             LayoutElement expRowLE = experienceRow.AddComponent<LayoutElement>();
-            expRowLE.minHeight = 35f; // Slightly taller
+            expRowLE.minHeight = 35f;
             expRowLE.preferredHeight = 35f;
             expRowLE.flexibleHeight = 0f;
-            
+
             HorizontalLayoutGroup expHLG = experienceRow.AddComponent<HorizontalLayoutGroup>();
             expHLG.padding = new RectOffset(0, 0, 0, 0);
             expHLG.childAlignment = TextAnchor.MiddleRight;
@@ -486,15 +512,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
             expHLG.childForceExpandHeight = false;
             expHLG.childControlWidth = true;
             expHLG.childControlHeight = true;
-            
+
             ContentSizeFitter expCSF = experienceRow.AddComponent<ContentSizeFitter>();
             expCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             expCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            
-            // Add "EXP:" label
+
             GameObject expLabelGO = new GameObject("ExpLabel");
             expLabelGO.transform.SetParent(experienceRow.transform, false);
-            
+
             TextMeshProUGUI expLabelTMP = expLabelGO.AddComponent<TextMeshProUGUI>();
             expLabelTMP.text = "EXP:";
             expLabelTMP.fontSize = 24f;
@@ -502,19 +527,17 @@ namespace MoxoPixel.MenuOverhaul.Patches
             expLabelTMP.alignment = TextAlignmentOptions.Right;
             expLabelTMP.margin = Vector4.zero;
             expLabelTMP.enableWordWrapping = false;
-            
-            // Add experience value
+
             GameObject expValueGO = new GameObject("ExpValue");
             expValueGO.transform.SetParent(experienceRow.transform, false);
-            
+
             TextMeshProUGUI expValueTMP = expValueGO.AddComponent<TextMeshProUGUI>();
             expValueTMP.fontSize = 24f;
-            expValueTMP.color = new Color(1f, 0.75f, 0.3f, 1f);
+            expValueTMP.color = Settings.AccentColor.Value;
             expValueTMP.alignment = TextAlignmentOptions.Right;
             expValueTMP.margin = Vector4.zero;
             expValueTMP.enableWordWrapping = false;
-            
-            // Look for existing font references to keep consistent styling
+
             Transform experienceOriginal = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView/BottomField/Experience")?.transform;
             if (experienceOriginal != null)
             {
@@ -525,20 +548,17 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     expValueTMP.font = originalExpTMP.font;
                 }
             }
-            
-            // Hide original experience and nickname panels if they exist
+
             Transform originalNicknameAndKarma = bottomFieldTransform.Find("NicknameAndKarma");
             if (originalNicknameAndKarma != null)
             {
                 originalNicknameAndKarma.gameObject.SetActive(false);
             }
-            
-            // Set sibling order (top to bottom)
+
             levelInfoRow.transform.SetAsFirstSibling();
             nicknameTextGO.transform.SetSiblingIndex(1);
             experienceRow.transform.SetSiblingIndex(2);
-            
-            // Update the stats immediately
+
             UpdatePlayerStats(bottomFieldTransform);
         }
 
@@ -600,6 +620,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             UpdateNicknameDisplay(bottomFieldTransform, profile);
             UpdateExperienceDisplay(bottomFieldTransform, profile);
             UpdateLevelDisplay(bottomFieldTransform, profile);
+            UpdateTextColors();
         }
 
         private static void UpdateNicknameDisplay(Transform bottomField, Profile profile)
@@ -631,7 +652,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 }
                 else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExpValue TMP component not found in ExperienceRow."); }
             }
-            else 
+            else
             {
                 // Check for original Experience panel for backward compatibility
                 Transform experienceTransform = bottomField.Find("Experience");
@@ -666,10 +687,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 TextMeshProUGUI levelTMP = levelInfoRow.Find("Level")?.GetComponent<TextMeshProUGUI>();
                 if (levelTMP != null)
                 {
-                    levelTMP.alignment = TextAlignmentOptions.Right; // Right alignment with reverseArrangement
-                    levelTMP.margin = Vector4.zero; // Ensure no internal margins
-                    levelTMP.lineSpacing = 0; // Ensure minimal line spacing
-                    levelTMP.fontSize = 54f; // Maintain the larger font size during updates
+                    levelTMP.alignment = TextAlignmentOptions.Right;
+                    levelTMP.margin = Vector4.zero;
+                    levelTMP.lineSpacing = 0;
+                    levelTMP.fontSize = 54f;
                     levelTMP.enableWordWrapping = false;
                     levelTMP.text = profile.Info.Level.ToString();
                 }
@@ -681,18 +702,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     Image iconImage = iconTransform.GetComponent<Image>();
                     if (iconImage != null)
                     {
-                        // Apply appropriate level icon
                         PlayerLevelPanel.SetLevelIcon(iconImage, profile.Info.Level);
-                        // Make sure image fills its container while preserving aspect ratio
                         iconImage.preserveAspect = true;
                     }
-                    
-                    // Ensure icon stays at the proper size and position
+
                     RectTransform iconRect = iconTransform.GetComponent<RectTransform>();
                     if (iconRect != null)
                     {
-                        iconRect.sizeDelta = new Vector2(56f, 56f); // Keep larger icon size
-                        // Maintain the negative right margin to keep icon close to text
+                        iconRect.sizeDelta = new Vector2(56f, 56f);
                         iconRect.offsetMax = new Vector2(-5f, iconRect.offsetMax.y);
                     }
 

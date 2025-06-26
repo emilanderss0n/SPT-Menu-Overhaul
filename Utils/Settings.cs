@@ -1,5 +1,6 @@
 ﻿using BepInEx.Configuration;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace MoxoPixel.MenuOverhaul.Utils
 {
@@ -7,6 +8,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
     {
         private const string GeneralSectionTitle = "1. General";
         private const string AdjustmentsSectionTitle = "2. Adjustments";
+        private const string ColorsSectionTitle = "3. Colors";
 
         public static ConfigFile Config;
 
@@ -20,7 +22,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<float> scaleBackgroundX;
         public static ConfigEntry<float> scaleBackgroundY;
         public static ConfigEntry<float> RotationPlayerModelHorizontal;
-
+        public static ConfigEntry<Color> AccentColor;
 
         public static List<ConfigEntryBase> ConfigEntries = new List<ConfigEntryBase>();
 
@@ -114,6 +116,15 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 new ConfigDescription(
                     "Adjust the horizontal rotation of the player model in the main menu",
                     new AcceptableValueRange<float>(0f, 360f),
+                    new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(AccentColor = Config.Bind(
+                ColorsSectionTitle,
+                "Accent Color",
+                new Color(1f, 0.75f, 0.3f, 1f), // Default gold/orange color
+                new ConfigDescription(
+                    "The accent color used for nickname, experience text, and highlighted buttons in the menu",
+                    null,
                     new ConfigurationManagerAttributes { })));
 
             RecalcOrder();

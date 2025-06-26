@@ -8,6 +8,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
     {
         private static Light mainLightComponent;
         private static Light hairLightComponent;
+        private static Light mainLightAccentComponent;
 
         public static void SetupLights(GameObject clonedPlayerModelView)
         {
@@ -17,6 +18,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
             mainLightComponent = FindAndSetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Main Light", ConfigureMainLight);
+            mainLightAccentComponent = FindAndSetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Main Light (2)", ConfigureMainLightAccent);
             hairLightComponent = FindAndSetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Hair Light", ConfigureHairLight);
         }
 
@@ -58,14 +60,29 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             light.shadows = Settings.EnableExtraShadows.Value ? LightShadows.Soft : LightShadows.None;
         }
 
+        private static void ConfigureMainLightAccent(Light light)
+        {
+            if (light == null) return;
+            light.color = Settings.AccentColor.Value;
+        }
+
         public static void UpdateLights()
         {
             UpdateSingleLightShadows(mainLightComponent);
             UpdateSingleLightShadows(hairLightComponent);
+            UpdateAccentLightColor();
             
             if (Utility.IsInGame())
             {
                 Utility.DisableDecalPlaneIfInGame();
+            }
+        }
+
+        public static void UpdateAccentLightColor()
+        {
+            if (mainLightAccentComponent != null)
+            {
+                mainLightAccentComponent.color = Settings.AccentColor.Value;
             }
         }
 
@@ -81,6 +98,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             mainLightComponent = null;
             hairLightComponent = null;
+            mainLightAccentComponent = null;
             
             Plugin.LogSource.LogDebug("Light helper references cleared during cleanup");
         }

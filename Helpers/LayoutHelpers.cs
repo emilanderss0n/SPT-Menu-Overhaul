@@ -344,9 +344,13 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 UnityEngine.Object.Destroy(existingCustomPlane);
             }
 
-            if (appliedMaterials.Any())
+            if (Settings.EnableBackground.Value && appliedMaterials.Any())
             {
                 CreateCustomPlaneForPanorama(factoryLayout, panorama, appliedMaterials);
+            }
+            else if (!Settings.EnableBackground.Value)
+            {
+                Plugin.LogSource.LogDebug("SetPanoramaEmissionMap - CustomPlane creation skipped because EnableBackground is disabled.");
             }
             else
             {
