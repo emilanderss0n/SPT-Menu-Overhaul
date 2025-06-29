@@ -29,6 +29,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (PlayerProfileFeaturesPatch.clonedPlayerModelView != null)
             {
                 PlayerProfileFeaturesPatch.clonedPlayerModelView.SetActive(true);
+                LightHelpers.SetupLights(PlayerProfileFeaturesPatch.clonedPlayerModelView);
             }
             
             var currentScene = SceneManager.GetActiveScene();
