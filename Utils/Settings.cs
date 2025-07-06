@@ -15,6 +15,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<bool> EnableBackground;
         public static ConfigEntry<bool> EnableTopGlow;
         public static ConfigEntry<bool> EnableExtraShadows;
+        public static ConfigEntry<bool> EnableLargerPlayerModel;
         public static ConfigEntry<float> PositionLogotypeHorizontal;
         public static ConfigEntry<float> PositionPlayerModelHorizontal;
         public static ConfigEntry<float> PositionBottomFieldHorizontal;
@@ -52,6 +53,15 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 false,
                 new ConfigDescription(
                     "Enable or disable more shadows to make the player in menu more detailed",
+                    null,
+                    new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(EnableLargerPlayerModel = Config.Bind(
+                GeneralSectionTitle,
+                "Enable Larger Player Model",
+                false,
+                new ConfigDescription(
+                    "Enable to make the player model larger and closer in the main menu",
                     null,
                     new ConfigurationManagerAttributes { })));
 

@@ -44,6 +44,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 UpdatePlayerModelPosition();
                 UpdatePlayerModelRotation();
+                UpdateCameraPosition();
                 BottomFieldPositionChanged();
                 UpdateTextColors();
             }
@@ -58,6 +59,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.PositionBottomFieldVertical.SettingChanged += OnBottomFieldPositionChanged;
             Settings.RotationPlayerModelHorizontal.SettingChanged += OnPlayerModelRotationChanged;
             Settings.AccentColor.SettingChanged += OnAccentColorChanged;
+            Settings.EnableLargerPlayerModel.SettingChanged += OnLargerPlayerModelChanged;
 
             _profileSettingsSubscribed = true;
         }
@@ -71,6 +73,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.PositionBottomFieldVertical.SettingChanged -= OnBottomFieldPositionChanged;
             Settings.RotationPlayerModelHorizontal.SettingChanged -= OnPlayerModelRotationChanged;
             Settings.AccentColor.SettingChanged -= OnAccentColorChanged;
+            Settings.EnableLargerPlayerModel.SettingChanged -= OnLargerPlayerModelChanged;
 
             _profileSettingsSubscribed = false;
         }
@@ -82,6 +85,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             UpdateTextColors();
             LightHelpers.UpdateAccentLightColor();
+        }
+        private static void OnLargerPlayerModelChanged(object sender, EventArgs e)
+        {
+            UpdatePlayerModelPosition();
+            UpdateCameraPosition();
         }
 
         private static void UpdateTextColors()
@@ -112,7 +120,20 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (clonedPlayerModelView != null)
             {
-                clonedPlayerModelView.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -250f, 0f);
+                clonedPlayerModelView.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -150f, 0f);
+                
+                if (Settings.EnableLargerPlayerModel.Value)
+                {
+                    RectTransform rectTransform = clonedPlayerModelView.GetComponent<RectTransform>();
+                    if (rectTransform != null)
+                    {
+                        float horizontalPos = Settings.PositionPlayerModelHorizontal.Value;
+                        rectTransform.anchoredPosition = new Vector2(horizontalPos, 0f);
+                        rectTransform.offsetMax = new Vector2(horizontalPos, 0f);
+                        rectTransform.offsetMin = new Vector2(horizontalPos, 0f);
+                        rectTransform.localPosition = new Vector3(horizontalPos, 0f, 0f);
+                    }
+                }
             }
             else
             {
@@ -133,6 +154,34 @@ namespace MoxoPixel.MenuOverhaul.Patches
             else
             {
                 Plugin.LogSource.LogWarning("UpdatePlayerModelRotation - clonedPlayerModelView is null.");
+            }
+        }
+
+        public static void UpdateCameraPosition()
+        {
+            if (clonedPlayerModelView != null)
+            {
+                Transform cameraTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
+                if (cameraTransform != null)
+                {
+                    if (Settings.EnableLargerPlayerModel.Value)
+                    {
+                        cameraTransform.localPosition = new Vector3(0f, 0.2f, 1.5f);
+                    }
+                    else
+                    {
+                        // Reset to default position when disabled
+                        cameraTransform.localPosition = new Vector3(0f, 0f, 1f);
+                    }
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning("UpdateCameraPosition - Camera_inventory not found.");
+                }
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("UpdateCameraPosition - clonedPlayerModelView is null.");
             }
         }
 
@@ -276,12 +325,23 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (modelInstance == null) { Plugin.LogSource.LogWarning("ConfigurePlayerModelVisuals - modelInstance is null."); return; }
 
-            modelInstance.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -250f, 0f);
+            modelInstance.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -150f, 0f);
             modelInstance.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
 
             Transform cameraTransform = modelInstance.transform.Find("PlayerMVObject/Camera_inventory");
             if (cameraTransform != null)
             {
+                // Set camera position based on larger model setting
+                if (Settings.EnableLargerPlayerModel.Value)
+                {
+                    cameraTransform.localPosition = new Vector3(0f, 0.2f, 1.5f);
+                }
+                else
+                {
+                    // Set default position when disabled
+                    cameraTransform.localPosition = new Vector3(0f, 0f, 1f);
+                }
+
                 PrismEffects prismEffects = cameraTransform.GetComponent<PrismEffects>();
                 if (prismEffects != null)
                 {
@@ -601,6 +661,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 {
                     await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false).ConfigureAwait(false);
                     AdjustInnerPlayerModelPosition(clonedPlayerModelView);
+                    UpdateCameraPosition();
                 }
                 else { Plugin.LogSource.LogWarning("RefreshPlayerModel - BackEndSession.Profile is null. Cannot show player model."); }
             }
