@@ -34,7 +34,7 @@ Install the mod by dragging the first folder in the zip into your SPT install di
 
 ---
 
-![image](https://i.imgur.com/YMAtT5k.png)
+![image](https://i.imgur.com/xqYOGB5.jpeg)
 
 ## Prerequisites
 
