@@ -12,7 +12,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         private const float ButtonIconScale = 0.8f;
         private const float ButtonYOffset = 60f;
         private const float ButtonXOffset = 250f;
-        private static readonly string[] ButtonNames = { "PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup" };
+        private static readonly string[] ButtonNames = ["PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup"
+        ];
 
         public static void SetupButtonIcons(MenuScreen menuScreenInstance)
         {
@@ -74,17 +75,24 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         private static async void HandleSpecificButtonLogic(MenuScreen menuScreenInstance, GameObject buttonObject, string buttonName)
         {
-            switch (buttonName)
+            try
             {
-                case "PlayButton":
-                    await HandlePlayButtonLogic(menuScreenInstance, buttonObject);
-                    break;
-                case "ExitButtonGroup":
-                    HandleExitButtonGroupLogic(buttonObject);
-                    break;
-                default:
-                    HideButtonBackgroundAndActivateIcon(buttonObject, buttonName);
-                    break;
+                switch (buttonName)
+                {
+                    case "PlayButton":
+                        await HandlePlayButtonLogic(menuScreenInstance, buttonObject);
+                        break;
+                    case "ExitButtonGroup":
+                        HandleExitButtonGroupLogic(buttonObject);
+                        break;
+                    default:
+                        HideButtonBackgroundAndActivateIcon(buttonObject, buttonName);
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.LogSource.LogError(e.ToString());
             }
         }
 
@@ -167,7 +175,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
         }
 
-        public static void SetButtonIconTransform(MenuScreen menuScreenInstance, string buttonName, Vector3? localScale = null, Vector3? anchoredPosition = null)
+        private static void SetButtonIconTransform(MenuScreen menuScreenInstance, string buttonName, Vector3? localScale = null, Vector3? anchoredPosition = null)
         {
             if (menuScreenInstance == null)
             {
@@ -219,7 +227,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
         }
 
-        public static void ModifyButtonTextComponent(FieldInfo buttonFieldInfo, MenuScreen screenInstance, string newText = null, int fontSize = 0)
+        private static void ModifyButtonTextComponent(FieldInfo buttonFieldInfo, MenuScreen screenInstance, string newText = null, int fontSize = 0)
         {
             if (buttonFieldInfo == null || screenInstance == null)
             {

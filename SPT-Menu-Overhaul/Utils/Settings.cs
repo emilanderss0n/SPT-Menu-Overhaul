@@ -20,16 +20,16 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<float> PositionPlayerModelHorizontal;
         public static ConfigEntry<float> PositionBottomFieldHorizontal;
         public static ConfigEntry<float> PositionBottomFieldVertical;
-        public static ConfigEntry<float> scaleBackgroundX;
-        public static ConfigEntry<float> scaleBackgroundY;
+        public static ConfigEntry<float> ScaleBackgroundX;
+        public static ConfigEntry<float> ScaleBackgroundY;
         public static ConfigEntry<float> RotationPlayerModelHorizontal;
         public static ConfigEntry<Color> AccentColor;
 
         public static List<ConfigEntryBase> ConfigEntries = new List<ConfigEntryBase>();
 
-        public static void Init(ConfigFile Config)
+        public static void Init(ConfigFile config)
         {
-            ConfigEntries.Add(EnableBackground = Config.Bind(
+            ConfigEntries.Add(EnableBackground = config.Bind(
                 GeneralSectionTitle,
                 "Enable Background",
                 true,
@@ -38,7 +38,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     null,
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(EnableTopGlow = Config.Bind(
+            ConfigEntries.Add(EnableTopGlow = config.Bind(
                 GeneralSectionTitle,
                 "Enable Top Glow",
                 true,
@@ -47,7 +47,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     null,
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(EnableExtraShadows = Config.Bind(
+            ConfigEntries.Add(EnableExtraShadows = config.Bind(
                 GeneralSectionTitle,
                 "Enable Extra Shadows",
                 false,
@@ -56,7 +56,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     null,
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(EnableLargerPlayerModel = Config.Bind(
+            ConfigEntries.Add(EnableLargerPlayerModel = config.Bind(
                 GeneralSectionTitle,
                 "Enable Larger Player Model",
                 false,
@@ -65,7 +65,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     null,
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(PositionLogotypeHorizontal = Config.Bind(
+            ConfigEntries.Add(PositionLogotypeHorizontal = config.Bind(
                 AdjustmentsSectionTitle,
                 "Position Logotype Horizontal",
                 -1.9f,
@@ -74,7 +74,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     new AcceptableValueRange<float>(-10f, 2f),
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(PositionPlayerModelHorizontal = Config.Bind(
+            ConfigEntries.Add(PositionPlayerModelHorizontal = config.Bind(
                 AdjustmentsSectionTitle,
                 "Position Player Model Horizontal",
                 400f,
@@ -83,7 +83,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     new AcceptableValueRange<float>(-600f, 1800f),
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(PositionBottomFieldHorizontal = Config.Bind(
+            ConfigEntries.Add(PositionBottomFieldHorizontal = config.Bind(
                 AdjustmentsSectionTitle,
                 "Position Player Info Horizontal",
                 250f,
@@ -92,7 +92,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     new AcceptableValueRange<float>(-800f, 1200f),
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(PositionBottomFieldVertical = Config.Bind(
+            ConfigEntries.Add(PositionBottomFieldVertical = config.Bind(
                 AdjustmentsSectionTitle,
                 "Position Player Info Vertical",
                 0f,
@@ -101,7 +101,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     new AcceptableValueRange<float>(-300f, 300f),
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(scaleBackgroundX = Config.Bind(
+            ConfigEntries.Add(ScaleBackgroundX = config.Bind(
                 AdjustmentsSectionTitle,
                 "Scale Background Horizontally",
                 1.9f,
@@ -110,7 +110,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     new AcceptableValueRange<float>(0f, 4f),
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(scaleBackgroundY = Config.Bind(
+            ConfigEntries.Add(ScaleBackgroundY = config.Bind(
                 AdjustmentsSectionTitle,
                 "Scale Background Vertically",
                 0.92f,
@@ -119,7 +119,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     new AcceptableValueRange<float>(-1f, 3f),
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(RotationPlayerModelHorizontal = Config.Bind(
+            ConfigEntries.Add(RotationPlayerModelHorizontal = config.Bind(
                 AdjustmentsSectionTitle,
                 "Rotate Player Model",
                 180f,
@@ -128,7 +128,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     new AcceptableValueRange<float>(0f, 360f),
                     new ConfigurationManagerAttributes { })));
 
-            ConfigEntries.Add(AccentColor = Config.Bind(
+            ConfigEntries.Add(AccentColor = config.Bind(
                 ColorsSectionTitle,
                 "Accent Color",
                 new Color(1f, 0.75f, 0.3f, 1f), // Default gold/orange color

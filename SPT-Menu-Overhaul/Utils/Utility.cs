@@ -5,10 +5,10 @@ namespace MoxoPixel.MenuOverhaul.Utils
 {
     public static class Utility
     {
-        private static bool isInGame = false;
+        private static bool isInGame;
         
-        private static LayoutHelpers.EnvironmentObjects cachedEnvironmentObjects = null;
-        private static GameObject cachedDecalPlane = null;
+        private static LayoutHelpers.EnvironmentObjects cachedEnvironmentObjects;
+        private static GameObject cachedDecalPlane;
 
         /// <summary>
         /// Method to track when the game starts or ends
@@ -42,10 +42,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 return cachedDecalPlane;
             }
             
-            if (cachedEnvironmentObjects == null)
-            {
-                cachedEnvironmentObjects = LayoutHelpers.FindEnvironmentObjects();
-            }
+            cachedEnvironmentObjects ??= LayoutHelpers.FindEnvironmentObjects();
             
             if (cachedEnvironmentObjects?.FactoryLayout == null)
             {

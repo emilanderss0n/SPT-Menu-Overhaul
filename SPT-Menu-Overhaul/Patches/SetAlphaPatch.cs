@@ -74,7 +74,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
                     if (__instance.Icon != null)
                     {
-                        __instance.ProcessTween(__instance.Icon.DOFade(1f, duration), Ease.OutQuad);
+                        __instance.ProcessTween(__instance.Icon.DOFade(1f, duration));
                     }
                 }
             }

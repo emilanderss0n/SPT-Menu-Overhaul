@@ -26,10 +26,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
             new TweenButtonPatch().Enable();
             new PlayerProfileFeaturesPatch().Enable();
 
-            if (PlayerProfileFeaturesPatch.clonedPlayerModelView != null)
+            if (PlayerProfileFeaturesPatch.ClonedPlayerModelView != null)
             {
-                PlayerProfileFeaturesPatch.clonedPlayerModelView.SetActive(true);
-                LightHelpers.SetupLights(PlayerProfileFeaturesPatch.clonedPlayerModelView);
+                PlayerProfileFeaturesPatch.ClonedPlayerModelView.SetActive(true);
+                LightHelpers.SetupLights(PlayerProfileFeaturesPatch.ClonedPlayerModelView);
             }
             
             var currentScene = SceneManager.GetActiveScene();
@@ -84,7 +84,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 GameObject existingCustomPlane = environmentObjects.FactoryLayout.transform.Find("CustomPlane")?.gameObject;
                 if (existingCustomPlane != null)
                 {
-                    UnityEngine.Object.Destroy(existingCustomPlane);
+                    Object.Destroy(existingCustomPlane);
                 }
             }
 
@@ -128,7 +128,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (customPlane != null)
             {
                 customPlane.SetActive(Settings.EnableBackground.Value);
-                customPlane.transform.localScale = new Vector3(Settings.scaleBackgroundX.Value, 1f, Settings.scaleBackgroundY.Value);
+                customPlane.transform.localScale = new Vector3(Settings.ScaleBackgroundX.Value, 1f, Settings.ScaleBackgroundY.Value);
             }
             else
             {

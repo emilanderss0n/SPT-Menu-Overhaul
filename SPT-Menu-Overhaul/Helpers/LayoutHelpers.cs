@@ -13,7 +13,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
     public static class LayoutHelpers
     {
         private static AssetBundle iconAssetBundle;
-        private static bool isAlignmentCameraMoved = false;
+        private static bool isAlignmentCameraMoved;
         private static readonly Dictionary<string, string> ButtonNameToFileNameMap = new Dictionary<string, string>
         {
             { "PlayButton", "icon_play" },
@@ -23,7 +23,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             { "ExitButton", "exit_status_runner" },
             { "ExitButtonGroup", "exit_status_runner" }
         };
-        private static readonly Dictionary<string, Texture2D> textureCache = new Dictionary<string, Texture2D>();
+        private static readonly Dictionary<string, Texture2D> TextureCache = new Dictionary<string, Texture2D>();
+        private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
+        private static readonly int MainTex = Shader.PropertyToID("_MainTex");
+        private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
         public class EnvironmentObjects
         {
@@ -211,7 +214,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             float aspectRatio = (float)Screen.width / Screen.height;
             string textureName = aspectRatio > 2.33f ? "background_ultrawide" : "background";
 
-            if (textureCache.TryGetValue(textureName, out Texture2D cachedTexture))
+            if (TextureCache.TryGetValue(textureName, out Texture2D cachedTexture))
             {
                 return cachedTexture;
             }
@@ -225,7 +228,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
             texture = FlipTextureVertically(texture);
             texture = FlipTextureHorizontally(texture);
-            textureCache[textureName] = texture;
+            TextureCache[textureName] = texture;
             return texture;
         }
 
@@ -233,7 +236,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (panoramaRenderer == null || emissionTexture == null) return new List<Material>();
 
-            string[] materialNames = { "part1", "part2", "part3", "part4" };
+            string[] materialNames = ["part1", "part2", "part3", "part4"];
             List<Material> appliedMaterials = new List<Material>();
 
             foreach (string materialName in materialNames)
@@ -241,7 +244,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 Material material = panoramaRenderer.materials.FirstOrDefault(mat => mat.name.Contains(materialName));
                 if (material != null)
                 {
-                    material.SetTexture("_EmissionMap", emissionTexture);
+                    material.SetTexture(EmissionMap, emissionTexture);
                     material.EnableKeyword("_EMISSION");
                     appliedMaterials.Add(material);
                 }
@@ -266,7 +269,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             newPlane.transform.SetParent(factoryLayout.transform);
             newPlane.transform.localPosition = new Vector3(0f, 0f, 5.399f);
             newPlane.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
-            newPlane.transform.localScale = new Vector3(Settings.scaleBackgroundX.Value, 1f, Settings.scaleBackgroundY.Value);
+            newPlane.transform.localScale = new Vector3(Settings.ScaleBackgroundX.Value, 1f, Settings.ScaleBackgroundY.Value);
 
             newPlane.layer = panoramaSource.layer;
             newPlane.tag = panoramaSource.tag;
@@ -369,10 +372,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             
             if (defaultMaterial != null)
             {
-                defaultMaterial.SetTexture("_EmissionMap", emissionTexture);
-                defaultMaterial.SetTexture("_MainTex", emissionTexture); 
+                defaultMaterial.SetTexture(EmissionMap, emissionTexture);
+                defaultMaterial.SetTexture(MainTex, emissionTexture); 
                 defaultMaterial.EnableKeyword("_EMISSION");
-                defaultMaterial.SetColor("_EmissionColor", Color.white);
+                defaultMaterial.SetColor(EmissionColor, Color.white);
                 materials.Add(defaultMaterial);
             }
             else
@@ -521,14 +524,14 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         /// </summary>
         public static void ClearTextureCache()
         {
-            foreach (var texture in textureCache.Values)
+            foreach (var texture in TextureCache.Values)
             {
                 if (texture != null)
                 {
                     UnityEngine.Object.Destroy(texture);
                 }
             }
-            textureCache.Clear();
+            TextureCache.Clear();
             
             if (iconAssetBundle != null)
             {

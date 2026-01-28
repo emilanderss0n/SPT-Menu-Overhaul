@@ -3,7 +3,6 @@ using MoxoPixel.MenuOverhaul.Helpers;
 using MoxoPixel.MenuOverhaul.Utils;
 using SPT.Reflection.Patching;
 using System.Reflection;
-using UnityEngine;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
@@ -15,13 +14,13 @@ namespace MoxoPixel.MenuOverhaul.Patches
         }
 
         [PatchPostfix]
-        private static void PatchPostfix(GameWorld __instance)
+        private static void PatchPostfix()
         {           
             Utility.SetGameStarted(true);
             
-            if (PlayerProfileFeaturesPatch.clonedPlayerModelView != null)
+            if (PlayerProfileFeaturesPatch.ClonedPlayerModelView != null)
             {
-                PlayerProfileFeaturesPatch.clonedPlayerModelView.SetActive(false);
+                PlayerProfileFeaturesPatch.ClonedPlayerModelView.SetActive(false);
             }
 
             MenuOverhaulPatch menuPatch = new MenuOverhaulPatch();

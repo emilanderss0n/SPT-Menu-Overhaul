@@ -3,7 +3,6 @@ using EFT.UI;
 using SPT.Reflection.Patching;
 using System.Reflection;
 using UnityEngine;
-using TMPro;
 using MoxoPixel.MenuOverhaul.Helpers;
 using MoxoPixel.MenuOverhaul.Utils;
 
@@ -80,7 +79,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
                     if (__instance.Icon != null)
                     {
-                        __instance.ProcessTween(__instance.Icon.DOFade(1f, iconFadeDuration), Ease.OutQuad);
+                        __instance.ProcessTween(__instance.Icon.DOFade(1f, iconFadeDuration));
                     }
                 }
             }

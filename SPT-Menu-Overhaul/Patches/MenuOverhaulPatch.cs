@@ -13,33 +13,41 @@ namespace MoxoPixel.MenuOverhaul.Patches
 {
     internal class MenuOverhaulPatch : ModulePatch
     {
-        private static bool _layoutSettingsSubscribed = false;
-        private static bool _sceneEventsInitialized = false;
+        private static bool _layoutSettingsSubscribed;
+        private static bool _sceneEventsInitialized;
 
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(MenuScreen).GetMethod("Show", new[] { typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode) });
+            return typeof(MenuScreen).GetMethod("Show", [typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode)
+            ]);
         }
 
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
-            if (__instance == null)
+            try
             {
-                Plugin.LogSource.LogWarning("MenuScreen instance is null.");
-                return;
+                if (__instance == null)
+                {
+                    Plugin.LogSource.LogWarning("MenuScreen instance is null.");
+                    return;
+                }
+
+                ButtonHelpers.SetupButtonIcons(__instance);
+                await LoadPatchContent(__instance).ConfigureAwait(false);
+
+                InitializeSceneEvents();
+                HandleScene(SceneManager.GetActiveScene());
+
+                ButtonHelpers.ProcessButtons(__instance);
+                SubscribeToLayoutSettingsChanges();
+                UpdateLayoutElements();
+                LayoutHelpers.DisableCameraMovement();
             }
-
-            ButtonHelpers.SetupButtonIcons(__instance);
-            await LoadPatchContent(__instance).ConfigureAwait(false);
-
-            InitializeSceneEvents();
-            HandleScene(SceneManager.GetActiveScene());
-
-            ButtonHelpers.ProcessButtons(__instance);
-            SubscribeToLayoutSettingsChanges();
-            UpdateLayoutElements();
-            LayoutHelpers.DisableCameraMovement();
+            catch (Exception e)
+            {
+                Plugin.LogSource.LogError(e.ToString());
+            }
         }
 
         private static void SubscribeToLayoutSettingsChanges()
@@ -49,30 +57,30 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.EnableTopGlow.SettingChanged += OnLayoutSettingsChanged;
             Settings.EnableBackground.SettingChanged += OnLayoutSettingsChanged;
             Settings.PositionLogotypeHorizontal.SettingChanged += OnLayoutSettingsChanged;
-            Settings.scaleBackgroundX.SettingChanged += OnScaleBackgroundChanged;
-            Settings.scaleBackgroundY.SettingChanged += OnScaleBackgroundChanged;
+            Settings.ScaleBackgroundX.SettingChanged += OnScaleBackgroundChanged;
+            Settings.ScaleBackgroundY.SettingChanged += OnScaleBackgroundChanged;
             Settings.EnableExtraShadows.SettingChanged += OnLayoutSettingsChanged;
 
             _layoutSettingsSubscribed = true;
             Plugin.LogSource.LogDebug("Layout-specific settings changes subscribed.");
         }
 
-        public static void UnsubscribeFromLayoutSettingsChanges()
+        private static void UnsubscribeFromLayoutSettingsChanges()
         {
             if (!_layoutSettingsSubscribed) return;
 
             Settings.EnableTopGlow.SettingChanged -= OnLayoutSettingsChanged;
             Settings.EnableBackground.SettingChanged -= OnLayoutSettingsChanged;
             Settings.PositionLogotypeHorizontal.SettingChanged -= OnLayoutSettingsChanged;
-            Settings.scaleBackgroundX.SettingChanged -= OnScaleBackgroundChanged;
-            Settings.scaleBackgroundY.SettingChanged -= OnScaleBackgroundChanged;
+            Settings.ScaleBackgroundX.SettingChanged -= OnScaleBackgroundChanged;
+            Settings.ScaleBackgroundY.SettingChanged -= OnScaleBackgroundChanged;
             Settings.EnableExtraShadows.SettingChanged -= OnLayoutSettingsChanged;
 
             _layoutSettingsSubscribed = false;
             Plugin.LogSource.LogDebug("Layout-specific settings changes unsubscribed.");
         }
 
-        public static void CleanupSceneEvents()
+        private static void CleanupSceneEvents()
         {
             if (!_sceneEventsInitialized) return;
 
@@ -134,12 +142,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
             LightHelpers.UpdateLights();
         }
 
-        public static void UpdateCustomPlaneScale()
+        private static void UpdateCustomPlaneScale()
         {
             GameObject customPlane = LayoutHelpers.GetBackgroundPlane();
             if (customPlane != null)
             {
-                customPlane.transform.localScale = new Vector3(Settings.scaleBackgroundX.Value, 1f, Settings.scaleBackgroundY.Value);
+                customPlane.transform.localScale = new Vector3(Settings.ScaleBackgroundX.Value, 1f, Settings.ScaleBackgroundY.Value);
             }
             else
             {

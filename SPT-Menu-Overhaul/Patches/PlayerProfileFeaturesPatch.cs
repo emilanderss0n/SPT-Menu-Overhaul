@@ -11,42 +11,51 @@ using MoxoPixel.MenuOverhaul.Helpers;
 using MoxoPixel.MenuOverhaul.Utils;
 using EFT;
 using SPT.Reflection.Utils;
+using Object = UnityEngine.Object;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
     internal class PlayerProfileFeaturesPatch : ModulePatch
     {
-        public static bool MenuPlayerCreated = false;
-        public static GameObject clonedPlayerModelView;
+        private static bool menuPlayerCreated;
+        public static GameObject ClonedPlayerModelView;
 
-        private static bool _profileSettingsSubscribed = false;
-        private static bool _experienceEventsSubscribed = false;
+        private static bool _profileSettingsSubscribed;
+        private static bool _experienceEventsSubscribed;
 
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(MenuScreen).GetMethod("Show", new[] { typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode) });
+            return typeof(MenuScreen).GetMethod("Show", [typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode)
+            ]);
         }
 
         [PatchPostfix]
         private static async void Postfix(MenuScreen __instance)
         {
-            if (__instance == null)
+            try
             {
-                Plugin.LogSource.LogWarning("MenuScreen instance is null.");
-                return;
+                if (__instance == null)
+                {
+                    Plugin.LogSource.LogWarning("MenuScreen instance is null.");
+                    return;
+                }
+
+                await AddPlayerModel().ConfigureAwait(false);
+                SubscribeToProfileSettingsChanges();
+                SubscribeToCharacterLevelUpEvent();
+
+                if (ClonedPlayerModelView != null)
+                {
+                    UpdatePlayerModelPosition();
+                    UpdatePlayerModelRotation();
+                    UpdateCameraPosition();
+                    BottomFieldPositionChanged();
+                    UpdateTextColors();
+                }
             }
-
-            await AddPlayerModel().ConfigureAwait(false);
-            SubscribeToProfileSettingsChanges();
-            SubscribeToCharacterLevelUpEvent();
-
-            if (clonedPlayerModelView != null)
+            catch (Exception e)
             {
-                UpdatePlayerModelPosition();
-                UpdatePlayerModelRotation();
-                UpdateCameraPosition();
-                BottomFieldPositionChanged();
-                UpdateTextColors();
+                Plugin.LogSource.LogError(e.ToString());
             }
         }
 
@@ -64,7 +73,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             _profileSettingsSubscribed = true;
         }
 
-        public static void UnsubscribeFromProfileSettingsChanges()
+        private static void UnsubscribeFromProfileSettingsChanges()
         {
             if (!_profileSettingsSubscribed) return;
 
@@ -116,15 +125,15 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        public static void UpdatePlayerModelPosition()
+        private static void UpdatePlayerModelPosition()
         {
-            if (clonedPlayerModelView != null)
+            if (ClonedPlayerModelView != null)
             {
-                clonedPlayerModelView.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -150f, 0f);
+                ClonedPlayerModelView.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -150f, 0f);
                 
                 if (Settings.EnableLargerPlayerModel.Value)
                 {
-                    RectTransform rectTransform = clonedPlayerModelView.GetComponent<RectTransform>();
+                    RectTransform rectTransform = ClonedPlayerModelView.GetComponent<RectTransform>();
                     if (rectTransform != null)
                     {
                         float horizontalPos = Settings.PositionPlayerModelHorizontal.Value;
@@ -141,11 +150,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        public static void UpdatePlayerModelRotation()
+        private static void UpdatePlayerModelRotation()
         {
-            if (clonedPlayerModelView != null)
+            if (ClonedPlayerModelView != null)
             {
-                Transform playerModelTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/MenuPlayer");
+                Transform playerModelTransform = ClonedPlayerModelView.transform.Find("PlayerMVObject/MenuPlayer");
                 if (playerModelTransform != null)
                 {
                     playerModelTransform.localRotation = Quaternion.Euler(0, Settings.RotationPlayerModelHorizontal.Value, 0);
@@ -157,22 +166,16 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        public static void UpdateCameraPosition()
+        private static void UpdateCameraPosition()
         {
-            if (clonedPlayerModelView != null)
+            if (ClonedPlayerModelView != null)
             {
-                Transform cameraTransform = clonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
+                Transform cameraTransform = ClonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
                 if (cameraTransform != null)
                 {
-                    if (Settings.EnableLargerPlayerModel.Value)
-                    {
-                        cameraTransform.localPosition = new Vector3(0f, 0.2f, 1.5f);
-                    }
-                    else
-                    {
+                    cameraTransform.localPosition = Settings.EnableLargerPlayerModel.Value ? new Vector3(0f, 0.2f, 1.5f) :
                         // Reset to default position when disabled
-                        cameraTransform.localPosition = new Vector3(0f, 0f, 1f);
-                    }
+                        new Vector3(0f, 0f, 1f);
                 }
                 else
                 {
@@ -185,7 +188,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        public static void BottomFieldPositionChanged()
+        private static void BottomFieldPositionChanged()
         {
             Transform bottomFieldTransform = GetBottomFieldTransform();
             if (bottomFieldTransform != null)
@@ -212,7 +215,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        public static void UnsubscribeFromCharacterLevelUpEvent()
+        private static void UnsubscribeFromCharacterLevelUpEvent()
         {
             if (!_experienceEventsSubscribed) return;
             if (PatchConstants.BackEndSession?.Profile?.Info != null)
@@ -237,24 +240,24 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static Transform GetBottomFieldTransform()
         {
-            if (clonedPlayerModelView != null)
+            if (ClonedPlayerModelView != null)
             {
-                return clonedPlayerModelView.transform.Find("BottomField");
+                return ClonedPlayerModelView.transform.Find("BottomField");
             }
             return null;
         }
 
         private static async Task AddPlayerModel()
         {
-            if (MenuPlayerCreated && clonedPlayerModelView != null)
+            if (menuPlayerCreated && ClonedPlayerModelView != null)
             {
                 await RefreshPlayerModel().ConfigureAwait(false);
                 return;
             }
-            if (MenuPlayerCreated)
+            if (menuPlayerCreated)
             {
                 Plugin.LogSource.LogWarning("AddPlayerModel - MenuPlayerCreated is true, but clonedPlayerModelView is null. Attempting to recreate.");
-                MenuPlayerCreated = false;
+                menuPlayerCreated = false;
             }
 
             GameObject playerModelViewPrefab = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView");
@@ -266,26 +269,26 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 return;
             }
 
-            clonedPlayerModelView = CreateClonedPlayerModelView(menuScreenParent, playerModelViewPrefab);
-            if (clonedPlayerModelView == null)
+            ClonedPlayerModelView = CreateClonedPlayerModelView(menuScreenParent, playerModelViewPrefab);
+            if (ClonedPlayerModelView == null)
             {
                 Plugin.LogSource.LogError("AddPlayerModel - Failed to create clonedPlayerModelView.");
                 return;
             }
 
-            MenuPlayerCreated = true;
+            menuPlayerCreated = true;
 
-            PlayerModelView playerModelViewScript = clonedPlayerModelView.GetComponentInChildren<PlayerModelView>();
+            PlayerModelView playerModelViewScript = ClonedPlayerModelView.GetComponentInChildren<PlayerModelView>();
             if (playerModelViewScript == null)
             {
                 Plugin.LogSource.LogError("AddPlayerModel - PlayerModelView script not found on the cloned PlayerModelViewObject.");
-                GameObject.Destroy(clonedPlayerModelView);
-                MenuPlayerCreated = false;
-                clonedPlayerModelView = null;
+                Object.Destroy(ClonedPlayerModelView);
+                menuPlayerCreated = false;
+                ClonedPlayerModelView = null;
                 return;
             }
 
-            ConfigurePlayerModelVisuals(clonedPlayerModelView);
+            ConfigurePlayerModelVisuals(ClonedPlayerModelView);
 
             GameObject playerLevelViewPrefab = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/Level Panel/Level");
             GameObject playerLevelIconViewPrefab = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/Level Panel/Level Icon");
@@ -293,14 +296,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 Plugin.LogSource.LogWarning("AddPlayerModel - PlayerLevelViewPrefab or PlayerLevelIconViewPrefab not found. BottomField setup might be incomplete.");
             }
-            SetupBottomField(clonedPlayerModelView, playerLevelViewPrefab, playerLevelIconViewPrefab);
+            SetupBottomField(ClonedPlayerModelView, playerLevelViewPrefab, playerLevelIconViewPrefab);
 
-            HidePlayerModelExtraElements(clonedPlayerModelView);
+            HidePlayerModelExtraElements(ClonedPlayerModelView);
 
             if (PatchConstants.BackEndSession?.Profile != null)
             {
                 await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false).ConfigureAwait(false);
-                AdjustInnerPlayerModelPosition(clonedPlayerModelView);
+                AdjustInnerPlayerModelPosition(ClonedPlayerModelView);
             }
             else
             {
@@ -315,7 +318,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Plugin.LogSource.LogError("CreateClonedPlayerModelView - Parent or Prefab is null.");
                 return null;
             }
-            GameObject instance = GameObject.Instantiate(prefab, parent.transform);
+            GameObject instance = Object.Instantiate(prefab, parent.transform);
             instance.name = "MainMenuPlayerModelView";
             instance.SetActive(true);
             return instance;
@@ -332,15 +335,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (cameraTransform != null)
             {
                 // Set camera position based on larger model setting
-                if (Settings.EnableLargerPlayerModel.Value)
-                {
-                    cameraTransform.localPosition = new Vector3(0f, 0.2f, 1.5f);
-                }
-                else
-                {
+                cameraTransform.localPosition = Settings.EnableLargerPlayerModel.Value ? new Vector3(0f, 0.2f, 1.5f) :
                     // Set default position when disabled
-                    cameraTransform.localPosition = new Vector3(0f, 0f, 1f);
-                }
+                    new Vector3(0f, 0f, 1f);
 
                 PrismEffects prismEffects = cameraTransform.GetComponent<PrismEffects>();
                 if (prismEffects != null)
@@ -380,21 +377,21 @@ namespace MoxoPixel.MenuOverhaul.Patches
             bftRect.sizeDelta = new Vector2(0, 0);
 
             // Add ContentSizeFitter to BottomField itself
-            ContentSizeFitter bftCSF = bottomFieldTransform.GetComponent<ContentSizeFitter>();
-            if (bftCSF == null) bftCSF = bottomFieldTransform.gameObject.AddComponent<ContentSizeFitter>();
-            bftCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            bftCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            ContentSizeFitter bftCsf = bottomFieldTransform.GetComponent<ContentSizeFitter>();
+            if (bftCsf == null) bftCsf = bottomFieldTransform.gameObject.AddComponent<ContentSizeFitter>();
+            bftCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            bftCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            VerticalLayoutGroup bftVLG = bottomFieldTransform.GetComponent<VerticalLayoutGroup>();
-            if (bftVLG != null)
+            VerticalLayoutGroup bftVlg = bottomFieldTransform.GetComponent<VerticalLayoutGroup>();
+            if (bftVlg != null)
             {
-                bftVLG.childAlignment = TextAnchor.UpperRight;
-                bftVLG.spacing = 15f;
-                bftVLG.padding = new RectOffset(0, 0, 0, 0);
-                bftVLG.childForceExpandHeight = false;
-                bftVLG.childControlHeight = true;
-                bftVLG.childForceExpandWidth = false;
-                bftVLG.childControlWidth = true;
+                bftVlg.childAlignment = TextAnchor.UpperRight;
+                bftVlg.spacing = 15f;
+                bftVlg.padding = new RectOffset(0, 0, 0, 0);
+                bftVlg.childForceExpandHeight = false;
+                bftVlg.childControlHeight = true;
+                bftVlg.childForceExpandWidth = false;
+                bftVlg.childControlWidth = true;
             }
             else { Plugin.LogSource.LogWarning("SetupBottomField - VerticalLayoutGroup component not found on BottomField. Row layout might be incorrect."); }
 
@@ -402,12 +399,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
             bottomFieldTransform.localPosition = new Vector3(Settings.PositionBottomFieldHorizontal.Value, Settings.PositionBottomFieldVertical.Value, 0f);
 
             // Destroy existing dynamic elements to prevent duplication
-            Action<string> DestroyChildIfExists = (name) => {
+            void DestroyChildIfExists(string name)
+            {
                 Transform child = bottomFieldTransform.Find(name);
-                if (child != null) {
-                    GameObject.Destroy(child.gameObject);
+                if (child != null)
+                {
+                    Object.Destroy(child.gameObject);
                 }
-            };
+            }
 
             DestroyChildIfExists("LevelGroup");
             DestroyChildIfExists("LevelInfoRow");
@@ -420,7 +419,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Transform existingExperience = bottomFieldTransform.Find("Experience");
             if (existingExperience != null)
             {
-                GameObject.Destroy(existingExperience.gameObject);
+                Object.Destroy(existingExperience.gameObject);
             }
 
             GameObject levelInfoRow = new GameObject("LevelInfoRow");
@@ -430,30 +429,29 @@ namespace MoxoPixel.MenuOverhaul.Patches
             levelInfoRect.anchorMax = new Vector2(1, 1);
             levelInfoRect.pivot = new Vector2(1, 1);
 
-            LayoutElement levelInfoRowLE = levelInfoRow.AddComponent<LayoutElement>();
-            levelInfoRowLE.minHeight = 56f;
-            levelInfoRowLE.preferredHeight = 56f;
-            levelInfoRowLE.flexibleHeight = 0f;
+            LayoutElement levelInfoRowLe = levelInfoRow.AddComponent<LayoutElement>();
+            levelInfoRowLe.minHeight = 56f;
+            levelInfoRowLe.preferredHeight = 56f;
+            levelInfoRowLe.flexibleHeight = 0f;
 
-            HorizontalLayoutGroup levelInfoHLG = levelInfoRow.AddComponent<HorizontalLayoutGroup>();
-            levelInfoHLG.padding = new RectOffset(0, 0, 0, 0);
-            levelInfoHLG.childAlignment = TextAnchor.MiddleRight;
-            levelInfoHLG.spacing = 0f;
-            levelInfoHLG.childForceExpandWidth = false;
-            levelInfoHLG.childForceExpandHeight = false;
-            levelInfoHLG.childControlWidth = true;
-            levelInfoHLG.childControlHeight = true;
-            levelInfoHLG.reverseArrangement = true;
+            HorizontalLayoutGroup levelInfoHlg = levelInfoRow.AddComponent<HorizontalLayoutGroup>();
+            levelInfoHlg.padding = new RectOffset(0, 0, 0, 0);
+            levelInfoHlg.childAlignment = TextAnchor.MiddleRight;
+            levelInfoHlg.spacing = 0f;
+            levelInfoHlg.childForceExpandWidth = false;
+            levelInfoHlg.childForceExpandHeight = false;
+            levelInfoHlg.childControlWidth = true;
+            levelInfoHlg.childControlHeight = true;
+            levelInfoHlg.reverseArrangement = true;
 
-            ContentSizeFitter levelInfoCSF = levelInfoRow.AddComponent<ContentSizeFitter>();
-            levelInfoCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            levelInfoCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            ContentSizeFitter levelInfoCsf = levelInfoRow.AddComponent<ContentSizeFitter>();
+            levelInfoCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            levelInfoCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             // Add level text first (will appear on the right due to reverseArrangement)
-            GameObject clonedLevel = null;
             if (playerLevelViewPrefab != null)
             {
-                clonedLevel = GameObject.Instantiate(playerLevelViewPrefab, levelInfoRow.transform);
+                var clonedLevel = Object.Instantiate(playerLevelViewPrefab, levelInfoRow.transform);
                 clonedLevel.name = "Level";
                 clonedLevel.SetActive(true);
 
@@ -474,17 +472,17 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     levelTMP.margin = Vector4.zero;
                 }
 
-                LayoutElement levelTextLE = clonedLevel.GetComponent<LayoutElement>();
-                if (levelTextLE == null) levelTextLE = clonedLevel.AddComponent<LayoutElement>();
-                levelTextLE.minHeight = 56f;
-                levelTextLE.preferredHeight = 56f;
+                LayoutElement levelTextLe = clonedLevel.GetComponent<LayoutElement>();
+                if (levelTextLe == null) levelTextLe = clonedLevel.AddComponent<LayoutElement>();
+                levelTextLe.minHeight = 56f;
+                levelTextLe.preferredHeight = 56f;
             }
             else { Plugin.LogSource.LogWarning("SetupBottomField - playerLevelViewPrefab is null. Level text will be missing."); }
 
             // Add level icon (will appear on the left of text due to reverseArrangement)
             if (playerLevelIconViewPrefab != null)
             {
-                GameObject clonedIcon = GameObject.Instantiate(playerLevelIconViewPrefab, levelInfoRow.transform);
+                GameObject clonedIcon = Object.Instantiate(playerLevelIconViewPrefab, levelInfoRow.transform);
                 clonedIcon.name = "Level Icon";
                 clonedIcon.SetActive(true);
 
@@ -498,12 +496,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     iconRect.offsetMax = new Vector2(-5f, iconRect.offsetMax.y);
                 }
 
-                LayoutElement iconLE = clonedIcon.GetComponent<LayoutElement>();
-                if (iconLE == null) iconLE = clonedIcon.AddComponent<LayoutElement>();
-                iconLE.minHeight = 56f;
-                iconLE.minWidth = 56f;
-                iconLE.preferredHeight = 56f;
-                iconLE.preferredWidth = 56f;
+                LayoutElement iconLe = clonedIcon.GetComponent<LayoutElement>();
+                if (iconLe == null) iconLe = clonedIcon.AddComponent<LayoutElement>();
+                iconLe.minHeight = 56f;
+                iconLe.minWidth = 56f;
+                iconLe.preferredHeight = 56f;
+                iconLe.preferredWidth = 56f;
 
                 // Ensure image stretches to fill the space
                 Image iconImage = clonedIcon.GetComponent<Image>();
@@ -514,19 +512,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
             else { Plugin.LogSource.LogWarning("SetupBottomField - playerLevelIconViewPrefab is null. Level Icon will be missing."); }
 
-            GameObject nicknameTextGO = new GameObject("NicknameText");
-            nicknameTextGO.transform.SetParent(bottomFieldTransform, false);
-            RectTransform nicknameRect = nicknameTextGO.AddComponent<RectTransform>();
+            GameObject nicknameTextGo = new GameObject("NicknameText");
+            nicknameTextGo.transform.SetParent(bottomFieldTransform, false);
+            RectTransform nicknameRect = nicknameTextGo.AddComponent<RectTransform>();
             nicknameRect.anchorMin = new Vector2(1, 1);
             nicknameRect.anchorMax = new Vector2(1, 1);
             nicknameRect.pivot = new Vector2(1, 1);
 
-            LayoutElement nicknameTextGOLE = nicknameTextGO.AddComponent<LayoutElement>();
-            nicknameTextGOLE.minHeight = 40f;
-            nicknameTextGOLE.preferredHeight = 40f;
-            nicknameTextGOLE.flexibleHeight = 0f;
+            LayoutElement nicknameTextGoLe = nicknameTextGo.AddComponent<LayoutElement>();
+            nicknameTextGoLe.minHeight = 40f;
+            nicknameTextGoLe.preferredHeight = 40f;
+            nicknameTextGoLe.flexibleHeight = 0f;
 
-            TextMeshProUGUI nicknameTMP = nicknameTextGO.AddComponent<TextMeshProUGUI>();
+            TextMeshProUGUI nicknameTMP = nicknameTextGo.AddComponent<TextMeshProUGUI>();
             nicknameTMP.fontSize = 36f * 1.6f;
             nicknameTMP.color = Settings.AccentColor.Value;
             nicknameTMP.margin = Vector4.zero;
@@ -548,9 +546,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 }
             }
 
-            ContentSizeFitter nicknameCSF = nicknameTextGO.AddComponent<ContentSizeFitter>();
-            nicknameCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            nicknameCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            ContentSizeFitter nicknameCsf = nicknameTextGo.AddComponent<ContentSizeFitter>();
+            nicknameCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            nicknameCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             GameObject experienceRow = new GameObject("ExperienceRow");
             experienceRow.transform.SetParent(bottomFieldTransform, false);
@@ -559,28 +557,28 @@ namespace MoxoPixel.MenuOverhaul.Patches
             expRect.anchorMax = new Vector2(1, 1);
             expRect.pivot = new Vector2(1, 1);
 
-            LayoutElement expRowLE = experienceRow.AddComponent<LayoutElement>();
-            expRowLE.minHeight = 35f;
-            expRowLE.preferredHeight = 35f;
-            expRowLE.flexibleHeight = 0f;
+            LayoutElement expRowLe = experienceRow.AddComponent<LayoutElement>();
+            expRowLe.minHeight = 35f;
+            expRowLe.preferredHeight = 35f;
+            expRowLe.flexibleHeight = 0f;
 
-            HorizontalLayoutGroup expHLG = experienceRow.AddComponent<HorizontalLayoutGroup>();
-            expHLG.padding = new RectOffset(0, 0, 0, 0);
-            expHLG.childAlignment = TextAnchor.MiddleRight;
-            expHLG.spacing = 5f;
-            expHLG.childForceExpandWidth = false;
-            expHLG.childForceExpandHeight = false;
-            expHLG.childControlWidth = true;
-            expHLG.childControlHeight = true;
+            HorizontalLayoutGroup expHlg = experienceRow.AddComponent<HorizontalLayoutGroup>();
+            expHlg.padding = new RectOffset(0, 0, 0, 0);
+            expHlg.childAlignment = TextAnchor.MiddleRight;
+            expHlg.spacing = 5f;
+            expHlg.childForceExpandWidth = false;
+            expHlg.childForceExpandHeight = false;
+            expHlg.childControlWidth = true;
+            expHlg.childControlHeight = true;
 
-            ContentSizeFitter expCSF = experienceRow.AddComponent<ContentSizeFitter>();
-            expCSF.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            expCSF.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            ContentSizeFitter expCsf = experienceRow.AddComponent<ContentSizeFitter>();
+            expCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            expCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            GameObject expLabelGO = new GameObject("ExpLabel");
-            expLabelGO.transform.SetParent(experienceRow.transform, false);
+            GameObject expLabelGo = new GameObject("ExpLabel");
+            expLabelGo.transform.SetParent(experienceRow.transform, false);
 
-            TextMeshProUGUI expLabelTMP = expLabelGO.AddComponent<TextMeshProUGUI>();
+            TextMeshProUGUI expLabelTMP = expLabelGo.AddComponent<TextMeshProUGUI>();
             expLabelTMP.text = "EXP:";
             expLabelTMP.fontSize = 24f;
             expLabelTMP.color = Color.white;
@@ -588,10 +586,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
             expLabelTMP.margin = Vector4.zero;
             expLabelTMP.enableWordWrapping = false;
 
-            GameObject expValueGO = new GameObject("ExpValue");
-            expValueGO.transform.SetParent(experienceRow.transform, false);
+            GameObject expValueGo = new GameObject("ExpValue");
+            expValueGo.transform.SetParent(experienceRow.transform, false);
 
-            TextMeshProUGUI expValueTMP = expValueGO.AddComponent<TextMeshProUGUI>();
+            TextMeshProUGUI expValueTMP = expValueGo.AddComponent<TextMeshProUGUI>();
             expValueTMP.fontSize = 24f;
             expValueTMP.color = Settings.AccentColor.Value;
             expValueTMP.alignment = TextAlignmentOptions.Right;
@@ -616,7 +614,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
 
             levelInfoRow.transform.SetAsFirstSibling();
-            nicknameTextGO.transform.SetSiblingIndex(1);
+            nicknameTextGo.transform.SetSiblingIndex(1);
             experienceRow.transform.SetSiblingIndex(2);
 
             UpdatePlayerStats(bottomFieldTransform);
@@ -632,10 +630,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static void AdjustInnerPlayerModelPosition(GameObject modelInstance)
         {
             if (modelInstance == null) { Plugin.LogSource.LogWarning("AdjustInnerPlayerModelPosition - modelInstance is null."); return; }
-            Transform playerMVObject = modelInstance.transform.Find("PlayerMVObject");
-            if (playerMVObject != null)
+            Transform playerMvObject = modelInstance.transform.Find("PlayerMVObject");
+            if (playerMvObject != null)
             {
-                Transform innerModelTransform = playerMVObject.Find("MenuPlayer");
+                Transform innerModelTransform = playerMvObject.Find("MenuPlayer");
                 if (innerModelTransform != null)
                 {
                     innerModelTransform.localPosition = new Vector3(0f, -1.1f, 5f);
@@ -647,20 +645,20 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static async Task RefreshPlayerModel()
         {
-            if (clonedPlayerModelView == null)
+            if (ClonedPlayerModelView == null)
             {
                 Plugin.LogSource.LogWarning("RefreshPlayerModel - clonedPlayerModelView is null. Cannot refresh.");
                 return;
             }
 
-            PlayerModelView playerModelViewScript = clonedPlayerModelView.GetComponentInChildren<PlayerModelView>();
+            PlayerModelView playerModelViewScript = ClonedPlayerModelView.GetComponentInChildren<PlayerModelView>();
             if (playerModelViewScript != null)
             {
                 playerModelViewScript.Close();
                 if (PatchConstants.BackEndSession?.Profile != null)
                 {
                     await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false).ConfigureAwait(false);
-                    AdjustInnerPlayerModelPosition(clonedPlayerModelView);
+                    AdjustInnerPlayerModelPosition(ClonedPlayerModelView);
                     UpdateCameraPosition();
                 }
                 else { Plugin.LogSource.LogWarning("RefreshPlayerModel - BackEndSession.Profile is null. Cannot show player model."); }
@@ -774,13 +772,13 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         iconRect.offsetMax = new Vector2(-5f, iconRect.offsetMax.y);
                     }
 
-                    LayoutElement iconLE = iconTransform.GetComponent<LayoutElement>();
-                    if (iconLE != null)
+                    LayoutElement iconLe = iconTransform.GetComponent<LayoutElement>();
+                    if (iconLe != null)
                     {
-                        iconLE.minWidth = 56f;
-                        iconLE.minHeight = 56f;
-                        iconLE.preferredWidth = 56f;
-                        iconLE.preferredHeight = 56f;
+                        iconLe.minWidth = 56f;
+                        iconLe.minHeight = 56f;
+                        iconLe.preferredWidth = 56f;
+                        iconLe.preferredHeight = 56f;
                     }
                 }
                 else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level Icon transform not found in LevelInfoRow."); }
@@ -801,11 +799,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         public static void CleanupClonedPlayerModel()
         {
-            if (clonedPlayerModelView != null)
+            if (ClonedPlayerModelView != null)
             {
-                GameObject.Destroy(clonedPlayerModelView);
-                clonedPlayerModelView = null;
-                MenuPlayerCreated = false;
+                Object.Destroy(ClonedPlayerModelView);
+                ClonedPlayerModelView = null;
+                menuPlayerCreated = false;
             }
         }
 
