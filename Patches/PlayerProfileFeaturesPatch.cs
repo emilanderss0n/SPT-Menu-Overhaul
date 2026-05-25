@@ -23,6 +23,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static bool _profileSettingsSubscribed;
         private static bool _experienceEventsSubscribed;
 
+        // Mouse drag rotation handle for the cloned player model.
+        private static PlayerModelDragRotator _dragRotator;
+
         protected override MethodBase GetTargetMethod()
         {
             return typeof(MenuScreen).GetMethod("Show", [typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode)
@@ -30,13 +33,21 @@ namespace MoxoPixel.MenuOverhaul.Patches
         }
 
         [PatchPostfix]
-        private static async void Postfix(MenuScreen __instance)
+        private static async void Postfix(MenuScreen __instance, Profile profile, MatchmakerPlayerControllerClass matchmaker)
         {
             try
             {
                 if (__instance == null)
                 {
                     Plugin.LogSource.LogWarning("MenuScreen instance is null.");
+                    return;
+                }
+
+                // Only show the custom player model on the actual main menu screen.
+                // The in-raid Disconnect/Resume menu and the reconnect menu invoke Show with
+                // null profile/matchmaker; skip those so the default game UI is preserved.
+                if (profile == null || matchmaker == null || Utility.IsInGame())
+                {
                     return;
                 }
 
@@ -152,18 +163,26 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void UpdatePlayerModelRotation()
         {
-            if (ClonedPlayerModelView != null)
-            {
-                Transform playerModelTransform = ClonedPlayerModelView.transform.Find("PlayerMVObject/MenuPlayer");
-                if (playerModelTransform != null)
-                {
-                    playerModelTransform.localRotation = Quaternion.Euler(0, Settings.RotationPlayerModelHorizontal.Value, 0);
-                }
-            }
-            else
+            if (ClonedPlayerModelView == null)
             {
                 Plugin.LogSource.LogWarning("UpdatePlayerModelRotation - clonedPlayerModelView is null.");
+                return;
             }
+
+            Transform target = ClonedPlayerModelView.transform.Find("PlayerMVObject/MenuPlayer");
+            if (target == null) return;
+
+            if (_dragRotator == null)
+            {
+                _dragRotator = ClonedPlayerModelView.GetComponent<PlayerModelDragRotator>();
+                if (_dragRotator == null)
+                {
+                    _dragRotator = ClonedPlayerModelView.AddComponent<PlayerModelDragRotator>();
+                }
+            }
+
+            _dragRotator.Target = target;
+            _dragRotator.SetYaw(Settings.RotationPlayerModelHorizontal.Value);
         }
 
         private static void UpdateCameraPosition()
@@ -701,35 +720,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static void UpdateExperienceDisplay(Transform bottomField, Profile profile)
         {
             Transform experienceRow = bottomField.Find("ExperienceRow");
-            if (experienceRow != null)
+            if (experienceRow == null)
             {
-                TextMeshProUGUI experienceTMP = experienceRow.Find("ExpValue")?.GetComponent<TextMeshProUGUI>();
-                if (experienceTMP != null)
-                {
-                    var numberFormat = new NumberFormatInfo { NumberGroupSeparator = " ", NumberDecimalDigits = 0 };
-                    experienceTMP.text = profile.Experience.ToString("N", numberFormat);
-                }
-                else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExpValue TMP component not found in ExperienceRow."); }
+                Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExperienceRow not found in BottomField.");
+                return;
             }
-            else
+
+            TextMeshProUGUI experienceTMP = experienceRow.Find("ExpValue")?.GetComponent<TextMeshProUGUI>();
+            if (experienceTMP != null)
             {
-                // Check for original Experience panel for backward compatibility
-                Transform experienceTransform = bottomField.Find("Experience");
-                if (experienceTransform != null)
-                {
-                    TextMeshProUGUI experienceTMP = experienceTransform.Find("ExpValue")?.GetComponent<TextMeshProUGUI>();
-                    if (experienceTMP != null)
-                    {
-                        experienceTMP.alignment = TextAlignmentOptions.Right;
-                        experienceTMP.margin = Vector4.zero;
-                        experienceTMP.lineSpacing = 0;
-                        var numberFormat = new NumberFormatInfo { NumberGroupSeparator = " ", NumberDecimalDigits = 0 };
-                        experienceTMP.text = profile.Experience.ToString("N", numberFormat);
-                    }
-                    else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - Experience TMP component (ExpValue) not found."); }
-                }
-                else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - Neither ExperienceRow nor Experience transform found in BottomField."); }
+                var numberFormat = new NumberFormatInfo { NumberGroupSeparator = " ", NumberDecimalDigits = 0 };
+                experienceTMP.text = profile.Experience.ToString("N", numberFormat);
             }
+            else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExpValue TMP component not found in ExperienceRow."); }
         }
 
         private static void UpdateLevelDisplay(Transform bottomField, Profile profile)
@@ -795,16 +798,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 }
             }
             else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - LevelInfoRow transform not found in BottomField."); }
-        }
-
-        public static void CleanupClonedPlayerModel()
-        {
-            if (ClonedPlayerModelView != null)
-            {
-                Object.Destroy(ClonedPlayerModelView);
-                ClonedPlayerModelView = null;
-                menuPlayerCreated = false;
-            }
         }
 
         public void CleanupBeforeDisable()

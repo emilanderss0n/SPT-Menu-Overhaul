@@ -1,6 +1,6 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using MoxoPixel.MenuOverhaul.Utils;
-using System;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
 {
@@ -71,11 +71,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             UpdateSingleLightShadows(mainLightComponent);
             UpdateSingleLightShadows(hairLightComponent);
             UpdateAccentLightColor();
-            
-            if (Utility.IsInGame())
-            {
-                Utility.DisableDecalPlaneIfInGame();
-            }
         }
 
         public static void UpdateAccentLightColor()

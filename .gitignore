@@ -4,6 +4,6 @@
 
 /.idea/.idea.SPT-MenuOverhaul/.idea
 /.vs
-/bin/Debug
-/obj/Debug
+/bin/
+/obj/
 /Properties

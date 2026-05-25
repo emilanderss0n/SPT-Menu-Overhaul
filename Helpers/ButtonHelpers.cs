@@ -28,6 +28,42 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             SetButtonIconTransform(menuScreenInstance, "ExitButtonGroup", new Vector3(ButtonIconScale, ButtonIconScale, ButtonIconScale));
         }
 
+        /// <summary>
+        /// Re-invokes DefaultUIButtonAnimation.method_1(false) on every button
+        /// under the MenuScreen so SetAlphaPatch can restore icon/label/image
+        /// alpha now that MenuVisibilityController.IsMainMenuActive is true.
+        /// The game itself runs the initial idle pass before our postfix, so
+        /// without this the icons stay invisible until the first hover.
+        /// </summary>
+        public static void RefreshButtonIdleState(MenuScreen menuScreenInstance)
+        {
+            if (menuScreenInstance == null) return;
+
+            var animations = menuScreenInstance.gameObject.GetComponentsInChildren<DefaultUIButtonAnimation>(true);
+            if (animations == null || animations.Length == 0) return;
+
+            var method = typeof(DefaultUIButtonAnimation).GetMethod("method_1", BindingFlags.Instance | BindingFlags.Public);
+            if (method == null)
+            {
+                Plugin.LogSource.LogWarning("RefreshButtonIdleState - method_1 not found on DefaultUIButtonAnimation.");
+                return;
+            }
+
+            object[] args = new object[] { false };
+            foreach (var anim in animations)
+            {
+                if (anim == null) continue;
+                try
+                {
+                    method.Invoke(anim, args);
+                }
+                catch (Exception ex)
+                {
+                    Plugin.LogSource.LogWarning($"RefreshButtonIdleState - method_1 invoke failed: {ex.Message}");
+                }
+            }
+        }
+
         public static void ProcessButtons(MenuScreen menuScreenInstance)
         {
             if (menuScreenInstance == null)

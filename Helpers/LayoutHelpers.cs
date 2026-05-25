@@ -80,19 +80,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             };
         }
 
-        public static GameObject GetGlowCanvas()
-        {
-            EnvironmentObjects envObjects = FindEnvironmentObjects();
-            if (envObjects?.CommonObj == null)
-            {
-                Plugin.LogSource.LogWarning("GetGlowCanvas - EnvironmentObjects or CommonObj not found.");
-                return null;
-            }
-            GameObject glowCanvas = envObjects.CommonObj.transform.Find("Glow Canvas")?.gameObject;
-            if (glowCanvas == null) Plugin.LogSource.LogWarning("Glow Canvas GameObject not found in CommonObj.");
-            return glowCanvas;
-        }
-
         public static GameObject GetBackgroundPlane()
         {
             EnvironmentObjects envObjects = FindEnvironmentObjects();
@@ -200,12 +187,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             return false;
         }
 
-        public static bool IsMatchMaker()
-        {
-            GameObject matchmakerScreen = GameObject.Find("Menu UI/UI/Matchmaker Time Has Come");
-            return matchmakerScreen != null && matchmakerScreen.activeInHierarchy;
-        }
-
 
         private static Texture2D LoadAndPreparePanoramaTexture(AssetBundle bundle)
         {
@@ -239,14 +220,22 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             string[] materialNames = ["part1", "part2", "part3", "part4"];
             List<Material> appliedMaterials = new List<Material>();
 
+            // IMPORTANT: read sharedMaterials and clone each one before mutating.
+            // Accessing panoramaRenderer.materials would mutate the original
+            // panorama renderer's instanced materials, causing our custom
+            // background to bleed into every other menu screen (Hideout, Flea,
+            // Matchmaker, in-raid ESC) that re-enables the original panorama.
+            Material[] sourceMaterials = panoramaRenderer.sharedMaterials;
+
             foreach (string materialName in materialNames)
             {
-                Material material = panoramaRenderer.materials.FirstOrDefault(mat => mat.name.Contains(materialName));
-                if (material != null)
+                Material source = sourceMaterials.FirstOrDefault(mat => mat != null && mat.name.Contains(materialName));
+                if (source != null)
                 {
-                    material.SetTexture(EmissionMap, emissionTexture);
-                    material.EnableKeyword("_EMISSION");
-                    appliedMaterials.Add(material);
+                    Material clone = new Material(source) { name = source.name + "_CustomPlane" };
+                    clone.SetTexture(EmissionMap, emissionTexture);
+                    clone.EnableKeyword("_EMISSION");
+                    appliedMaterials.Add(clone);
                 }
                 else
                 {
@@ -315,14 +304,13 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            bool wasActive = panorama.activeSelf;
-            panorama.SetActive(true);
-
+            // We read sharedMaterials below, which does not require the renderer
+            // to be active. Avoid toggling panorama.SetActive here so other screens
+            // that re-enable the original panorama never see its custom-emission state.
             Renderer panoramaRenderer = panorama.GetComponent<Renderer>();
             if (panoramaRenderer == null)
             {
                 Plugin.LogSource.LogWarning("Renderer component not found on panorama.");
-                panorama.SetActive(wasActive);
                 return;
             }
 
@@ -330,7 +318,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             if (preparedTexture == null)
             {
                 Plugin.LogSource.LogWarning("Failed to prepare panorama texture.");
-                panorama.SetActive(wasActive);
                 return;
             }
 
@@ -359,8 +346,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             {
                 Plugin.LogSource.LogError("SetPanoramaEmissionMap - Failed to create any materials for the custom plane!");
             }
-            
-            panorama.SetActive(false);
         }
 
         private static List<Material> CreateDefaultMaterialsWithEmission(Texture2D emissionTexture)
@@ -538,41 +523,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 iconAssetBundle.Unload(false);
                 iconAssetBundle = null;
             }
-        }
-
-        /// <summary>
-        /// Performs cleanup of game objects related to the menu overhaul
-        /// </summary>
-        public static void CleanupGameObjects()
-        {           
-            try {
-                EnvironmentObjects envObjects = FindEnvironmentObjects();
-                if (envObjects == null || envObjects.FactoryLayout == null)
-                {
-                    Plugin.LogSource.LogWarning("CleanupGameObjects - Could not find environment objects.");
-                    return;
-                }
-
-                Utility.ConfigureDecalPlane(false);
-                
-                GameObject customPlane = envObjects.FactoryLayout.transform.Find("CustomPlane")?.gameObject;
-                if (customPlane != null && customPlane.activeSelf)
-                {
-                    customPlane.SetActive(false);
-                }
-                
-                GameObject panorama = envObjects.FactoryLayout.transform.Find("panorama")?.gameObject;
-                if (panorama != null && panorama.activeSelf)
-                {
-                    panorama.SetActive(false);
-                }
-            }
-            catch (Exception ex)
-            {
-                Plugin.LogSource.LogError($"Error during GameObject cleanup: {ex}");
-            }
-
-            Plugin.LogSource.LogDebug("Menu overhaul GameObjects cleanup completed");
         }
 
         public static void DisposeResources()

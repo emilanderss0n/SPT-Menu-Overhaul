@@ -38,6 +38,15 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static void Postfix(DefaultUIButtonAnimation __instance, bool animated)
         {
+            // Only restyle buttons on the modded menu. The same MenuScreen
+            // GameObject is reused for the in-raid ESC menu (GClass3880) and the
+            // reconnect menu (GClass3879), so IsPartOfMenuScreen alone matches
+            // those too.
+            if (!MenuVisibilityController.IsMainMenuActive)
+            {
+                return;
+            }
+
             if (!LayoutHelpers.IsPartOfMenuScreen(__instance))
             {
                 return;

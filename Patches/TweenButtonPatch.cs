@@ -34,6 +34,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static void Postfix(DefaultUIButtonAnimation __instance, bool animated)
         {
+            // See SetAlphaPatch: the MenuScreen GameObject is reused by the
+            // in-raid ESC menu (GClass3880) and reconnect menu (GClass3879),
+            // so we must also gate on the active EFT screen identity.
+            if (!MenuVisibilityController.IsMainMenuActive)
+            {
+                return;
+            }
+
             if (!LayoutHelpers.IsPartOfMenuScreen(__instance))
             {
                 return;

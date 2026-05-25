@@ -9,7 +9,7 @@ using SPT.Reflection.Patching;
 
 namespace MoxoPixel.MenuOverhaul
 {
-    [BepInPlugin("com.moxopixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.1.0")]
+    [BepInPlugin("com.moxopixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.2.0")]
     public class Plugin : BaseUnityPlugin
     {
         public static ManualLogSource LogSource { get; private set; }
@@ -48,11 +48,6 @@ namespace MoxoPixel.MenuOverhaul
             }
         }
         
-        private void OnDisable()
-        {
-            CleanupResources();
-        }
-        
         private void OnDestroy()
         {
             CleanupResources();
@@ -75,6 +70,9 @@ namespace MoxoPixel.MenuOverhaul
                     }
                 }
                 
+                // Unsubscribe screen-change listener
+                MenuVisibilityController.Unsubscribe();
+
                 // Cleanup static helpers
                 LayoutHelpers.DisposeResources();
                 LightHelpers.Cleanup();

@@ -4,7 +4,6 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using MoxoPixel.MenuOverhaul.Helpers;
 using MoxoPixel.MenuOverhaul.Utils;
 using EFT;
@@ -14,7 +13,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
     internal class MenuOverhaulPatch : ModulePatch
     {
         private static bool _layoutSettingsSubscribed;
-        private static bool _sceneEventsInitialized;
 
         protected override MethodBase GetTargetMethod()
         {
@@ -23,7 +21,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         }
 
         [PatchPostfix]
-        private static async void Postfix(MenuScreen __instance)
+        private static async void Postfix(MenuScreen __instance, Profile profile, MatchmakerPlayerControllerClass matchmaker)
         {
             try
             {
@@ -33,20 +31,75 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     return;
                 }
 
+                // Only apply the overhaul to the actual main menu screen.
+                // The in-raid Disconnect/Resume menu (MenuScreen.GClass3880) and the reconnect
+                // menu (MenuScreen.GClass3879) both invoke Show with null profile/matchmaker;
+                // skip those so the default game UI is preserved.
+                if (profile == null || matchmaker == null || Utility.IsInGame())
+                {
+                    return;
+                }
+
+                // Mark the main menu active up-front so that DefaultUIButtonAnimation
+                // idle/hover callbacks fired during button setup are styled by
+                // SetAlphaPatch / TweenButtonPatch. Otherwise icons remain invisible
+                // until the user hovers a button.
+                MenuVisibilityController.EnsureSubscribed();
+                MenuVisibilityController.MarkMainMenuActive();
+
                 ButtonHelpers.SetupButtonIcons(__instance);
                 await LoadPatchContent(__instance).ConfigureAwait(false);
 
-                InitializeSceneEvents();
-                HandleScene(SceneManager.GetActiveScene());
+                var env = LayoutHelpers.FindEnvironmentObjects();
+                if (env?.FactoryLayout != null)
+                {
+                    ApplyMenuLayout(env);
+                }
 
                 ButtonHelpers.ProcessButtons(__instance);
                 SubscribeToLayoutSettingsChanges();
                 UpdateLayoutElements();
                 LayoutHelpers.DisableCameraMovement();
+
+                // The game invokes DefaultUIButtonAnimation.method_1 (idle state)
+                // during MenuScreen.Show BEFORE our postfix runs, so SetAlphaPatch
+                // sees IsMainMenuActive == false and skips restoring icon alpha,
+                // leaving icons invisible until the first hover. Re-trigger the
+                // idle state on every button now that the gate is active.
+                ButtonHelpers.RefreshButtonIdleState(__instance);
             }
             catch (Exception e)
             {
                 Plugin.LogSource.LogError(e.ToString());
+            }
+        }
+
+        private static void ApplyMenuLayout(LayoutHelpers.EnvironmentObjects env)
+        {
+            GameObject panorama = env.FactoryLayout.transform.Find("panorama")?.gameObject;
+            if (panorama != null)
+            {
+                panorama.SetActive(false);
+            }
+
+            LayoutHelpers.SetChildActive(env.FactoryLayout, "LampContainer", true);
+
+            // One-shot: only create the CustomPlane if it does not exist yet.
+            if (env.FactoryLayout.transform.Find("CustomPlane") == null)
+            {
+                LayoutHelpers.SetPanoramaEmissionMap(env.FactoryLayout);
+            }
+
+            GameObject customPlane = env.FactoryLayout.transform.Find("CustomPlane")?.gameObject;
+            if (customPlane != null)
+            {
+                customPlane.SetActive(Settings.EnableBackground.Value);
+            }
+
+            if (!Utility.IsInGame())
+            {
+                Utility.ConfigureDecalPlane(true);
+                Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value);
             }
         }
 
@@ -78,16 +131,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             _layoutSettingsSubscribed = false;
             Plugin.LogSource.LogDebug("Layout-specific settings changes unsubscribed.");
-        }
-
-        private static void CleanupSceneEvents()
-        {
-            if (!_sceneEventsInitialized) return;
-
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-            SceneManager.sceneUnloaded -= OnSceneUnloaded;
-            _sceneEventsInitialized = false;
-            Plugin.LogSource.LogDebug("Scene events cleaned up by MenuOverhaulPatch.");
         }
 
         private static Task LoadPatchContent(MenuScreen menuScreenInstance)
@@ -155,70 +198,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        private static void InitializeSceneEvents()
-        {
-            if (_sceneEventsInitialized) return;
-            SceneManager.sceneLoaded += OnSceneLoaded;
-            SceneManager.sceneUnloaded += OnSceneUnloaded;
-            _sceneEventsInitialized = true;
-            Plugin.LogSource.LogDebug("Scene events initialized by MenuOverhaulPatch.");
-        }
-
-        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode) => HandleScene(scene);
-        private static void OnSceneUnloaded(Scene scene)
-        {
-            Plugin.LogSource.LogDebug($"Scene unloaded: {scene.name} (MenuOverhaulPatch)");
-        }
-
-        private static void HandleScene(Scene scene)
-        {
-            if (scene.name == "CommonUIScene")
-            {
-                var environmentObjects = LayoutHelpers.FindEnvironmentObjects();
-                if (environmentObjects?.FactoryLayout != null)
-                {
-                    ActivateSceneLayoutElements(environmentObjects);
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("MenuOverhaulPatch.HandleScene - EnvironmentObjects or FactoryLayout not found for CommonUIScene.");
-                }
-            }
-        }
-
-        private static void ActivateSceneLayoutElements(LayoutHelpers.EnvironmentObjects envObjects)
-        {
-            GameObject panorama = envObjects.FactoryLayout.transform.Find("panorama")?.gameObject;
-            if (panorama != null)
-            {
-                panorama.SetActive(false);
-            }
-
-            LayoutHelpers.SetChildActive(envObjects.FactoryLayout, "LampContainer", true);
-
-            LayoutHelpers.SetPanoramaEmissionMap(envObjects.FactoryLayout);
-
-            GameObject customPlane = LayoutHelpers.GetBackgroundPlane();
-            if (customPlane != null)
-            {
-                customPlane.SetActive(Settings.EnableBackground.Value);
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("ActivateSceneLayoutElements - CustomPlane not found after setup");
-            }
-
-            if (!Utility.IsInGame())
-            {
-                Utility.ConfigureDecalPlane(true);
-                Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value);
-            }
-        }
-
         public void CleanupBeforeDisable()
         {
             UnsubscribeFromLayoutSettingsChanges();
-            CleanupSceneEvents();
         }
     }
 }
