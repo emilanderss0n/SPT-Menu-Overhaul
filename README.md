@@ -68,15 +68,11 @@ Refer to the ConfigurationManager in-game for detailed descriptions and value ra
 ### Building
 
 *   This project is written in C#.
-*   It targets .NET Framework 4.7.1.
-*   Dependencies include:
-    *   `UnityEngine.dll`, `UnityEngine.CoreModule.dll`, `UnityEngine.UI.dll`, `UnityEngine.ImageConversionModule.dll` (from the game's `Managed` folder)
-    *   `Assembly-CSharp.dll` (from the game's `Managed` folder, or the specific version used by SPT-AKI)
-    *   `BepInEx.dll`
-    *   `0Harmony.dll`
-    *   `BepInEx.PluginInfoProps.dll`
-    *   `DOTween.dll` (likely from the game's `Managed` folder or included with BepInEx/SPT)
-    *   `TextMeshPro.dll` (or the version used by the game)
+*   It targets .NET Standard 2.1.
+*   Dependencies include (all resolved from your local SPT install directory):
+    *   **From `EscapeFromTarkov_Data/Managed/`:** `Assembly-CSharp.dll`, `UnityEngine.dll`, `UnityEngine.CoreModule.dll`, `UnityEngine.UI.dll`, `UnityEngine.UIModule.dll`, `UnityEngine.ImageConversionModule.dll`, `UnityEngine.AssetBundleModule.dll`, `UnityEngine.AudioModule.dll`, `UnityEngine.PhysicsModule.dll`, `UnityEngine.InputLegacyModule.dll`, `UnityEngine.IMGUIModule.dll`, `UnityEngine.TextRenderingModule.dll`, `Unity.TextMeshPro.dll`, `Unity.Postprocessing.Runtime.dll`, `DOTween.dll`, `DOTween.Modules.dll`, `Comfort.dll`, `Comfort.Unity.dll`, `Newtonsoft.Json.dll`, `Sirenix.Serialization.dll`, `uLipSync.Runtime.dll`
+    *   **From `BepInEx/core/`:** `BepInEx.dll`, `0Harmony.dll`
+    *   **From `BepInEx/plugins/spt/`:** `spt-common.dll`, `spt-reflection.dll`
 
 ### Patching Approach
 
