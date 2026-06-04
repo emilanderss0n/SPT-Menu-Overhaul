@@ -78,18 +78,16 @@ This mod now loads menu assets directly from files instead of an asset bundle.
 
 Expected background file names:
 
-- `background.png` (default)
-- `background_ultrawide.png` (used on ultrawide aspect ratios)
+- `background.jpg` (default)
+- `background_ultrawide.jpg` (used on ultrawide aspect ratios)
 
 Icon file names should match the internal icon keys used by the mod:
 
-- `icon_play`
-- `icon_mainmenu_character`
-- `icon_trade`
-- `hideout_icon_black`
-- `exit_status_runner`
-
-Supported image formats: `.png`, `.jpg`, `.jpeg`, `.tga`.
+- `icon_play.png`
+- `icon_mainmenu_character.png`
+- `icon_trade.png`
+- `hideout_icon_black.png`
+- `exit_status_runner.png`
 
 ## For Developers
 
@@ -102,13 +100,6 @@ Supported image formats: `.png`, `.jpg`, `.jpeg`, `.tga`.
     *   **From `BepInEx/core/`:** `BepInEx.dll`, `0Harmony.dll`
     *   **From `BepInEx/plugins/spt/`:** `spt-common.dll`, `spt-reflection.dll`
 
-### Patching Approach
-
-The plugin utilizes HarmonyX patches to modify game behavior:
-*   `MenuOverhaulPatch`: Modifies `MenuScreen.Show` to apply general layout changes, background, and logotype adjustments.
-*   `PlayerProfileFeaturesPatch`: Also patches `MenuScreen.Show` to add and configure the player model and its associated UI elements (like stats).
-*   `SetAlphaPatch`: Modifies `DefaultUIButtonAnimation.method_1` to adjust button alpha and animations.
-*   Other patches (e.g., `OnGameEndedPatch`, `OnGameStartedPatch`, `TweenButtonPatch`) handle specific game events or UI component behaviors.
 
 ## Contributing
 
