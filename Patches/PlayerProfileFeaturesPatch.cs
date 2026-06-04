@@ -17,11 +17,16 @@ namespace MoxoPixel.MenuOverhaul.Patches
 {
     internal class PlayerProfileFeaturesPatch : ModulePatch
     {
+        private const float BottomFieldBaseScale = 0.6f;
+        private const float HighQualityPreviewSupersampleFactor = 1.6f;
+
         private static bool menuPlayerCreated;
         public static GameObject ClonedPlayerModelView;
 
         private static bool _profileSettingsSubscribed;
         private static bool _experienceEventsSubscribed;
+        private static Vector2? _basePreviewViewportSize;
+        private static Vector3? _basePreviewViewportScale;
 
         // Mouse drag rotation handle for the cloned player model.
         private static PlayerModelDragRotator _dragRotator;
@@ -51,7 +56,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     return;
                 }
 
-                await AddPlayerModel().ConfigureAwait(false);
+                await AddPlayerModel();
                 SubscribeToProfileSettingsChanges();
                 SubscribeToCharacterLevelUpEvent();
 
@@ -80,6 +85,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.RotationPlayerModelHorizontal.SettingChanged += OnPlayerModelRotationChanged;
             Settings.AccentColor.SettingChanged += OnAccentColorChanged;
             Settings.EnableLargerPlayerModel.SettingChanged += OnLargerPlayerModelChanged;
+            Settings.EnableHighQualityPlayerPreview.SettingChanged += OnPlayerPreviewQualityChanged;
+            Settings.EnableDefaultPlayerAnimation.SettingChanged += OnPlayerPreviewAnimationChanged;
 
             _profileSettingsSubscribed = true;
         }
@@ -94,6 +101,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.RotationPlayerModelHorizontal.SettingChanged -= OnPlayerModelRotationChanged;
             Settings.AccentColor.SettingChanged -= OnAccentColorChanged;
             Settings.EnableLargerPlayerModel.SettingChanged -= OnLargerPlayerModelChanged;
+            Settings.EnableHighQualityPlayerPreview.SettingChanged -= OnPlayerPreviewQualityChanged;
+            Settings.EnableDefaultPlayerAnimation.SettingChanged -= OnPlayerPreviewAnimationChanged;
 
             _profileSettingsSubscribed = false;
         }
@@ -110,6 +119,18 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             UpdatePlayerModelPosition();
             UpdateCameraPosition();
+            ConfigurePreviewRenderQuality(ClonedPlayerModelView);
+        }
+        private static void OnPlayerPreviewQualityChanged(object sender, EventArgs e)
+        {
+            ConfigurePreviewRenderQuality(ClonedPlayerModelView);
+            UpdateBottomFieldScale();
+        }
+
+        private static async void OnPlayerPreviewAnimationChanged(object sender, EventArgs e)
+        {
+            await RefreshPlayerModel();
+            UpdatePlayerModelRotation();
         }
 
         private static void UpdateTextColors()
@@ -266,11 +287,28 @@ namespace MoxoPixel.MenuOverhaul.Patches
             return null;
         }
 
+        private static float GetPreviewSupersampleFactor()
+        {
+            return Settings.EnableHighQualityPlayerPreview.Value ? HighQualityPreviewSupersampleFactor : 1f;
+        }
+
+        private static void UpdateBottomFieldScale()
+        {
+            Transform bottomFieldTransform = GetBottomFieldTransform();
+            if (bottomFieldTransform == null)
+            {
+                return;
+            }
+
+            float compensatedBottomFieldScale = BottomFieldBaseScale * GetPreviewSupersampleFactor();
+            bottomFieldTransform.localScale = new Vector3(compensatedBottomFieldScale, compensatedBottomFieldScale, compensatedBottomFieldScale);
+        }
+
         private static async Task AddPlayerModel()
         {
             if (menuPlayerCreated && ClonedPlayerModelView != null)
             {
-                await RefreshPlayerModel().ConfigureAwait(false);
+                await RefreshPlayerModel();
                 return;
             }
             if (menuPlayerCreated)
@@ -321,8 +359,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             if (PatchConstants.BackEndSession?.Profile != null)
             {
-                await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false).ConfigureAwait(false);
+                await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, Settings.EnableDefaultPlayerAnimation.Value);
                 AdjustInnerPlayerModelPosition(ClonedPlayerModelView);
+                ConfigurePreviewRenderQuality(ClonedPlayerModelView);
             }
             else
             {
@@ -369,8 +408,80 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
             else { Plugin.LogSource.LogWarning("ConfigurePlayerModelVisuals - Camera_inventory not found in player model instance."); }
 
+            ConfigurePreviewRenderQuality(modelInstance);
             LightHelpers.SetupLights(modelInstance);
             UpdatePlayerModelRotation();
+        }
+
+        private static void ConfigurePreviewRenderQuality(GameObject modelInstance)
+        {
+            if (modelInstance == null)
+            {
+                return;
+            }
+
+            CameraImage cameraImage = modelInstance.GetComponentInChildren<CameraImage>(true);
+            Transform cameraTransform = modelInstance.transform.Find("PlayerMVObject/Camera_inventory");
+            Camera previewCamera = cameraTransform?.GetComponent<Camera>();
+
+            if (cameraImage == null || previewCamera == null)
+            {
+                Plugin.LogSource.LogWarning("ConfigurePreviewRenderQuality - CameraImage or Camera_inventory missing on player model preview.");
+                return;
+            }
+
+            RectTransform previewRect = cameraImage.GetComponent<RectTransform>();
+            if (previewRect != null)
+            {
+                if (!_basePreviewViewportSize.HasValue)
+                {
+                    Vector2 detectedSize = previewRect.rect.size;
+                    if (detectedSize.x <= 0f || detectedSize.y <= 0f)
+                    {
+                        detectedSize = previewRect.sizeDelta;
+                    }
+
+                    if (detectedSize.x > 0f && detectedSize.y > 0f)
+                    {
+                        _basePreviewViewportSize = detectedSize;
+                    }
+                }
+
+                if (!_basePreviewViewportScale.HasValue)
+                {
+                    _basePreviewViewportScale = previewRect.localScale;
+                }
+
+                if (_basePreviewViewportSize.HasValue && _basePreviewViewportScale.HasValue)
+                {
+                    float previewSupersampleFactor = GetPreviewSupersampleFactor();
+
+                    Vector2 baseSize = _basePreviewViewportSize.Value;
+                    previewRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, baseSize.x * previewSupersampleFactor);
+                    previewRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, baseSize.y * previewSupersampleFactor);
+
+                    Vector3 baseScale = _basePreviewViewportScale.Value;
+                    previewRect.localScale = new Vector3(baseScale.x / previewSupersampleFactor, baseScale.y / previewSupersampleFactor, baseScale.z);
+                }
+            }
+
+            int qualityAA = QualitySettings.antiAliasing;
+            int resolvedAA = qualityAA <= 1
+                ? (Settings.EnableHighQualityPlayerPreview.Value ? 8 : 1)
+                : qualityAA;
+            if (resolvedAA != 1 && resolvedAA != 2 && resolvedAA != 4 && resolvedAA != 8)
+            {
+                resolvedAA = Settings.EnableHighQualityPlayerPreview.Value ? 8 : 1;
+            }
+
+            cameraImage.TextureDepth = 24;
+            cameraImage.TextureFormat = RenderTextureFormat.ARGB32;
+            cameraImage.RenderTextureReadWrite = RenderTextureReadWrite.Default;
+            cameraImage.Antialiasing = resolvedAA;
+
+            previewCamera.allowMSAA = true;
+
+            cameraImage.InitCamera(previewCamera);
         }
 
         private static void SetupBottomField(GameObject modelInstance, GameObject playerLevelViewPrefab, GameObject playerLevelIconViewPrefab)
@@ -414,7 +525,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
             else { Plugin.LogSource.LogWarning("SetupBottomField - VerticalLayoutGroup component not found on BottomField. Row layout might be incorrect."); }
 
-            bottomFieldTransform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+            float compensatedBottomFieldScale = BottomFieldBaseScale * GetPreviewSupersampleFactor();
+            bottomFieldTransform.localScale = new Vector3(compensatedBottomFieldScale, compensatedBottomFieldScale, compensatedBottomFieldScale);
             bottomFieldTransform.localPosition = new Vector3(Settings.PositionBottomFieldHorizontal.Value, Settings.PositionBottomFieldVertical.Value, 0f);
 
             // Destroy existing dynamic elements to prevent duplication
@@ -676,9 +788,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 playerModelViewScript.Close();
                 if (PatchConstants.BackEndSession?.Profile != null)
                 {
-                    await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, false).ConfigureAwait(false);
+                    await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, Settings.EnableDefaultPlayerAnimation.Value);
                     AdjustInnerPlayerModelPosition(ClonedPlayerModelView);
                     UpdateCameraPosition();
+                    ConfigurePreviewRenderQuality(ClonedPlayerModelView);
                 }
                 else { Plugin.LogSource.LogWarning("RefreshPlayerModel - BackEndSession.Profile is null. Cannot show player model."); }
             }

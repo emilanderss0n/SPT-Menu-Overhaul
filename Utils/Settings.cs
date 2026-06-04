@@ -16,6 +16,8 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<bool> EnableTopGlow;
         public static ConfigEntry<bool> EnableExtraShadows;
         public static ConfigEntry<bool> EnableLargerPlayerModel;
+        public static ConfigEntry<bool> EnableHighQualityPlayerPreview;
+        public static ConfigEntry<bool> EnableDefaultPlayerAnimation;
         public static ConfigEntry<float> PositionLogotypeHorizontal;
         public static ConfigEntry<float> PositionPlayerModelHorizontal;
         public static ConfigEntry<float> PositionBottomFieldHorizontal;
@@ -62,6 +64,24 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 false,
                 new ConfigDescription(
                     "Enable to make the player model larger and closer in the main menu",
+                    null,
+                    new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(EnableHighQualityPlayerPreview = config.Bind(
+                GeneralSectionTitle,
+                "Enable High Quality Player Preview",
+                true,
+                new ConfigDescription(
+                    "Enable sharper player preview rendering in the main menu (higher GPU cost). Disable for better performance on low-end systems",
+                    null,
+                    new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(EnableDefaultPlayerAnimation = config.Bind(
+                GeneralSectionTitle,
+                "Enable Default Player Animation",
+                false,
+                new ConfigDescription(
+                    "Use EFT's default animated player preview behavior in the main menu. Disable for a static pose",
                     null,
                     new ConfigurationManagerAttributes { })));
 
