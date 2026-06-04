@@ -65,6 +65,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     UpdatePlayerModelPosition();
                     UpdatePlayerModelRotation();
                     UpdateCameraPosition();
+                    UpdateCameraRotation();
                     BottomFieldPositionChanged();
                     UpdateTextColors();
                 }
@@ -87,6 +88,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.EnableLargerPlayerModel.SettingChanged += OnLargerPlayerModelChanged;
             Settings.EnableHighQualityPlayerPreview.SettingChanged += OnPlayerPreviewQualityChanged;
             Settings.EnableDefaultPlayerAnimation.SettingChanged += OnPlayerPreviewAnimationChanged;
+            Settings.CameraInventoryPositionX.SettingChanged += OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryPositionY.SettingChanged += OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryPositionZ.SettingChanged += OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryRotationX.SettingChanged += OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryRotationY.SettingChanged += OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryRotationZ.SettingChanged += OnCameraInventoryTransformChanged;
 
             _profileSettingsSubscribed = true;
         }
@@ -103,6 +110,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.EnableLargerPlayerModel.SettingChanged -= OnLargerPlayerModelChanged;
             Settings.EnableHighQualityPlayerPreview.SettingChanged -= OnPlayerPreviewQualityChanged;
             Settings.EnableDefaultPlayerAnimation.SettingChanged -= OnPlayerPreviewAnimationChanged;
+            Settings.CameraInventoryPositionX.SettingChanged -= OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryPositionY.SettingChanged -= OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryPositionZ.SettingChanged -= OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryRotationX.SettingChanged -= OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryRotationY.SettingChanged -= OnCameraInventoryTransformChanged;
+            Settings.CameraInventoryRotationZ.SettingChanged -= OnCameraInventoryTransformChanged;
 
             _profileSettingsSubscribed = false;
         }
@@ -119,6 +132,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             UpdatePlayerModelPosition();
             UpdateCameraPosition();
+            UpdateCameraRotation();
             ConfigurePreviewRenderQuality(ClonedPlayerModelView);
         }
         private static void OnPlayerPreviewQualityChanged(object sender, EventArgs e)
@@ -131,6 +145,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             await RefreshPlayerModel();
             UpdatePlayerModelRotation();
+        }
+
+        private static void OnCameraInventoryTransformChanged(object sender, EventArgs e)
+        {
+            UpdateCameraPosition();
+            UpdateCameraRotation();
         }
 
         private static void UpdateTextColors()
@@ -213,9 +233,16 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Transform cameraTransform = ClonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
                 if (cameraTransform != null)
                 {
-                    cameraTransform.localPosition = Settings.EnableLargerPlayerModel.Value ? new Vector3(0f, 0.2f, 1.5f) :
-                        // Reset to default position when disabled
-                        new Vector3(0f, 0f, 1f);
+                    Vector3 basePosition = Settings.EnableLargerPlayerModel.Value
+                        ? new Vector3(0f, 0.2f, 1.5f)
+                        : new Vector3(0f, 0f, 1f);
+
+                    Vector3 configuredOffset = new Vector3(
+                        Settings.CameraInventoryPositionX.Value,
+                        Settings.CameraInventoryPositionY.Value,
+                        Settings.CameraInventoryPositionZ.Value);
+
+                    cameraTransform.localPosition = basePosition + configuredOffset;
                 }
                 else
                 {
@@ -225,6 +252,29 @@ namespace MoxoPixel.MenuOverhaul.Patches
             else
             {
                 Plugin.LogSource.LogWarning("UpdateCameraPosition - clonedPlayerModelView is null.");
+            }
+        }
+
+        private static void UpdateCameraRotation()
+        {
+            if (ClonedPlayerModelView != null)
+            {
+                Transform cameraTransform = ClonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
+                if (cameraTransform != null)
+                {
+                    cameraTransform.localRotation = Quaternion.Euler(
+                        Settings.CameraInventoryRotationX.Value,
+                        Settings.CameraInventoryRotationY.Value,
+                        Settings.CameraInventoryRotationZ.Value);
+                }
+                else
+                {
+                    Plugin.LogSource.LogWarning("UpdateCameraRotation - Camera_inventory not found.");
+                }
+            }
+            else
+            {
+                Plugin.LogSource.LogWarning("UpdateCameraRotation - clonedPlayerModelView is null.");
             }
         }
 
@@ -392,10 +442,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Transform cameraTransform = modelInstance.transform.Find("PlayerMVObject/Camera_inventory");
             if (cameraTransform != null)
             {
-                // Set camera position based on larger model setting
-                cameraTransform.localPosition = Settings.EnableLargerPlayerModel.Value ? new Vector3(0f, 0.2f, 1.5f) :
-                    // Set default position when disabled
-                    new Vector3(0f, 0f, 1f);
+                UpdateCameraPosition();
+                UpdateCameraRotation();
 
                 PrismEffects prismEffects = cameraTransform.GetComponent<PrismEffects>();
                 if (prismEffects != null)
@@ -791,6 +839,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     await playerModelViewScript.Show(PatchConstants.BackEndSession.Profile, null, null, 0f, null, Settings.EnableDefaultPlayerAnimation.Value);
                     AdjustInnerPlayerModelPosition(ClonedPlayerModelView);
                     UpdateCameraPosition();
+                    UpdateCameraRotation();
                     ConfigurePreviewRenderQuality(ClonedPlayerModelView);
                 }
                 else { Plugin.LogSource.LogWarning("RefreshPlayerModel - BackEndSession.Profile is null. Cannot show player model."); }

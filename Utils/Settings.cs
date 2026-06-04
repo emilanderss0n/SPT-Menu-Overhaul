@@ -9,6 +9,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
         private const string GeneralSectionTitle = "1. General";
         private const string AdjustmentsSectionTitle = "2. Adjustments";
         private const string ColorsSectionTitle = "3. Colors";
+        private const string AdvancedSectionTitle = "4. Advanced";
 
         public static ConfigFile Config;
 
@@ -18,6 +19,12 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<bool> EnableLargerPlayerModel;
         public static ConfigEntry<bool> EnableHighQualityPlayerPreview;
         public static ConfigEntry<bool> EnableDefaultPlayerAnimation;
+        public static ConfigEntry<float> CameraInventoryPositionX;
+        public static ConfigEntry<float> CameraInventoryPositionY;
+        public static ConfigEntry<float> CameraInventoryPositionZ;
+        public static ConfigEntry<float> CameraInventoryRotationX;
+        public static ConfigEntry<float> CameraInventoryRotationY;
+        public static ConfigEntry<float> CameraInventoryRotationZ;
         public static ConfigEntry<float> PositionLogotypeHorizontal;
         public static ConfigEntry<float> PositionPlayerModelHorizontal;
         public static ConfigEntry<float> PositionBottomFieldHorizontal;
@@ -84,6 +91,60 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     "Use EFT's default animated player preview behavior in the main menu. Disable for a static pose",
                     null,
                     new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(CameraInventoryPositionX = config.Bind(
+                AdvancedSectionTitle,
+                "Camera Inventory Position X",
+                0f,
+                new ConfigDescription(
+                    "Offset Camera_inventory localPosition X for the main menu player preview",
+                    new AcceptableValueRange<float>(-3f, 3f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(CameraInventoryPositionY = config.Bind(
+                AdvancedSectionTitle,
+                "Camera Inventory Position Y",
+                0f,
+                new ConfigDescription(
+                    "Offset Camera_inventory localPosition Y for the main menu player preview",
+                    new AcceptableValueRange<float>(-3f, 3f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(CameraInventoryPositionZ = config.Bind(
+                AdvancedSectionTitle,
+                "Camera Inventory Position Z",
+                0f,
+                new ConfigDescription(
+                    "Offset Camera_inventory localPosition Z for the main menu player preview",
+                    new AcceptableValueRange<float>(-3f, 3f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(CameraInventoryRotationX = config.Bind(
+                AdvancedSectionTitle,
+                "Camera Inventory Rotation X",
+                0f,
+                new ConfigDescription(
+                    "Set Camera_inventory localRotation X for the main menu player preview",
+                    new AcceptableValueRange<float>(-180f, 180f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(CameraInventoryRotationY = config.Bind(
+                AdvancedSectionTitle,
+                "Camera Inventory Rotation Y",
+                0f,
+                new ConfigDescription(
+                    "Set Camera_inventory localRotation Y for the main menu player preview",
+                    new AcceptableValueRange<float>(-180f, 180f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(CameraInventoryRotationZ = config.Bind(
+                AdvancedSectionTitle,
+                "Camera Inventory Rotation Z",
+                0f,
+                new ConfigDescription(
+                    "Set Camera_inventory localRotation Z for the main menu player preview",
+                    new AcceptableValueRange<float>(-180f, 180f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
 
             ConfigEntries.Add(PositionLogotypeHorizontal = config.Bind(
                 AdjustmentsSectionTitle,
