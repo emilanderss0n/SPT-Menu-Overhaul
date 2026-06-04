@@ -23,7 +23,10 @@ Install the mod by dragging the first folder in the zip into your SPT install di
     *   Display player model in the main menu.
     *   Adjust the horizontal position of the player model.
     *   Adjust the horizontal rotation of the player model.
+    *   Enable a larger/closer player model framing.
     *   Enable extra shadows for a more detailed player model.
+    *   Toggle high-quality player preview rendering (sharper image, higher GPU usage).
+    *   Toggle default EFT player preview animation behavior.
 *   **Player Information Panel:**
     *   Adjust the horizontal and vertical position of the player information text (level, nickname, etc.).
 *   **Button & Animation Enhancements:**
@@ -52,6 +55,9 @@ Key settings include:
     *   `Enable Background`: Toggle the custom menu background.
     *   `Enable Top Glow`: Toggle the glow effect at the top of the menu.
     *   `Enable Extra Shadows`: Toggle additional shadows for the player model.
+    *   `Enable Larger Player Model`: Make the player model appear larger/closer in the main menu.
+    *   `Enable High Quality Player Preview`: Enable sharper player preview rendering (higher GPU cost).
+    *   `Enable Default Player Animation`: Use EFT's default animated player preview behavior.
 *   **Adjustment Settings:**
     *   `Position Logotype Horizontal`: Adjust the horizontal placement of the game's logo.
     *   `Position Player Model Horizontal`: Adjust the horizontal placement of the player character model.
