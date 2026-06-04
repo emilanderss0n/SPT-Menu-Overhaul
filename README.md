@@ -69,6 +69,28 @@ Key settings include:
 
 Refer to the ConfigurationManager in-game for detailed descriptions and value ranges for each setting.
 
+### Custom Assets (Icons and Background)
+
+This mod now loads menu assets directly from files instead of an asset bundle.
+
+- Icons are loaded from: `BepInEx/plugins/MoxoPixel.MenuOverhaul/Resources/icons/`
+- Background textures are loaded from: `BepInEx/plugins/MoxoPixel.MenuOverhaul/Resources/background/`
+
+Expected background file names:
+
+- `background.png` (default)
+- `background_ultrawide.png` (used on ultrawide aspect ratios)
+
+Icon file names should match the internal icon keys used by the mod:
+
+- `icon_play`
+- `icon_mainmenu_character`
+- `icon_trade`
+- `hideout_icon_black`
+- `exit_status_runner`
+
+Supported image formats: `.png`, `.jpg`, `.jpeg`, `.tga`.
+
 ## For Developers
 
 ### Building

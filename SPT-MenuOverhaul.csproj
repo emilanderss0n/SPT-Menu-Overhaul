@@ -21,7 +21,7 @@
     <EmbeddedResource Remove="Interfaces\**"/>
     <None Remove="build\**"/>
     <None Remove="Interfaces\**"/>
-    <None Update="Resources\menu_overhaul_ui.bundle">
+    <None Update="Resources\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

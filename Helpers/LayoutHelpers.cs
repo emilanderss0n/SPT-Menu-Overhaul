@@ -12,8 +12,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 {
     public static class LayoutHelpers
     {
-        private static AssetBundle iconAssetBundle;
         private static bool isAlignmentCameraMoved;
+        private static readonly string PluginResourcesRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "MoxoPixel.MenuOverhaul", "Resources");
+        private static readonly string IconsDirectory = Path.Combine(PluginResourcesRoot, "icons");
+        private static readonly string BackgroundDirectory = Path.Combine(PluginResourcesRoot, "background");
         private static readonly Dictionary<string, string> ButtonNameToFileNameMap = new Dictionary<string, string>
         {
             { "PlayButton", "icon_play" },
@@ -24,6 +26,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             { "ExitButtonGroup", "exit_status_runner" }
         };
         private static readonly Dictionary<string, Texture2D> TextureCache = new Dictionary<string, Texture2D>();
+        private static readonly Dictionary<string, Sprite> SpriteCache = new Dictionary<string, Sprite>();
         private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
         private static readonly int MainTex = Shader.PropertyToID("_MainTex");
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
@@ -35,27 +38,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             public GameObject EnvironmentUISceneFactory { get; set; }
             public GameObject FactoryLayout { get; set; }
         }
-
-        private static AssetBundle GetIconAssetBundle()
-        {
-            if (iconAssetBundle == null)
-            {
-                string assetBundlePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "MoxoPixel.MenuOverhaul", "Resources", "menu_overhaul_ui.bundle");
-                if (!File.Exists(assetBundlePath))
-                {
-                    Plugin.LogSource.LogError($"AssetBundle not found at path: {assetBundlePath}");
-                    return null;
-                }
-                iconAssetBundle = AssetBundle.LoadFromFile(assetBundlePath);
-                if (iconAssetBundle == null)
-                {
-                    Plugin.LogSource.LogError("Failed to load AssetBundle!");
-                    return null;
-                }
-            }
-            return iconAssetBundle;
-        }
-
 
         public static EnvironmentObjects FindEnvironmentObjects()
         {
@@ -140,19 +122,16 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            AssetBundle bundle = GetIconAssetBundle();
-            if (bundle == null) return;
-
             if (!ButtonNameToFileNameMap.TryGetValue(buttonName, out string fileName))
             {
                 Plugin.LogSource.LogWarning($"No icon mapping found for button name: {buttonName}");
                 return;
             }
 
-            Sprite newIconSprite = bundle.LoadAsset<Sprite>(fileName);
+            Sprite newIconSprite = LoadIconSprite(fileName);
             if (newIconSprite == null)
             {
-                Plugin.LogSource.LogWarning($"Icon sprite '{fileName}' for {buttonName} could not be loaded from AssetBundle.");
+                Plugin.LogSource.LogWarning($"Icon sprite '{fileName}' for {buttonName} could not be loaded from '{IconsDirectory}'.");
                 return;
             }
 
@@ -172,6 +151,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             {
                 image.sprite = sprite;
                 image.overrideSprite = sprite;
+                image.type = Image.Type.Simple;
+                image.preserveAspect = true;
             }
         }
 
@@ -188,10 +169,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         }
 
 
-        private static Texture2D LoadAndPreparePanoramaTexture(AssetBundle bundle)
+        private static Texture2D LoadAndPreparePanoramaTexture()
         {
-            if (bundle == null) return null;
-
             float aspectRatio = (float)Screen.width / Screen.height;
             string textureName = aspectRatio > 2.33f ? "background_ultrawide" : "background";
 
@@ -200,10 +179,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return cachedTexture;
             }
 
-            Texture2D texture = bundle.LoadAsset<Texture2D>(textureName);
+            Texture2D texture = LoadTextureFromDirectory(BackgroundDirectory, textureName);
             if (texture == null)
             {
-                Plugin.LogSource.LogWarning($"Texture '{textureName}' could not be loaded from AssetBundle.");
+                Plugin.LogSource.LogWarning($"Texture '{textureName}' could not be loaded from '{BackgroundDirectory}'.");
                 return null;
             }
 
@@ -290,13 +269,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 ClearTextureCache();
             }
 
-            AssetBundle bundle = GetIconAssetBundle();
-            if (bundle == null)
-            {
-                Plugin.LogSource.LogError("Failed to get asset bundle for panorama emission map.");
-                return;
-            }
-
             GameObject panorama = factoryLayout.transform.Find("panorama")?.gameObject;
             if (panorama == null)
             {
@@ -314,7 +286,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            Texture2D preparedTexture = LoadAndPreparePanoramaTexture(bundle);
+            Texture2D preparedTexture = LoadAndPreparePanoramaTexture();
             if (preparedTexture == null)
             {
                 Plugin.LogSource.LogWarning("Failed to prepare panorama texture.");
@@ -517,12 +489,105 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
             }
             TextureCache.Clear();
-            
-            if (iconAssetBundle != null)
+
+            foreach (var sprite in SpriteCache.Values)
             {
-                iconAssetBundle.Unload(false);
-                iconAssetBundle = null;
+                if (sprite != null)
+                {
+                    UnityEngine.Object.Destroy(sprite);
+                }
             }
+            SpriteCache.Clear();
+        }
+
+        private static Sprite LoadIconSprite(string baseFileName)
+        {
+            if (string.IsNullOrEmpty(baseFileName))
+            {
+                return null;
+            }
+
+            if (SpriteCache.TryGetValue(baseFileName, out Sprite cachedSprite))
+            {
+                return cachedSprite;
+            }
+
+            Texture2D iconTexture = LoadTextureFromDirectory(IconsDirectory, baseFileName);
+            if (iconTexture == null)
+            {
+                return null;
+            }
+
+            Sprite sprite = Sprite.Create(iconTexture, new Rect(0, 0, iconTexture.width, iconTexture.height), new Vector2(0.5f, 0.5f), 100f);
+            SpriteCache[baseFileName] = sprite;
+            return sprite;
+        }
+
+        private static Texture2D LoadTextureFromDirectory(string directory, string baseFileName)
+        {
+            string filePath = ResolveAssetPath(directory, baseFileName);
+            if (string.IsNullOrEmpty(filePath))
+            {
+                return null;
+            }
+
+            try
+            {
+                byte[] fileBytes = File.ReadAllBytes(filePath);
+                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (!texture.LoadImage(fileBytes))
+                {
+                    UnityEngine.Object.Destroy(texture);
+                    Plugin.LogSource.LogWarning($"Failed to decode image file '{filePath}'.");
+                    return null;
+                }
+
+                texture.name = Path.GetFileNameWithoutExtension(filePath);
+                texture.wrapMode = TextureWrapMode.Clamp;
+                texture.filterMode = FilterMode.Bilinear;
+                return texture;
+            }
+            catch (Exception ex)
+            {
+                Plugin.LogSource.LogError($"Failed to read texture from '{filePath}': {ex.Message}");
+                return null;
+            }
+        }
+
+        private static string ResolveAssetPath(string directory, string baseFileName)
+        {
+            if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(baseFileName) || !Directory.Exists(directory))
+            {
+                return null;
+            }
+
+            string[] extensions = new[] { ".png", ".jpg", ".jpeg", ".tga" };
+
+            if (Path.HasExtension(baseFileName))
+            {
+                string explicitPath = Path.Combine(directory, baseFileName);
+                if (File.Exists(explicitPath))
+                {
+                    return explicitPath;
+                }
+            }
+
+            foreach (string extension in extensions)
+            {
+                string candidatePath = Path.Combine(directory, baseFileName + extension);
+                if (File.Exists(candidatePath))
+                {
+                    return candidatePath;
+                }
+            }
+
+            string[] matchingFiles = Directory.GetFiles(directory, baseFileName + ".*");
+            if (matchingFiles.Length > 0)
+            {
+                return matchingFiles[0];
+            }
+
+            return null;
         }
 
         public static void DisposeResources()
