@@ -287,7 +287,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
 
                 Utility.ConfigureDecalPlane(true);
-                Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value);
+                Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value, Settings.PositionLogotypeVertical.Value);
             }
             catch (System.Exception ex)
             {

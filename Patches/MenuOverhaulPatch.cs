@@ -99,7 +99,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (!Utility.IsInGame())
             {
                 Utility.ConfigureDecalPlane(true);
-                Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value);
+                Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value, Settings.PositionLogotypeVertical.Value);
             }
         }
 
@@ -109,10 +109,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             Settings.EnableTopGlow.SettingChanged += OnLayoutSettingsChanged;
             Settings.EnableBackground.SettingChanged += OnLayoutSettingsChanged;
+            Settings.EnableLogotypeBulbAccentColor.SettingChanged += OnLayoutSettingsChanged;
             Settings.PositionLogotypeHorizontal.SettingChanged += OnLayoutSettingsChanged;
+            Settings.PositionLogotypeVertical.SettingChanged += OnLayoutSettingsChanged;
             Settings.ScaleBackgroundX.SettingChanged += OnScaleBackgroundChanged;
             Settings.ScaleBackgroundY.SettingChanged += OnScaleBackgroundChanged;
             Settings.EnableExtraShadows.SettingChanged += OnLayoutSettingsChanged;
+            Settings.EnableMenuButtonIcons.SettingChanged += OnMenuIconVisibilityChanged;
+            Settings.AccentColor.SettingChanged += OnLayoutSettingsChanged;
 
             _layoutSettingsSubscribed = true;
             Plugin.LogSource.LogDebug("Layout-specific settings changes subscribed.");
@@ -124,10 +128,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             Settings.EnableTopGlow.SettingChanged -= OnLayoutSettingsChanged;
             Settings.EnableBackground.SettingChanged -= OnLayoutSettingsChanged;
+            Settings.EnableLogotypeBulbAccentColor.SettingChanged -= OnLayoutSettingsChanged;
             Settings.PositionLogotypeHorizontal.SettingChanged -= OnLayoutSettingsChanged;
+            Settings.PositionLogotypeVertical.SettingChanged -= OnLayoutSettingsChanged;
             Settings.ScaleBackgroundX.SettingChanged -= OnScaleBackgroundChanged;
             Settings.ScaleBackgroundY.SettingChanged -= OnScaleBackgroundChanged;
             Settings.EnableExtraShadows.SettingChanged -= OnLayoutSettingsChanged;
+            Settings.EnableMenuButtonIcons.SettingChanged -= OnMenuIconVisibilityChanged;
+            Settings.AccentColor.SettingChanged -= OnLayoutSettingsChanged;
 
             _layoutSettingsSubscribed = false;
             Plugin.LogSource.LogDebug("Layout-specific settings changes unsubscribed.");
@@ -143,6 +151,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void OnLayoutSettingsChanged(object sender, EventArgs e) => UpdateLayoutElements();
         private static void OnScaleBackgroundChanged(object sender, EventArgs e) => UpdateCustomPlaneScale();
+        private static void OnMenuIconVisibilityChanged(object sender, EventArgs e) => ButtonHelpers.UpdateMenuButtonIconVisibility();
 
         public static void UpdateLayoutElements()
         {
@@ -157,6 +166,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (environmentObjects.CommonObj != null)
             {
                 LayoutHelpers.SetChildActive(environmentObjects.CommonObj, "Glow Canvas", Settings.EnableTopGlow.Value);
+                LayoutHelpers.UpdateTopGlowColor(environmentObjects.CommonObj, Settings.AccentColor.Value);
             }
             else
             {
@@ -167,13 +177,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
             {
                 // Handle custom plane
                 LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "CustomPlane", Settings.EnableBackground.Value);
+                LayoutHelpers.UpdateLogotypeBulbLightColor(environmentObjects.FactoryLayout);
                 
                 // Only update decal plane if we're not in game
                 if (!Utility.IsInGame())
                 {
                     // Update decal plane position and ensure it's active
                     Utility.ConfigureDecalPlane(true);
-                    Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value);
+                    Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value, Settings.PositionLogotypeVertical.Value);
                 }
             }
             else

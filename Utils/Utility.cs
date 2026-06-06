@@ -6,6 +6,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
     public static class Utility
     {
         private static bool isInGame;
+        private const float DefaultDecalPlaneY = -999.4f;
 
         /// <summary>
         /// Method to track when the game starts or ends
@@ -77,7 +78,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
         /// <summary>
         /// Set the position of the decal plane
         /// </summary>
-        public static void SetDecalPlanePosition(float xPosition)
+        public static void SetDecalPlanePosition(float xPosition, float yOffset)
         {
             var env = LayoutHelpers.FindEnvironmentObjects();
             if (env?.FactoryLayout == null) return;
@@ -85,7 +86,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
             GameObject decalPlane = env.FactoryLayout.transform.Find("decal_plane")?.gameObject;
             if (decalPlane == null || !decalPlane.activeSelf) return;
 
-            decalPlane.transform.position = new Vector3(xPosition, -999.4f, 0f);
+            decalPlane.transform.position = new Vector3(xPosition, DefaultDecalPlaneY + yOffset, 0f);
         }
 
         /// <summary>

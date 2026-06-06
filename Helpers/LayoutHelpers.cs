@@ -93,6 +93,29 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
         }
 
+        public static void UpdateTopGlowColor(GameObject commonObj, Color accentColor)
+        {
+            if (commonObj == null)
+            {
+                return;
+            }
+
+            Transform topGlowTransform = commonObj.transform.Find("Glow Canvas/TopGlowPve");
+            if (topGlowTransform == null)
+            {
+                return;
+            }
+
+            Graphic topGlowGraphic = topGlowTransform.GetComponent<Graphic>();
+            if (topGlowGraphic == null)
+            {
+                return;
+            }
+
+            Color currentColor = topGlowGraphic.color;
+            topGlowGraphic.color = new Color(accentColor.r, accentColor.g, accentColor.b, currentColor.a);
+        }
+
 
         public static void SetChildActive(GameObject parent, string childName, bool isActive)
         {
@@ -392,7 +415,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     {
                         pointLightBulbTransform.gameObject.SetActive(true);
                         Light pointLight = pointLightBulbTransform.GetComponent<Light>();
-                        if (pointLight != null) pointLight.color = Color.white;
+                        if (pointLight != null)
+                        {
+                            pointLight.color = Settings.EnableLogotypeBulbAccentColor.Value
+                                ? Settings.AccentColor.Value
+                                : Color.white;
+                        }
                         else Plugin.LogSource.LogWarning("Light component not found on Point light_bulb.");
                         pointLightBulbTransform.localPosition = new Vector3(-2.9435f, 1.2058f, 0.024f);
                     }
@@ -414,6 +442,30 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             GameObject mainMenuCamera = factoryCameraContainer.transform.Find("MainMenuCamera")?.gameObject;
             if (mainMenuCamera != null) mainMenuCamera.SetActive(false);
             else Plugin.LogSource.LogWarning("MainMenuCamera GameObject not found in FactoryCameraContainer.");
+        }
+
+        public static void UpdateLogotypeBulbLightColor(GameObject factoryLayout)
+        {
+            if (factoryLayout == null)
+            {
+                return;
+            }
+
+            Transform pointLightBulbTransform = factoryLayout.transform.Find("LampContainer/Lamp/Lamp/Point light_bulb");
+            if (pointLightBulbTransform == null)
+            {
+                return;
+            }
+
+            Light pointLight = pointLightBulbTransform.GetComponent<Light>();
+            if (pointLight == null)
+            {
+                return;
+            }
+
+            pointLight.color = Settings.EnableLogotypeBulbAccentColor.Value
+                ? Settings.AccentColor.Value
+                : Color.white;
         }
 
         private static void SetupCustomAlignmentCamera(GameObject environmentUI, GameObject factoryLayout)

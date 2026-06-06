@@ -10,15 +10,19 @@ namespace MoxoPixel.MenuOverhaul.Utils
         private const string AdjustmentsSectionTitle = "2. Adjustments";
         private const string ColorsSectionTitle = "3. Colors";
         private const string AdvancedSectionTitle = "4. Advanced";
+        private const float DefaultLogotypeWorldY = -999.4f;
+        private const float LogotypeVerticalOffsetLimit = 2f;
 
         public static ConfigFile Config;
 
         public static ConfigEntry<bool> EnableBackground;
         public static ConfigEntry<bool> EnableTopGlow;
+        public static ConfigEntry<bool> EnableLogotypeBulbAccentColor;
         public static ConfigEntry<bool> EnableExtraShadows;
         public static ConfigEntry<bool> EnableLargerPlayerModel;
         public static ConfigEntry<bool> EnableHighQualityPlayerPreview;
         public static ConfigEntry<bool> EnableDefaultPlayerAnimation;
+        public static ConfigEntry<bool> EnableMenuButtonIcons;
         public static ConfigEntry<float> CameraInventoryPositionX;
         public static ConfigEntry<float> CameraInventoryPositionY;
         public static ConfigEntry<float> CameraInventoryPositionZ;
@@ -26,6 +30,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<float> CameraInventoryRotationY;
         public static ConfigEntry<float> CameraInventoryRotationZ;
         public static ConfigEntry<float> PositionLogotypeHorizontal;
+        public static ConfigEntry<float> PositionLogotypeVertical;
         public static ConfigEntry<float> PositionPlayerModelHorizontal;
         public static ConfigEntry<float> PositionBottomFieldHorizontal;
         public static ConfigEntry<float> PositionBottomFieldVertical;
@@ -33,6 +38,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<float> ScaleBackgroundY;
         public static ConfigEntry<float> RotationPlayerModelHorizontal;
         public static ConfigEntry<Color> AccentColor;
+        private static bool _normalizingAccentAlpha;
 
         public static List<ConfigEntryBase> ConfigEntries = new List<ConfigEntryBase>();
 
@@ -53,6 +59,15 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 true,
                 new ConfigDescription(
                     "Enable or disable the blue/yellow top glow in the main menu",
+                    null,
+                    new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(EnableLogotypeBulbAccentColor = config.Bind(
+                ColorsSectionTitle,
+                "Enable Logotype Light Accent Color",
+                false,
+                new ConfigDescription(
+                    "Use Accent Color for the logotype light instead of white",
                     null,
                     new ConfigurationManagerAttributes { })));
 
@@ -89,6 +104,15 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 false,
                 new ConfigDescription(
                     "Use EFT's default animated player preview behavior in the main menu. Disable for a static pose",
+                    null,
+                    new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(EnableMenuButtonIcons = config.Bind(
+                GeneralSectionTitle,
+                "Enable Menu Button Icons",
+                true,
+                new ConfigDescription(
+                    "Show or hide menu button icons. When disabled, icons are hidden in both default and hover states",
                     null,
                     new ConfigurationManagerAttributes { })));
 
@@ -155,6 +179,17 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     new AcceptableValueRange<float>(-10f, 2f),
                     new ConfigurationManagerAttributes { })));
 
+            ConfigEntries.Add(PositionLogotypeVertical = config.Bind(
+                AdjustmentsSectionTitle,
+                "Position Logotype Vertical",
+                0f,
+                new ConfigDescription(
+                    "Adjust the vertical offset of the logotype from its default position",
+                    new AcceptableValueRange<float>(-LogotypeVerticalOffsetLimit, LogotypeVerticalOffsetLimit),
+                    new ConfigurationManagerAttributes { })));
+
+            NormalizeLegacyLogotypeVerticalSetting();
+
             ConfigEntries.Add(PositionPlayerModelHorizontal = config.Bind(
                 AdjustmentsSectionTitle,
                 "Position Player Model Horizontal",
@@ -214,11 +249,37 @@ namespace MoxoPixel.MenuOverhaul.Utils
                 "Accent Color",
                 new Color(1f, 0.75f, 0.3f, 1f), // Default gold/orange color
                 new ConfigDescription(
-                    "The accent color used for nickname, experience text, and highlighted buttons in the menu",
+                    "The accent color used for nickname, experience text, highlighted buttons, and top glow hue (alpha is always forced to 1)",
                     null,
                     new ConfigurationManagerAttributes { })));
 
+            AccentColor.SettingChanged += OnAccentColorChanged;
+            EnforceAccentColorOpaque();
+
             RecalcOrder();
+        }
+
+        private static void OnAccentColorChanged(object sender, System.EventArgs e)
+        {
+            EnforceAccentColorOpaque();
+        }
+
+        private static void EnforceAccentColorOpaque()
+        {
+            if (AccentColor == null || _normalizingAccentAlpha)
+            {
+                return;
+            }
+
+            Color current = AccentColor.Value;
+            if (Mathf.Approximately(current.a, 1f))
+            {
+                return;
+            }
+
+            _normalizingAccentAlpha = true;
+            AccentColor.Value = new Color(current.r, current.g, current.b, 1f);
+            _normalizingAccentAlpha = false;
         }
 
         private static void RecalcOrder()
@@ -235,6 +296,26 @@ namespace MoxoPixel.MenuOverhaul.Utils
 
                 settingOrder--;
             }
+        }
+
+        private static void NormalizeLegacyLogotypeVerticalSetting()
+        {
+            if (PositionLogotypeVertical == null)
+            {
+                return;
+            }
+
+            float currentValue = PositionLogotypeVertical.Value;
+            if (currentValue >= -10f && currentValue <= 10f)
+            {
+                return;
+            }
+
+            float convertedOffset = currentValue <= -100f
+                ? currentValue - DefaultLogotypeWorldY
+                : (-currentValue) - DefaultLogotypeWorldY;
+
+            PositionLogotypeVertical.Value = Mathf.Clamp(convertedOffset, -LogotypeVerticalOffsetLimit, LogotypeVerticalOffsetLimit);
         }
 
         public enum EAlignment

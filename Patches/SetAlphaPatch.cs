@@ -61,7 +61,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             if (__instance.Icon != null)
             {
-                __instance.Icon.color = normalIconColor.SetAlpha(1f);
+                bool showIcons = MoxoPixel.MenuOverhaul.Utils.Settings.EnableMenuButtonIcons.Value;
+                __instance.Icon.gameObject.SetActive(showIcons);
+                if (showIcons)
+                {
+                    __instance.Icon.color = normalIconColor.SetAlpha(1f);
+                }
             }
 
             if (__instance.Label != null)
@@ -81,7 +86,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     __instance.Image.color = normalImageColor.SetAlpha(0f);
                     __instance.ProcessMultipleTweens(new Tween[] { __instance.Image.DOFade(1f, duration) });
 
-                    if (__instance.Icon != null)
+                    if (__instance.Icon != null && MoxoPixel.MenuOverhaul.Utils.Settings.EnableMenuButtonIcons.Value)
                     {
                         __instance.ProcessTween(__instance.Icon.DOFade(1f, duration));
                     }

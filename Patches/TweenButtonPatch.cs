@@ -56,7 +56,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             if (__instance.Icon != null)
             {
-                __instance.Icon.color = highlightedIconColor;
+                bool showIcons = Settings.EnableMenuButtonIcons.Value;
+                __instance.Icon.gameObject.SetActive(showIcons);
+                if (showIcons)
+                {
+                    __instance.Icon.color = highlightedIconColor;
+                }
             }
 
             if (__instance.Label != null)
@@ -69,7 +74,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 if (!animated)
                 {
                     __instance.Image.color = highlightedImageColor;
-                    if (__instance.Icon != null)
+                    if (__instance.Icon != null && Settings.EnableMenuButtonIcons.Value)
                     {
                         __instance.Icon.color = highlightedIconColor.SetAlpha(1f);
                     }
@@ -85,7 +90,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                         __instance.Image.DOFade(1f, imageFadeDuration)
                     });
 
-                    if (__instance.Icon != null)
+                    if (__instance.Icon != null && Settings.EnableMenuButtonIcons.Value)
                     {
                         __instance.ProcessTween(__instance.Icon.DOFade(1f, iconFadeDuration));
                     }

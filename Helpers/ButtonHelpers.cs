@@ -4,6 +4,7 @@ using System;
 using TMPro;
 using UnityEngine;
 using System.Threading.Tasks;
+using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
 {
@@ -60,6 +61,56 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 catch (Exception ex)
                 {
                     Plugin.LogSource.LogWarning($"RefreshButtonIdleState - method_1 invoke failed: {ex.Message}");
+                }
+            }
+
+            UpdateMenuButtonIconVisibility(menuScreenInstance);
+        }
+
+        public static void UpdateMenuButtonIconVisibility(MenuScreen menuScreenInstance = null)
+        {
+            bool showIcons = Settings.EnableMenuButtonIcons.Value;
+
+            GameObject menuScreenObject = menuScreenInstance != null
+                ? menuScreenInstance.gameObject
+                : GameObject.Find("Common UI/Common UI/MenuScreen");
+
+            if (menuScreenObject == null)
+            {
+                return;
+            }
+
+            foreach (var animation in menuScreenObject.GetComponentsInChildren<DefaultUIButtonAnimation>(true))
+            {
+                if (animation?.Icon != null)
+                {
+                    animation.Icon.gameObject.SetActive(showIcons);
+                }
+            }
+
+            foreach (string buttonName in ButtonNames)
+            {
+                GameObject buttonObject = menuScreenObject.transform.Find(buttonName)?.gameObject;
+                if (buttonObject == null)
+                {
+                    continue;
+                }
+
+                Transform sizeLabelTransform = buttonObject.transform.Find("SizeLabel");
+                if (buttonName == "ExitButtonGroup")
+                {
+                    sizeLabelTransform = buttonObject.transform.Find("ExitButton/SizeLabel");
+                }
+
+                if (sizeLabelTransform == null)
+                {
+                    continue;
+                }
+
+                Transform iconContainerTransform = sizeLabelTransform.Find("IconContainer");
+                if (iconContainerTransform != null)
+                {
+                    iconContainerTransform.gameObject.SetActive(showIcons);
                 }
             }
         }
@@ -150,7 +201,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             GameObject sizeLabel = buttonObject.transform.Find("SizeLabel")?.gameObject;
             if (sizeLabel != null)
             {
-                LayoutHelpers.SetChildActive(sizeLabel, "IconContainer", true);
+                LayoutHelpers.SetChildActive(sizeLabel, "IconContainer", Settings.EnableMenuButtonIcons.Value);
             }
             else
             {
@@ -170,7 +221,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     GameObject iconContainer = sizeLabel.transform.Find("IconContainer")?.gameObject;
                     if (iconContainer != null)
                     {
-                        LayoutHelpers.SetChildActive(iconContainer, "Icon", true);
+                        LayoutHelpers.SetChildActive(iconContainer, "Icon", Settings.EnableMenuButtonIcons.Value);
                     }
                     else
                     {
@@ -198,7 +249,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 GameObject iconContainer = sizeLabel.transform.Find("IconContainer")?.gameObject;
                 if (iconContainer != null)
                 {
-                    LayoutHelpers.SetChildActive(iconContainer, "Icon", true);
+                    LayoutHelpers.SetChildActive(iconContainer, "Icon", Settings.EnableMenuButtonIcons.Value);
                 }
                 else
                 {

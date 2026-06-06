@@ -9,7 +9,7 @@ using SPT.Reflection.Patching;
 
 namespace MoxoPixel.MenuOverhaul
 {
-    [BepInPlugin("com.moxopixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.2.1")]
+    [BepInPlugin("com.moxopixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.2.2")]
     public class Plugin : BaseUnityPlugin
     {
         public static ManualLogSource LogSource { get; private set; }
