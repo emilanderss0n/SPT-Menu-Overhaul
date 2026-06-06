@@ -3,8 +3,9 @@
     <AssemblyName>MoxoPixel.MenuOverhaul</AssemblyName>
     <Description>MoxoPixel.MenuOverhaul</Description>
     <AssemblyVersion>$(Version)</AssemblyVersion>
-    <Version>1.2.2</Version>
+    <Version>1.1.0</Version>
     <Authors>MoxoPixel, GrooveypenguinX</Authors>
+    <Description>MoxoPixel.MenuOverhaul</Description>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <Configurations>Debug;Release</Configurations>
@@ -129,6 +130,6 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="&quot;$(ProjectDir)build\postbuild-copy.cmd&quot; &quot;$(TargetName)&quot; &quot;$(TargetDir)&quot; &quot;$(ProjectDir)&quot;" />
+    <Exec Command="@echo off&#xA;setlocal enabledelayedexpansion&#xA;&#xA;REM Set variables&#xA;set MODNAME=$(TargetName)&#xA;set DLLPATH=$(TargetDir)$(TargetName).dll&#xA;set RESOURCESPATH=$(ProjectDir)Resources&#xA;set OUTDIR=..\..\BepInEx\plugins\%MODNAME%&#xA;set BUILDOUTDIR=..\Build\BepInEx\plugins\%MODNAME%&#xA;&#xA;REM Create output directories if they don't exist&#xA;if not exist &quot;%OUTDIR%&quot; mkdir &quot;%OUTDIR%&quot;&#xA;if not exist &quot;%BUILDOUTDIR%&quot; mkdir &quot;%BUILDOUTDIR%&quot;&#xA;&#xA;REM Copy the DLL to BepInEx plugins directory&#xA;copy /Y &quot;%DLLPATH%&quot; &quot;%OUTDIR%\&quot; &gt;nul 2&gt;&amp;1&#xA;echo [PostBuild] Copied %MODNAME%.dll to %OUTDIR%&#xA;&#xA;REM Copy the DLL to Build/BepInEx plugins directory&#xA;copy /Y &quot;%DLLPATH%&quot; &quot;%BUILDOUTDIR%\&quot; &gt;nul 2&gt;&amp;1&#xA;echo [PostBuild] Copied %MODNAME%.dll to %BUILDOUTDIR%&#xA;&#xA;REM Copy Resources folder to both output directories if it exists&#xA;if exist &quot;%RESOURCESPATH%&quot; (&#xA;    xcopy /E /I /Y &quot;%RESOURCESPATH%&quot; &quot;%OUTDIR%\Resources\&quot; &gt;nul 2&gt;&amp;1&#xA;    echo [PostBuild] Copied Resources folder to %OUTDIR%&#xA;    &#xA;    xcopy /E /I /Y &quot;%RESOURCESPATH%&quot; &quot;%BUILDOUTDIR%\Resources\&quot; &gt;nul 2&gt;&amp;1&#xA;    echo [PostBuild] Copied Resources folder to %BUILDOUTDIR%&#xA;) else (&#xA;    echo [PostBuild] Resources folder not found at %RESOURCESPATH%&#xA;)&#xA;" />
   </Target>
 </Project>

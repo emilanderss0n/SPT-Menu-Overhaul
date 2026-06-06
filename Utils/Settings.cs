@@ -118,7 +118,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
 
             ConfigEntries.Add(CameraInventoryPositionX = config.Bind(
                 AdvancedSectionTitle,
-                "Camera Inventory Position X",
+                "Camera Player Position X",
                 0f,
                 new ConfigDescription(
                     "Offset Camera_inventory localPosition X for the main menu player preview",
@@ -127,7 +127,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
 
             ConfigEntries.Add(CameraInventoryPositionY = config.Bind(
                 AdvancedSectionTitle,
-                "Camera Inventory Position Y",
+                "Camera Player Position Y",
                 0f,
                 new ConfigDescription(
                     "Offset Camera_inventory localPosition Y for the main menu player preview",
@@ -136,7 +136,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
 
             ConfigEntries.Add(CameraInventoryPositionZ = config.Bind(
                 AdvancedSectionTitle,
-                "Camera Inventory Position Z",
+                "Camera Player Position Z",
                 0f,
                 new ConfigDescription(
                     "Offset Camera_inventory localPosition Z for the main menu player preview",
@@ -145,7 +145,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
 
             ConfigEntries.Add(CameraInventoryRotationX = config.Bind(
                 AdvancedSectionTitle,
-                "Camera Inventory Rotation X",
+                "Camera Player Rotation X",
                 0f,
                 new ConfigDescription(
                     "Set Camera_inventory localRotation X for the main menu player preview",
@@ -154,7 +154,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
 
             ConfigEntries.Add(CameraInventoryRotationY = config.Bind(
                 AdvancedSectionTitle,
-                "Camera Inventory Rotation Y",
+                "Camera Player Rotation Y",
                 0f,
                 new ConfigDescription(
                     "Set Camera_inventory localRotation Y for the main menu player preview",
@@ -163,7 +163,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
 
             ConfigEntries.Add(CameraInventoryRotationZ = config.Bind(
                 AdvancedSectionTitle,
-                "Camera Inventory Rotation Z",
+                "Camera Player Rotation Z",
                 0f,
                 new ConfigDescription(
                     "Set Camera_inventory localRotation Z for the main menu player preview",

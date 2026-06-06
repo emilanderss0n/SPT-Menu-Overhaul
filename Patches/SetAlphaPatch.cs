@@ -4,6 +4,7 @@ using SPT.Reflection.Patching;
 using System.Reflection;
 using UnityEngine;
 using MoxoPixel.MenuOverhaul.Helpers;
+using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
@@ -27,10 +28,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Plugin.LogSource.LogError("SetAlphaPatch: Failed to find one or more private fields in DefaultUIButtonAnimation via reflection. Patch may not work as expected.");
             }
             
-            var targetMethod = typeof(DefaultUIButtonAnimation).GetMethod("method_1", BindingFlags.Instance | BindingFlags.Public);
+            var targetMethod = typeof(DefaultUIButtonAnimation).GetMethod(MenuOverhaulConstants.Reflection.DefaultButtonIdleMethod, BindingFlags.Instance | BindingFlags.Public);
             if (targetMethod == null)
             {
-                Plugin.LogSource.LogError("SetAlphaPatch: Failed to find target method 'method_1' in DefaultUIButtonAnimation.");
+                Plugin.LogSource.LogError($"SetAlphaPatch: Failed to find target method '{MenuOverhaulConstants.Reflection.DefaultButtonIdleMethod}' in DefaultUIButtonAnimation.");
             }
             return targetMethod;
         }

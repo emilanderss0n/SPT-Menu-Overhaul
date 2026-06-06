@@ -23,10 +23,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Plugin.LogSource.LogError("TweenButtonPatch: Failed to find one or more private fields (_highlightedIconColor, _highlightedImageColor) in DefaultUIButtonAnimation. Patch may not work as expected.");
             }
 
-            var targetMethod = typeof(DefaultUIButtonAnimation).GetMethod("method_2", BindingFlags.Instance | BindingFlags.Public);
+            var targetMethod = typeof(DefaultUIButtonAnimation).GetMethod(MenuOverhaulConstants.Reflection.DefaultButtonHighlightedMethod, BindingFlags.Instance | BindingFlags.Public);
             if (targetMethod == null)
             {
-                Plugin.LogSource.LogError("TweenButtonPatch: Failed to find target method 'method_2' in DefaultUIButtonAnimation.");
+                Plugin.LogSource.LogError($"TweenButtonPatch: Failed to find target method '{MenuOverhaulConstants.Reflection.DefaultButtonHighlightedMethod}' in DefaultUIButtonAnimation.");
             }
             return targetMethod;
         }

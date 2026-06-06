@@ -30,9 +30,10 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static void ConfigureDecalPlane(bool enable)
         {
             var env = LayoutHelpers.FindEnvironmentObjects();
-            if (env?.FactoryLayout == null) return;
+            if (env == null || env.FactoryLayout == null) return;
 
-            GameObject decalPlane = env.FactoryLayout.transform.Find("decal_plane")?.gameObject;
+            Transform decalPlaneTransform = env.FactoryLayout.transform.Find("decal_plane");
+            GameObject decalPlane = decalPlaneTransform != null ? decalPlaneTransform.gameObject : null;
             if (decalPlane == null) return;
 
             if (enable)
@@ -81,9 +82,10 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static void SetDecalPlanePosition(float xPosition, float yOffset)
         {
             var env = LayoutHelpers.FindEnvironmentObjects();
-            if (env?.FactoryLayout == null) return;
+            if (env == null || env.FactoryLayout == null) return;
 
-            GameObject decalPlane = env.FactoryLayout.transform.Find("decal_plane")?.gameObject;
+            Transform decalPlaneTransform = env.FactoryLayout.transform.Find("decal_plane");
+            GameObject decalPlane = decalPlaneTransform != null ? decalPlaneTransform.gameObject : null;
             if (decalPlane == null || !decalPlane.activeSelf) return;
 
             decalPlane.transform.position = new Vector3(xPosition, DefaultDecalPlaneY + yOffset, 0f);

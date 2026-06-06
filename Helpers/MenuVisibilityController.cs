@@ -121,7 +121,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
 
                 var env = LayoutHelpers.FindEnvironmentObjects();
-                if (env?.FactoryLayout != null)
+                if (env != null && env.FactoryLayout != null)
                 {
                     SetChildActiveIfPresent(env.FactoryLayout, "LampContainer", false);
                     // AlignmentCamera positions/renders the CustomPlane, so it
@@ -129,7 +129,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     SetChildActiveIfPresent(env.FactoryLayout, "AlignmentCamera", true);
                     SetChildActiveIfPresent(env.FactoryLayout, "decal_plane", false);
 
-                    GameObject panorama = env.FactoryLayout.transform.Find("panorama")?.gameObject;
+                    Transform panoramaTransform = env.FactoryLayout.transform.Find("panorama");
+                    GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
                     if (panorama != null && panorama.activeSelf)
                     {
                         panorama.SetActive(false);
@@ -146,7 +147,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 // screens drive their own camera setup; we only changed it on
                 // the actual main menu).
 
-                if (env?.CommonObj != null)
+                if (env != null && env.CommonObj != null)
                 {
                     Transform glowCanvas = env.CommonObj.transform.Find("Glow Canvas");
                     if (glowCanvas != null && glowCanvas.gameObject.activeSelf)
@@ -185,7 +186,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
 
                 var env = LayoutHelpers.FindEnvironmentObjects();
-                if (env?.FactoryLayout != null)
+                if (env != null && env.FactoryLayout != null)
                 {
                     SetChildActiveIfPresent(env.FactoryLayout, "CustomPlane", false);
                     SetChildActiveIfPresent(env.FactoryLayout, "LampContainer", false);
@@ -195,14 +196,15 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     // Restore the stock panorama so non-main-menu screens that
                     // also use the FactoryLayout environment (Hideout etc.)
                     // get the default look back.
-                    GameObject panorama = env.FactoryLayout.transform.Find("panorama")?.gameObject;
+                    Transform panoramaTransform = env.FactoryLayout.transform.Find("panorama");
+                    GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
                     if (panorama != null && !panorama.activeSelf)
                     {
                         panorama.SetActive(true);
                     }
                 }
 
-                if (env?.EnvironmentUISceneFactory != null)
+                if (env != null && env.EnvironmentUISceneFactory != null)
                 {
                     Transform factoryCameraContainer = env.EnvironmentUISceneFactory.transform.Find("FactoryCameraContainer");
                     if (factoryCameraContainer != null)
@@ -215,7 +217,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     }
                 }
 
-                if (env?.CommonObj != null)
+                if (env != null && env.CommonObj != null)
                 {
                     Transform glowCanvas = env.CommonObj.transform.Find("Glow Canvas");
                     if (glowCanvas != null && glowCanvas.gameObject.activeSelf)
@@ -246,9 +248,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
 
                 var env = LayoutHelpers.FindEnvironmentObjects();
-                if (env?.FactoryLayout != null)
+                if (env != null && env.FactoryLayout != null)
                 {
-                    GameObject panorama = env.FactoryLayout.transform.Find("panorama")?.gameObject;
+                    Transform panoramaTransform = env.FactoryLayout.transform.Find("panorama");
+                    GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
                     if (panorama != null && panorama.activeSelf)
                     {
                         panorama.SetActive(false);
@@ -264,7 +267,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     }
                 }
 
-                if (env?.EnvironmentUISceneFactory != null)
+                if (env != null && env.EnvironmentUISceneFactory != null)
                 {
                     Transform factoryCameraContainer = env.EnvironmentUISceneFactory.transform.Find("FactoryCameraContainer");
                     if (factoryCameraContainer != null)
@@ -277,7 +280,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     }
                 }
 
-                if (env?.CommonObj != null)
+                if (env != null && env.CommonObj != null)
                 {
                     Transform glowCanvas = env.CommonObj.transform.Find("Glow Canvas");
                     if (glowCanvas != null)

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Globalization;
 using MoxoPixel.MenuOverhaul.Helpers;
 using MoxoPixel.MenuOverhaul.Utils;
 using EFT;
@@ -15,11 +14,8 @@ using Object = UnityEngine.Object;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
-    internal class PlayerProfileFeaturesPatch : ModulePatch
+    internal class PlayerProfileFeaturesPatch : ModulePatch, ICleanupPatch
     {
-        private const float BottomFieldBaseScale = 0.6f;
-        private const float HighQualityPreviewSupersampleFactor = 1.6f;
-
         private static bool menuPlayerCreated;
         public static GameObject ClonedPlayerModelView;
 
@@ -33,7 +29,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(MenuScreen).GetMethod("Show", [typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode)
+            return typeof(MenuScreen).GetMethod(MenuOverhaulConstants.Reflection.MenuScreenShowMethod, [typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode)
             ]);
         }
 
@@ -155,146 +151,38 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void UpdateTextColors()
         {
-            Transform bottomFieldTransform = GetBottomFieldTransform();
-            if (bottomFieldTransform == null) return;
-
-            Color accentColor = Settings.AccentColor.Value;
-
-            TextMeshProUGUI nicknameTMP = bottomFieldTransform.Find("NicknameText")?.GetComponent<TextMeshProUGUI>();
-            if (nicknameTMP != null)
-            {
-                nicknameTMP.color = accentColor;
-            }
-
-            Transform experienceRow = bottomFieldTransform.Find("ExperienceRow");
-            if (experienceRow != null)
-            {
-                TextMeshProUGUI expValueTMP = experienceRow.Find("ExpValue")?.GetComponent<TextMeshProUGUI>();
-                if (expValueTMP != null)
-                {
-                    expValueTMP.color = accentColor;
-                }
-            }
+            PlayerProfileStatsController.UpdateTextColors(ClonedPlayerModelView);
         }
 
         private static void UpdatePlayerModelPosition()
         {
-            if (ClonedPlayerModelView != null)
-            {
-                ClonedPlayerModelView.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -150f, 0f);
-                
-                if (Settings.EnableLargerPlayerModel.Value)
-                {
-                    RectTransform rectTransform = ClonedPlayerModelView.GetComponent<RectTransform>();
-                    if (rectTransform != null)
-                    {
-                        float horizontalPos = Settings.PositionPlayerModelHorizontal.Value;
-                        rectTransform.anchoredPosition = new Vector2(horizontalPos, 0f);
-                        rectTransform.offsetMax = new Vector2(horizontalPos, 0f);
-                        rectTransform.offsetMin = new Vector2(horizontalPos, 0f);
-                        rectTransform.localPosition = new Vector3(horizontalPos, 0f, 0f);
-                    }
-                }
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("UpdatePlayerModelPosition - clonedPlayerModelView is null.");
-            }
+            PlayerProfileTransformController.UpdatePlayerModelPosition(ClonedPlayerModelView);
         }
 
         private static void UpdatePlayerModelRotation()
         {
-            if (ClonedPlayerModelView == null)
-            {
-                Plugin.LogSource.LogWarning("UpdatePlayerModelRotation - clonedPlayerModelView is null.");
-                return;
-            }
-
-            Transform target = ClonedPlayerModelView.transform.Find("PlayerMVObject/MenuPlayer");
-            if (target == null) return;
-
-            if (_dragRotator == null)
-            {
-                _dragRotator = ClonedPlayerModelView.GetComponent<PlayerModelDragRotator>();
-                if (_dragRotator == null)
-                {
-                    _dragRotator = ClonedPlayerModelView.AddComponent<PlayerModelDragRotator>();
-                }
-            }
-
-            _dragRotator.Target = target;
-            _dragRotator.SetYaw(Settings.RotationPlayerModelHorizontal.Value);
+            _dragRotator = PlayerProfileTransformController.UpdatePlayerModelRotation(ClonedPlayerModelView, _dragRotator);
         }
 
         private static void UpdateCameraPosition()
         {
-            if (ClonedPlayerModelView != null)
-            {
-                Transform cameraTransform = ClonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
-                if (cameraTransform != null)
-                {
-                    Vector3 basePosition = Settings.EnableLargerPlayerModel.Value
-                        ? new Vector3(0f, 0.2f, 1.5f)
-                        : new Vector3(0f, 0f, 1f);
-
-                    Vector3 configuredOffset = new Vector3(
-                        Settings.CameraInventoryPositionX.Value,
-                        Settings.CameraInventoryPositionY.Value,
-                        Settings.CameraInventoryPositionZ.Value);
-
-                    cameraTransform.localPosition = basePosition + configuredOffset;
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("UpdateCameraPosition - Camera_inventory not found.");
-                }
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("UpdateCameraPosition - clonedPlayerModelView is null.");
-            }
+            PlayerProfileTransformController.UpdateCameraPosition(ClonedPlayerModelView);
         }
 
         private static void UpdateCameraRotation()
         {
-            if (ClonedPlayerModelView != null)
-            {
-                Transform cameraTransform = ClonedPlayerModelView.transform.Find("PlayerMVObject/Camera_inventory");
-                if (cameraTransform != null)
-                {
-                    cameraTransform.localRotation = Quaternion.Euler(
-                        Settings.CameraInventoryRotationX.Value,
-                        Settings.CameraInventoryRotationY.Value,
-                        Settings.CameraInventoryRotationZ.Value);
-                }
-                else
-                {
-                    Plugin.LogSource.LogWarning("UpdateCameraRotation - Camera_inventory not found.");
-                }
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("UpdateCameraRotation - clonedPlayerModelView is null.");
-            }
+            PlayerProfileTransformController.UpdateCameraRotation(ClonedPlayerModelView);
         }
 
         private static void BottomFieldPositionChanged()
         {
-            Transform bottomFieldTransform = GetBottomFieldTransform();
-            if (bottomFieldTransform != null)
-            {
-                bottomFieldTransform.localPosition = new Vector3(Settings.PositionBottomFieldHorizontal.Value, Settings.PositionBottomFieldVertical.Value, 0f);
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("BottomFieldPositionChanged - BottomField transform not found.");
-            }
+            PlayerProfileTransformController.UpdateBottomFieldPosition(ClonedPlayerModelView);
         }
 
         private static void SubscribeToCharacterLevelUpEvent()
         {
             if (_experienceEventsSubscribed) return;
-            if (PatchConstants.BackEndSession?.Profile?.Info != null)
+            if (PatchConstants.BackEndSession != null && PatchConstants.BackEndSession.Profile != null && PatchConstants.BackEndSession.Profile.Info != null)
             {
                 PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged += OnExperienceChanged;
                 _experienceEventsSubscribed = true;
@@ -308,7 +196,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static void UnsubscribeFromCharacterLevelUpEvent()
         {
             if (!_experienceEventsSubscribed) return;
-            if (PatchConstants.BackEndSession?.Profile?.Info != null)
+            if (PatchConstants.BackEndSession != null && PatchConstants.BackEndSession.Profile != null && PatchConstants.BackEndSession.Profile.Info != null)
             {
                 PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged -= OnExperienceChanged;
                 _experienceEventsSubscribed = false;
@@ -317,10 +205,10 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void OnExperienceChanged(int oldExperience, int newExperience)
         {
-            Transform bottomFieldTransform = GetBottomFieldTransform();
+            Transform bottomFieldTransform = PlayerProfileTransformController.GetBottomFieldTransform(ClonedPlayerModelView);
             if (bottomFieldTransform != null)
             {
-                UpdatePlayerStats(bottomFieldTransform);
+                UpdatePlayerStats();
             }
             else
             {
@@ -328,30 +216,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
         }
 
-        private static Transform GetBottomFieldTransform()
-        {
-            if (ClonedPlayerModelView != null)
-            {
-                return ClonedPlayerModelView.transform.Find("BottomField");
-            }
-            return null;
-        }
-
         private static float GetPreviewSupersampleFactor()
         {
-            return Settings.EnableHighQualityPlayerPreview.Value ? HighQualityPreviewSupersampleFactor : 1f;
+            return PlayerProfileTransformController.GetPreviewSupersampleFactor();
         }
 
         private static void UpdateBottomFieldScale()
         {
-            Transform bottomFieldTransform = GetBottomFieldTransform();
-            if (bottomFieldTransform == null)
-            {
-                return;
-            }
-
-            float compensatedBottomFieldScale = BottomFieldBaseScale * GetPreviewSupersampleFactor();
-            bottomFieldTransform.localScale = new Vector3(compensatedBottomFieldScale, compensatedBottomFieldScale, compensatedBottomFieldScale);
+            PlayerProfileTransformController.UpdateBottomFieldScale(ClonedPlayerModelView);
         }
 
         private static async Task AddPlayerModel()
@@ -367,8 +239,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 menuPlayerCreated = false;
             }
 
-            GameObject playerModelViewPrefab = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView");
-            GameObject menuScreenParent = GameObject.Find("Common UI/Common UI/MenuScreen");
+            GameObject playerModelViewPrefab = GameObject.Find(MenuOverhaulConstants.PlayerModel.PlayerModelViewPrefabPath);
+            GameObject menuScreenParent = GameObject.Find(MenuOverhaulConstants.MenuScreen.ScenePath);
 
             if (playerModelViewPrefab == null || menuScreenParent == null)
             {
@@ -397,8 +269,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             ConfigurePlayerModelVisuals(ClonedPlayerModelView);
 
-            GameObject playerLevelViewPrefab = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/Level Panel/Level");
-            GameObject playerLevelIconViewPrefab = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/Level Panel/Level Icon");
+            GameObject playerLevelViewPrefab = GameObject.Find(MenuOverhaulConstants.PlayerModel.PlayerLevelPrefabPath);
+            GameObject playerLevelIconViewPrefab = GameObject.Find(MenuOverhaulConstants.PlayerModel.PlayerLevelIconPrefabPath);
             if (playerLevelViewPrefab == null || playerLevelIconViewPrefab == null)
             {
                 Plugin.LogSource.LogWarning("AddPlayerModel - PlayerLevelViewPrefab or PlayerLevelIconViewPrefab not found. BottomField setup might be incomplete.");
@@ -439,7 +311,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             modelInstance.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -150f, 0f);
             modelInstance.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
 
-            Transform cameraTransform = modelInstance.transform.Find("PlayerMVObject/Camera_inventory");
+            Transform cameraTransform = modelInstance.transform.Find(MenuOverhaulConstants.PlayerModel.CameraInventoryPath);
             if (cameraTransform != null)
             {
                 UpdateCameraPosition();
@@ -469,8 +341,12 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
 
             CameraImage cameraImage = modelInstance.GetComponentInChildren<CameraImage>(true);
-            Transform cameraTransform = modelInstance.transform.Find("PlayerMVObject/Camera_inventory");
-            Camera previewCamera = cameraTransform?.GetComponent<Camera>();
+            Transform cameraTransform = modelInstance.transform.Find(MenuOverhaulConstants.PlayerModel.CameraInventoryPath);
+            Camera previewCamera = null;
+            if (cameraTransform != null)
+            {
+                previewCamera = cameraTransform.GetComponent<Camera>();
+            }
 
             if (cameraImage == null || previewCamera == null)
             {
@@ -536,7 +412,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (modelInstance == null) { Plugin.LogSource.LogWarning("SetupBottomField - modelInstance is null."); return; }
 
-            Transform bottomFieldTransform = modelInstance.transform.Find("BottomField");
+            Transform bottomFieldTransform = modelInstance.transform.Find(MenuOverhaulConstants.PlayerModel.BottomFieldName);
             if (bottomFieldTransform == null)
             {
                 Plugin.LogSource.LogError("SetupBottomField - BottomField transform not found in modelInstance.");
@@ -549,12 +425,26 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 Plugin.LogSource.LogError("SetupBottomField - RectTransform not found on BottomField. Cannot configure layout.");
                 return;
             }
+            ConfigureBottomFieldLayout(bottomFieldTransform, bftRect);
+            RemoveDynamicBottomFieldChildren(bottomFieldTransform);
+
+            GameObject levelInfoRow = CreateLevelInfoRow(bottomFieldTransform, playerLevelViewPrefab, playerLevelIconViewPrefab);
+            GameObject nicknameTextGo = CreateNicknameRow(bottomFieldTransform);
+            GameObject experienceRow = CreateExperienceRow(bottomFieldTransform);
+
+            DisableOriginalNicknameAndKarma(bottomFieldTransform);
+            SetBottomFieldRowOrder(levelInfoRow, nicknameTextGo, experienceRow);
+
+            UpdatePlayerStats();
+        }
+
+        private static void ConfigureBottomFieldLayout(Transform bottomFieldTransform, RectTransform bftRect)
+        {
             bftRect.anchorMin = new Vector2(0, 1);
             bftRect.anchorMax = new Vector2(0, 1);
             bftRect.pivot = new Vector2(0, 1);
             bftRect.sizeDelta = new Vector2(0, 0);
 
-            // Add ContentSizeFitter to BottomField itself
             ContentSizeFitter bftCsf = bottomFieldTransform.GetComponent<ContentSizeFitter>();
             if (bftCsf == null) bftCsf = bottomFieldTransform.gameObject.AddComponent<ContentSizeFitter>();
             bftCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -571,38 +461,41 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 bftVlg.childForceExpandWidth = false;
                 bftVlg.childControlWidth = true;
             }
-            else { Plugin.LogSource.LogWarning("SetupBottomField - VerticalLayoutGroup component not found on BottomField. Row layout might be incorrect."); }
+            else
+            {
+                Plugin.LogSource.LogWarning("SetupBottomField - VerticalLayoutGroup component not found on BottomField. Row layout might be incorrect.");
+            }
 
-            float compensatedBottomFieldScale = BottomFieldBaseScale * GetPreviewSupersampleFactor();
+            float compensatedBottomFieldScale = 0.6f * GetPreviewSupersampleFactor();
             bottomFieldTransform.localScale = new Vector3(compensatedBottomFieldScale, compensatedBottomFieldScale, compensatedBottomFieldScale);
             bottomFieldTransform.localPosition = new Vector3(Settings.PositionBottomFieldHorizontal.Value, Settings.PositionBottomFieldVertical.Value, 0f);
+        }
 
-            // Destroy existing dynamic elements to prevent duplication
-            void DestroyChildIfExists(string name)
+        private static void RemoveDynamicBottomFieldChildren(Transform bottomFieldTransform)
+        {
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, "LevelGroup");
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, "LevelInfoRow");
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, "NicknameText");
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, "ExperienceRow");
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, "Spacer_LevelInfo_Nickname");
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, "Spacer_Nickname_Experience");
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, "Experience");
+        }
+
+        private static void DestroyBottomFieldChildIfExists(Transform bottomFieldTransform, string childName)
+        {
+            Transform child = bottomFieldTransform.Find(childName);
+            if (child != null)
             {
-                Transform child = bottomFieldTransform.Find(name);
-                if (child != null)
-                {
-                    Object.Destroy(child.gameObject);
-                }
+                Object.Destroy(child.gameObject);
             }
+        }
 
-            DestroyChildIfExists("LevelGroup");
-            DestroyChildIfExists("LevelInfoRow");
-            DestroyChildIfExists("NicknameText");
-            DestroyChildIfExists("ExperienceRow");
-            DestroyChildIfExists("Spacer_LevelInfo_Nickname");
-            DestroyChildIfExists("Spacer_Nickname_Experience");
-
-            // Clean up the existing Experience panel if it exists
-            Transform existingExperience = bottomFieldTransform.Find("Experience");
-            if (existingExperience != null)
-            {
-                Object.Destroy(existingExperience.gameObject);
-            }
-
+        private static GameObject CreateLevelInfoRow(Transform bottomFieldTransform, GameObject playerLevelViewPrefab, GameObject playerLevelIconViewPrefab)
+        {
             GameObject levelInfoRow = new GameObject("LevelInfoRow");
             levelInfoRow.transform.SetParent(bottomFieldTransform, false);
+
             RectTransform levelInfoRect = levelInfoRow.AddComponent<RectTransform>();
             levelInfoRect.anchorMin = new Vector2(1, 1);
             levelInfoRect.anchorMax = new Vector2(1, 1);
@@ -627,72 +520,88 @@ namespace MoxoPixel.MenuOverhaul.Patches
             levelInfoCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             levelInfoCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            // Add level text first (will appear on the right due to reverseArrangement)
-            if (playerLevelViewPrefab != null)
+            AddLevelText(levelInfoRow, playerLevelViewPrefab);
+            AddLevelIcon(levelInfoRow, playerLevelIconViewPrefab);
+
+            return levelInfoRow;
+        }
+
+        private static void AddLevelText(GameObject levelInfoRow, GameObject playerLevelViewPrefab)
+        {
+            if (playerLevelViewPrefab == null)
             {
-                var clonedLevel = Object.Instantiate(playerLevelViewPrefab, levelInfoRow.transform);
-                clonedLevel.name = "Level";
-                clonedLevel.SetActive(true);
-
-                RectTransform levelRect = clonedLevel.GetComponent<RectTransform>();
-                if (levelRect != null)
-                {
-                    levelRect.anchorMin = new Vector2(1, 0.5f);
-                    levelRect.anchorMax = new Vector2(1, 0.5f);
-                    levelRect.pivot = new Vector2(1, 0.5f);
-                }
-
-                TextMeshProUGUI levelTMP = clonedLevel.GetComponent<TextMeshProUGUI>();
-                if (levelTMP != null)
-                {
-                    levelTMP.alignment = TextAlignmentOptions.Right;
-                    levelTMP.fontSize = 54f;
-                    levelTMP.enableWordWrapping = false;
-                    levelTMP.margin = Vector4.zero;
-                }
-
-                LayoutElement levelTextLe = clonedLevel.GetComponent<LayoutElement>();
-                if (levelTextLe == null) levelTextLe = clonedLevel.AddComponent<LayoutElement>();
-                levelTextLe.minHeight = 56f;
-                levelTextLe.preferredHeight = 56f;
+                Plugin.LogSource.LogWarning("SetupBottomField - playerLevelViewPrefab is null. Level text will be missing.");
+                return;
             }
-            else { Plugin.LogSource.LogWarning("SetupBottomField - playerLevelViewPrefab is null. Level text will be missing."); }
 
-            // Add level icon (will appear on the left of text due to reverseArrangement)
-            if (playerLevelIconViewPrefab != null)
+            GameObject clonedLevel = Object.Instantiate(playerLevelViewPrefab, levelInfoRow.transform);
+            clonedLevel.name = "Level";
+            clonedLevel.SetActive(true);
+
+            RectTransform levelRect = clonedLevel.GetComponent<RectTransform>();
+            if (levelRect != null)
             {
-                GameObject clonedIcon = Object.Instantiate(playerLevelIconViewPrefab, levelInfoRow.transform);
-                clonedIcon.name = "Level Icon";
-                clonedIcon.SetActive(true);
-
-                RectTransform iconRect = clonedIcon.GetComponent<RectTransform>();
-                if (iconRect != null)
-                {
-                    iconRect.anchorMin = new Vector2(1, 0.5f);
-                    iconRect.anchorMax = new Vector2(1, 0.5f);
-                    iconRect.pivot = new Vector2(1, 0.5f);
-                    iconRect.sizeDelta = new Vector2(56f, 56f);
-                    iconRect.offsetMax = new Vector2(-5f, iconRect.offsetMax.y);
-                }
-
-                LayoutElement iconLe = clonedIcon.GetComponent<LayoutElement>();
-                if (iconLe == null) iconLe = clonedIcon.AddComponent<LayoutElement>();
-                iconLe.minHeight = 56f;
-                iconLe.minWidth = 56f;
-                iconLe.preferredHeight = 56f;
-                iconLe.preferredWidth = 56f;
-
-                // Ensure image stretches to fill the space
-                Image iconImage = clonedIcon.GetComponent<Image>();
-                if (iconImage != null)
-                {
-                    iconImage.preserveAspect = true;
-                }
+                levelRect.anchorMin = new Vector2(1, 0.5f);
+                levelRect.anchorMax = new Vector2(1, 0.5f);
+                levelRect.pivot = new Vector2(1, 0.5f);
             }
-            else { Plugin.LogSource.LogWarning("SetupBottomField - playerLevelIconViewPrefab is null. Level Icon will be missing."); }
 
+            TextMeshProUGUI levelTMP = clonedLevel.GetComponent<TextMeshProUGUI>();
+            if (levelTMP != null)
+            {
+                levelTMP.alignment = TextAlignmentOptions.Right;
+                levelTMP.fontSize = 54f;
+                levelTMP.enableWordWrapping = false;
+                levelTMP.margin = Vector4.zero;
+            }
+
+            LayoutElement levelTextLe = clonedLevel.GetComponent<LayoutElement>();
+            if (levelTextLe == null) levelTextLe = clonedLevel.AddComponent<LayoutElement>();
+            levelTextLe.minHeight = 56f;
+            levelTextLe.preferredHeight = 56f;
+        }
+
+        private static void AddLevelIcon(GameObject levelInfoRow, GameObject playerLevelIconViewPrefab)
+        {
+            if (playerLevelIconViewPrefab == null)
+            {
+                Plugin.LogSource.LogWarning("SetupBottomField - playerLevelIconViewPrefab is null. Level Icon will be missing.");
+                return;
+            }
+
+            GameObject clonedIcon = Object.Instantiate(playerLevelIconViewPrefab, levelInfoRow.transform);
+            clonedIcon.name = "Level Icon";
+            clonedIcon.SetActive(true);
+
+            RectTransform iconRect = clonedIcon.GetComponent<RectTransform>();
+            if (iconRect != null)
+            {
+                iconRect.anchorMin = new Vector2(1, 0.5f);
+                iconRect.anchorMax = new Vector2(1, 0.5f);
+                iconRect.pivot = new Vector2(1, 0.5f);
+                iconRect.sizeDelta = new Vector2(56f, 56f);
+                iconRect.offsetMax = new Vector2(-5f, iconRect.offsetMax.y);
+            }
+
+            LayoutElement iconLe = clonedIcon.GetComponent<LayoutElement>();
+            if (iconLe == null) iconLe = clonedIcon.AddComponent<LayoutElement>();
+            iconLe.minHeight = 56f;
+            iconLe.minWidth = 56f;
+            iconLe.preferredHeight = 56f;
+            iconLe.preferredWidth = 56f;
+
+            Image iconImage = clonedIcon.GetComponent<Image>();
+            if (iconImage != null)
+            {
+                iconImage.preserveAspect = true;
+            }
+        }
+
+        private static GameObject CreateNicknameRow(Transform bottomFieldTransform)
+        {
             GameObject nicknameTextGo = new GameObject("NicknameText");
             nicknameTextGo.transform.SetParent(bottomFieldTransform, false);
+
             RectTransform nicknameRect = nicknameTextGo.AddComponent<RectTransform>();
             nicknameRect.anchorMin = new Vector2(1, 1);
             nicknameRect.anchorMax = new Vector2(1, 1);
@@ -711,7 +620,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
             nicknameTMP.alignment = TextAlignmentOptions.Right;
             nicknameTMP.enableWordWrapping = false;
 
-            Transform nicknameAndKarmaSourceOriginal = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView/BottomField/NicknameAndKarma")?.transform;
+            GameObject nicknameAndKarmaSourceObject = GameObject.Find(MenuOverhaulConstants.PlayerModel.BottomFieldNicknameAndKarmaSourcePath);
+            Transform nicknameAndKarmaSourceOriginal = nicknameAndKarmaSourceObject != null ? nicknameAndKarmaSourceObject.transform : null;
             if (nicknameAndKarmaSourceOriginal != null)
             {
                 TextMeshProUGUI originalNicknameTMP = nicknameAndKarmaSourceOriginal.GetComponentInChildren<TextMeshProUGUI>();
@@ -721,6 +631,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     {
                         nicknameTMP.font = originalNicknameTMP.font;
                     }
+
                     nicknameTMP.fontSize = originalNicknameTMP.fontSize * 1.6f;
                 }
             }
@@ -729,8 +640,14 @@ namespace MoxoPixel.MenuOverhaul.Patches
             nicknameCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             nicknameCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            return nicknameTextGo;
+        }
+
+        private static GameObject CreateExperienceRow(Transform bottomFieldTransform)
+        {
             GameObject experienceRow = new GameObject("ExperienceRow");
             experienceRow.transform.SetParent(bottomFieldTransform, false);
+
             RectTransform expRect = experienceRow.AddComponent<RectTransform>();
             expRect.anchorMin = new Vector2(1, 1);
             expRect.anchorMax = new Vector2(1, 1);
@@ -775,7 +692,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
             expValueTMP.margin = Vector4.zero;
             expValueTMP.enableWordWrapping = false;
 
-            Transform experienceOriginal = GameObject.Find("Common UI/Common UI/InventoryScreen/Overall Panel/LeftSide/CharacterPanel/PlayerModelView/BottomField/Experience")?.transform;
+            GameObject experienceOriginalObject = GameObject.Find(MenuOverhaulConstants.PlayerModel.BottomFieldExperienceSourcePath);
+            Transform experienceOriginal = experienceOriginalObject != null ? experienceOriginalObject.transform : null;
             if (experienceOriginal != null)
             {
                 TextMeshProUGUI originalExpTMP = experienceOriginal.GetComponentInChildren<TextMeshProUGUI>();
@@ -786,40 +704,44 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 }
             }
 
+            return experienceRow;
+        }
+
+        private static void DisableOriginalNicknameAndKarma(Transform bottomFieldTransform)
+        {
             Transform originalNicknameAndKarma = bottomFieldTransform.Find("NicknameAndKarma");
             if (originalNicknameAndKarma != null)
             {
                 originalNicknameAndKarma.gameObject.SetActive(false);
             }
+        }
 
-            levelInfoRow.transform.SetAsFirstSibling();
-            nicknameTextGo.transform.SetSiblingIndex(1);
-            experienceRow.transform.SetSiblingIndex(2);
+        private static void SetBottomFieldRowOrder(GameObject levelInfoRow, GameObject nicknameTextGo, GameObject experienceRow)
+        {
+            if (levelInfoRow != null)
+            {
+                levelInfoRow.transform.SetAsFirstSibling();
+            }
 
-            UpdatePlayerStats(bottomFieldTransform);
+            if (nicknameTextGo != null)
+            {
+                nicknameTextGo.transform.SetSiblingIndex(1);
+            }
+
+            if (experienceRow != null)
+            {
+                experienceRow.transform.SetSiblingIndex(2);
+            }
         }
 
         private static void HidePlayerModelExtraElements(GameObject modelInstance)
         {
-            if (modelInstance == null) { Plugin.LogSource.LogWarning("HidePlayerModelExtraElements - modelInstance is null."); return; }
-            LayoutHelpers.SetChildActive(modelInstance, "IconsContainer", false);
-            LayoutHelpers.SetChildActive(modelInstance, "DragTrigger", false);
+            PlayerProfileTransformController.HidePlayerModelExtraElements(modelInstance);
         }
 
         private static void AdjustInnerPlayerModelPosition(GameObject modelInstance)
         {
-            if (modelInstance == null) { Plugin.LogSource.LogWarning("AdjustInnerPlayerModelPosition - modelInstance is null."); return; }
-            Transform playerMvObject = modelInstance.transform.Find("PlayerMVObject");
-            if (playerMvObject != null)
-            {
-                Transform innerModelTransform = playerMvObject.Find("MenuPlayer");
-                if (innerModelTransform != null)
-                {
-                    innerModelTransform.localPosition = new Vector3(0f, -1.1f, 5f);
-                }
-                else { Plugin.LogSource.LogWarning("AdjustInnerPlayerModelPosition - MenuPlayer not found in PlayerMVObject."); }
-            }
-            else { Plugin.LogSource.LogWarning("AdjustInnerPlayerModelPosition - PlayerMVObject not found in modelInstance."); }
+            PlayerProfileTransformController.AdjustInnerPlayerModelPosition(modelInstance);
         }
 
         private static async Task RefreshPlayerModel()
@@ -847,119 +769,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
             else { Plugin.LogSource.LogWarning("RefreshPlayerModel - PlayerModelView script not found on clonedPlayerModelView."); }
         }
 
-        private static void UpdatePlayerStats(Transform bottomFieldTransform)
+        private static void UpdatePlayerStats()
         {
-            if (bottomFieldTransform == null) { Plugin.LogSource.LogWarning("UpdatePlayerStats - bottomFieldTransform is null."); return; }
-
-            Profile profile = PatchConstants.BackEndSession?.Profile;
-            if (profile == null)
-            {
-                Plugin.LogSource.LogWarning("UpdatePlayerStats - BackEndSession.Profile is null. Cannot update stats.");
-                return;
-            }
-            UpdateNicknameDisplay(bottomFieldTransform, profile);
-            UpdateExperienceDisplay(bottomFieldTransform, profile);
-            UpdateLevelDisplay(bottomFieldTransform, profile);
-            UpdateTextColors();
-        }
-
-        private static void UpdateNicknameDisplay(Transform bottomField, Profile profile)
-        {
-            TextMeshProUGUI nicknameTMP = bottomField.Find("NicknameText")?.GetComponent<TextMeshProUGUI>();
-            if (nicknameTMP != null)
-            {
-                nicknameTMP.text = profile.Nickname;
-            }
-            else { Plugin.LogSource.LogWarning("UpdateNicknameDisplay - NicknameText TMP component not found in BottomField."); }
-
-            Transform originalNicknameAndKarma = bottomField.Find("NicknameAndKarma");
-            if (originalNicknameAndKarma != null)
-            {
-                originalNicknameAndKarma.gameObject.SetActive(false);
-            }
-        }
-
-        private static void UpdateExperienceDisplay(Transform bottomField, Profile profile)
-        {
-            Transform experienceRow = bottomField.Find("ExperienceRow");
-            if (experienceRow == null)
-            {
-                Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExperienceRow not found in BottomField.");
-                return;
-            }
-
-            TextMeshProUGUI experienceTMP = experienceRow.Find("ExpValue")?.GetComponent<TextMeshProUGUI>();
-            if (experienceTMP != null)
-            {
-                var numberFormat = new NumberFormatInfo { NumberGroupSeparator = " ", NumberDecimalDigits = 0 };
-                experienceTMP.text = profile.Experience.ToString("N", numberFormat);
-            }
-            else { Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExpValue TMP component not found in ExperienceRow."); }
-        }
-
-        private static void UpdateLevelDisplay(Transform bottomField, Profile profile)
-        {
-            Transform levelInfoRow = bottomField.Find("LevelInfoRow");
-            if (levelInfoRow != null)
-            {
-                if (profile.Info == null)
-                {
-                    Plugin.LogSource.LogWarning("UpdateLevelDisplay - Profile.Info is null.");
-                    return;
-                }
-
-                TextMeshProUGUI levelTMP = levelInfoRow.Find("Level")?.GetComponent<TextMeshProUGUI>();
-                if (levelTMP != null)
-                {
-                    levelTMP.alignment = TextAlignmentOptions.Right;
-                    levelTMP.margin = Vector4.zero;
-                    levelTMP.lineSpacing = 0;
-                    levelTMP.fontSize = 54f;
-                    levelTMP.enableWordWrapping = false;
-                    levelTMP.text = profile.Info.Level.ToString();
-                }
-                else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level TMP component not found in LevelInfoRow."); }
-
-                Transform iconTransform = levelInfoRow.Find("Level Icon");
-                if (iconTransform != null)
-                {
-                    Image iconImage = iconTransform.GetComponent<Image>();
-                    if (iconImage != null)
-                    {
-                        PlayerLevelPanel.SetLevelIcon(iconImage, profile.Info.Level);
-                        iconImage.preserveAspect = true;
-                    }
-
-                    RectTransform iconRect = iconTransform.GetComponent<RectTransform>();
-                    if (iconRect != null)
-                    {
-                        iconRect.sizeDelta = new Vector2(56f, 56f);
-                        iconRect.offsetMax = new Vector2(-5f, iconRect.offsetMax.y);
-                    }
-
-                    LayoutElement iconLe = iconTransform.GetComponent<LayoutElement>();
-                    if (iconLe != null)
-                    {
-                        iconLe.minWidth = 56f;
-                        iconLe.minHeight = 56f;
-                        iconLe.preferredWidth = 56f;
-                        iconLe.preferredHeight = 56f;
-                    }
-                }
-                else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level Icon transform not found in LevelInfoRow."); }
-
-                // Make sure the HorizontalLayoutGroup has reverseArrangement set and zero spacing
-                HorizontalLayoutGroup hlg = levelInfoRow.GetComponent<HorizontalLayoutGroup>();
-                if (hlg != null)
-                {
-                    if (!hlg.reverseArrangement)
-                    {
-                        hlg.reverseArrangement = true;
-                    }
-                    hlg.spacing = 0f;
-                }
-            }
-            else { Plugin.LogSource.LogWarning("UpdateLevelDisplay - LevelInfoRow transform not found in BottomField."); }
+            PlayerProfileStatsController.UpdatePlayerStats(ClonedPlayerModelView, PlayerLevelPanel.SetLevelIcon);
         }
 
         public void CleanupBeforeDisable()

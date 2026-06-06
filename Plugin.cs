@@ -9,7 +9,7 @@ using SPT.Reflection.Patching;
 
 namespace MoxoPixel.MenuOverhaul
 {
-    [BepInPlugin("com.moxopixel.menuoverhaul", "MoxoPixel-MenuOverhaul", "1.2.2")]
+    [BepInPlugin(MenuOverhaulConstants.Plugin.Guid, MenuOverhaulConstants.Plugin.Name, MenuOverhaulConstants.Plugin.Version)]
     public class Plugin : BaseUnityPlugin
     {
         public static ManualLogSource LogSource { get; private set; }
@@ -60,13 +60,10 @@ namespace MoxoPixel.MenuOverhaul
                 // Unsubscribe from events
                 foreach (var patch in _patches)
                 {
-                    if (patch is MenuOverhaulPatch menuPatch)
+                    ICleanupPatch cleanupPatch = patch as ICleanupPatch;
+                    if (cleanupPatch != null)
                     {
-                        menuPatch.CleanupBeforeDisable();
-                    }
-                    else if (patch is PlayerProfileFeaturesPatch profilePatch)
-                    {
-                        profilePatch.CleanupBeforeDisable();
+                        cleanupPatch.CleanupBeforeDisable();
                     }
                 }
                 

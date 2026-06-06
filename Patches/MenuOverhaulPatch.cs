@@ -10,13 +10,13 @@ using EFT;
 
 namespace MoxoPixel.MenuOverhaul.Patches
 {
-    internal class MenuOverhaulPatch : ModulePatch
+    internal class MenuOverhaulPatch : ModulePatch, ICleanupPatch
     {
         private static bool _layoutSettingsSubscribed;
 
         protected override MethodBase GetTargetMethod()
         {
-            return typeof(MenuScreen).GetMethod("Show", [typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode)
+            return typeof(MenuScreen).GetMethod(MenuOverhaulConstants.Reflection.MenuScreenShowMethod, [typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode)
             ]);
         }
 
@@ -51,7 +51,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 await LoadPatchContent(__instance).ConfigureAwait(false);
 
                 var env = LayoutHelpers.FindEnvironmentObjects();
-                if (env?.FactoryLayout != null)
+                if (env != null && env.FactoryLayout != null)
                 {
                     ApplyMenuLayout(env);
                 }
@@ -76,7 +76,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void ApplyMenuLayout(LayoutHelpers.EnvironmentObjects env)
         {
-            GameObject panorama = env.FactoryLayout.transform.Find("panorama")?.gameObject;
+            Transform panoramaTransform = env.FactoryLayout.transform.Find("panorama");
+            GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
             if (panorama != null)
             {
                 panorama.SetActive(false);
@@ -90,7 +91,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 LayoutHelpers.SetPanoramaEmissionMap(env.FactoryLayout);
             }
 
-            GameObject customPlane = env.FactoryLayout.transform.Find("CustomPlane")?.gameObject;
+            Transform customPlaneTransform = env.FactoryLayout.transform.Find("CustomPlane");
+            GameObject customPlane = customPlaneTransform != null ? customPlaneTransform.gameObject : null;
             if (customPlane != null)
             {
                 customPlane.SetActive(Settings.EnableBackground.Value);
@@ -144,8 +146,8 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static Task LoadPatchContent(MenuScreen menuScreenInstance)
         {
             if (menuScreenInstance == null) return Task.CompletedTask;
-            LayoutHelpers.HideGameObject(menuScreenInstance, "_alphaWarningGameObject");
-            LayoutHelpers.HideGameObject(menuScreenInstance, "_warningGameObject");
+            LayoutHelpers.HideGameObject(menuScreenInstance, MenuOverhaulConstants.MenuScreen.AlphaWarningField);
+            LayoutHelpers.HideGameObject(menuScreenInstance, MenuOverhaulConstants.MenuScreen.WarningField);
             return Task.CompletedTask;
         }
 
