@@ -1,6 +1,5 @@
 using MoxoPixel.MenuOverhaul.Utils;
 using UnityEngine;
-using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
 {
