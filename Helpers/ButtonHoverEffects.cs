@@ -27,6 +27,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         private const float HoverIndicatorSizeMultiplier = 0.35f;
         private const float HoverIndicatorSpacing = 8f;
         private const float HoverIndicatorLeftOffsetFallback = -18f;
+        private const float HoverIndicatorSlideDistance = 4f;
+        private const float HoverIndicatorStartScale = 0.9f;
         private const string HoverIndicatorObjectName = "MenuHoverIndicator";
 
         private static readonly string PluginResourcesRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "MoxoPixel.MenuOverhaul", "Resources");
@@ -177,7 +179,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            if (indicatorImage.transform is RectTransform indicatorRect)
+            RectTransform indicatorRect = indicatorImage.transform as RectTransform;
+            if (indicatorRect != null)
             {
                 ConfigureHoverIndicatorRect(instance, baseState, indicatorRect);
             }
@@ -187,7 +190,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 if (visible)
                 {
                     indicatorImage.gameObject.SetActive(true);
-                    indicatorImage.color = Color.white;
                 }
                 return;
             }
@@ -203,18 +205,41 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 indicatorImage.gameObject.SetActive(true);
                 if (animated)
                 {
+                    Vector2 targetPosition = indicatorRect != null ? indicatorRect.anchoredPosition : Vector2.zero;
+                    if (indicatorRect != null)
+                    {
+                        indicatorRect.anchoredPosition = targetPosition + new Vector2(-HoverIndicatorSlideDistance, 0f);
+                        indicatorRect.localScale = Vector3.one * HoverIndicatorStartScale;
+
+                        DOTween.To(() => indicatorRect.anchoredPosition, position => indicatorRect.anchoredPosition = position, targetPosition, HoverDuration * 0.75f)
+                            .SetEase(Ease.OutCubic);
+                        indicatorRect.DOScale(1f, HoverDuration * 0.75f).SetEase(Ease.OutQuad);
+                    }
+
                     indicatorImage.color = new Color(1f, 1f, 1f, indicatorImage.color.a);
-                    indicatorImage.DOFade(1f, HoverDuration * 0.7f).SetEase(Ease.OutQuad);
+                    indicatorImage.DOFade(1f, HoverDuration * 0.75f).SetEase(Ease.OutCubic);
                 }
                 else
                 {
                     indicatorImage.color = visibleColor;
+                    if (indicatorRect != null)
+                    {
+                        indicatorRect.localScale = Vector3.one;
+                    }
                 }
             }
             else
             {
                 if (animated)
                 {
+                    if (indicatorRect != null)
+                    {
+                        Vector2 hideTarget = indicatorRect.anchoredPosition + new Vector2(-HoverIndicatorSlideDistance * 0.6f, 0f);
+                        DOTween.To(() => indicatorRect.anchoredPosition, position => indicatorRect.anchoredPosition = position, hideTarget, IdleDuration * 0.6f)
+                            .SetEase(Ease.OutQuad);
+                        indicatorRect.DOScale(HoverIndicatorStartScale, IdleDuration * 0.6f).SetEase(Ease.OutQuad);
+                    }
+
                     indicatorImage.DOFade(0f, IdleDuration * 0.6f)
                         .SetEase(Ease.OutQuad)
                         .OnComplete(() =>
