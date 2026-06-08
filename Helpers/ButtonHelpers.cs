@@ -12,7 +12,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
     {
         private const float ButtonIconScale = 0.8f;
         private const float ButtonYOffset = 60f;
-        private const float ButtonXOffset = 250f;
+        private const float DefaultButtonXOffset = 250f;
         private static readonly string[] ButtonNames = ["PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup"
         ];
 
@@ -65,6 +65,28 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
 
             UpdateMenuButtonIconVisibility(menuScreenInstance);
+        }
+
+        public static void UpdateMenuButtonGroupPositions(MenuScreen menuScreenInstance = null)
+        {
+            GameObject menuScreenObject = menuScreenInstance != null
+                ? menuScreenInstance.gameObject
+                : GameObject.Find(MenuOverhaulConstants.MenuScreen.ScenePath);
+
+            if (menuScreenObject == null)
+            {
+                return;
+            }
+
+            foreach (var buttonName in ButtonNames)
+            {
+                Transform buttonTransform = menuScreenObject.transform.Find(buttonName);
+                GameObject buttonObject = buttonTransform != null ? buttonTransform.gameObject : null;
+                if (buttonObject != null)
+                {
+                    ApplyButtonTransform(buttonObject, buttonName);
+                }
+            }
         }
 
         public static void UpdateMenuButtonIconVisibility(MenuScreen menuScreenInstance = null)
@@ -159,7 +181,21 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
             float yOffset = -index * ButtonYOffset;
-            rectTransform.anchoredPosition = new Vector2(ButtonXOffset, yOffset);
+            float xOffset = GetButtonXOffset(buttonName);
+            rectTransform.anchoredPosition = new Vector2(xOffset, yOffset);
+        }
+
+        private static float GetButtonXOffset(string buttonName)
+        {
+            return buttonName switch
+            {
+                "PlayButton" => Settings.PositionPlayButtonHorizontal.Value,
+                "CharacterButton" => Settings.PositionCharacterButtonHorizontal.Value,
+                "TradeButton" => Settings.PositionTradeButtonHorizontal.Value,
+                "HideoutButton" => Settings.PositionHideoutButtonHorizontal.Value,
+                "ExitButtonGroup" => Settings.PositionExitButtonHorizontal.Value,
+                _ => DefaultButtonXOffset
+            };
         }
 
         private static async void HandleSpecificButtonLogic(MenuScreen menuScreenInstance, GameObject buttonObject, string buttonName)

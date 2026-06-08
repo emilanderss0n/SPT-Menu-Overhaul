@@ -23,6 +23,11 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<bool> EnableHighQualityPlayerPreview;
         public static ConfigEntry<bool> EnableDefaultPlayerAnimation;
         public static ConfigEntry<bool> EnableMenuButtonIcons;
+        public static ConfigEntry<float> PositionPlayButtonHorizontal;
+        public static ConfigEntry<float> PositionCharacterButtonHorizontal;
+        public static ConfigEntry<float> PositionTradeButtonHorizontal;
+        public static ConfigEntry<float> PositionHideoutButtonHorizontal;
+        public static ConfigEntry<float> PositionExitButtonHorizontal;
         public static ConfigEntry<float> CameraInventoryPositionX;
         public static ConfigEntry<float> CameraInventoryPositionY;
         public static ConfigEntry<float> CameraInventoryPositionZ;
@@ -115,6 +120,51 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     "Show or hide menu button icons. When disabled, icons are hidden in both default and hover states",
                     null,
                     new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(PositionPlayButtonHorizontal = config.Bind(
+                AdvancedSectionTitle,
+                "Position Play Button Horizontal",
+                250f,
+                new ConfigDescription(
+                    "Adjust the horizontal position of the Play button group (label + icon)",
+                    new AcceptableValueRange<float>(-800f, 1200f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(PositionCharacterButtonHorizontal = config.Bind(
+                AdvancedSectionTitle,
+                "Position Character Button Horizontal",
+                250f,
+                new ConfigDescription(
+                    "Adjust the horizontal position of the Character button group (label + icon)",
+                    new AcceptableValueRange<float>(-800f, 1200f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(PositionTradeButtonHorizontal = config.Bind(
+                AdvancedSectionTitle,
+                "Position Trade Button Horizontal",
+                250f,
+                new ConfigDescription(
+                    "Adjust the horizontal position of the Trade button group (label + icon)",
+                    new AcceptableValueRange<float>(-800f, 1200f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(PositionHideoutButtonHorizontal = config.Bind(
+                AdvancedSectionTitle,
+                "Position Hideout Button Horizontal",
+                250f,
+                new ConfigDescription(
+                    "Adjust the horizontal position of the Hideout button group (label + icon)",
+                    new AcceptableValueRange<float>(-800f, 1200f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(PositionExitButtonHorizontal = config.Bind(
+                AdvancedSectionTitle,
+                "Position Exit Button Horizontal",
+                250f,
+                new ConfigDescription(
+                    "Adjust the horizontal position of the Exit button group (label + icon)",
+                    new AcceptableValueRange<float>(-800f, 1200f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
 
             ConfigEntries.Add(CameraInventoryPositionX = config.Bind(
                 AdvancedSectionTitle,

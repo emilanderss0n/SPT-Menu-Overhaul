@@ -118,6 +118,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.ScaleBackgroundY.SettingChanged += OnScaleBackgroundChanged;
             Settings.EnableExtraShadows.SettingChanged += OnLayoutSettingsChanged;
             Settings.EnableMenuButtonIcons.SettingChanged += OnMenuIconVisibilityChanged;
+            Settings.PositionPlayButtonHorizontal.SettingChanged += OnButtonGroupPositionChanged;
+            Settings.PositionCharacterButtonHorizontal.SettingChanged += OnButtonGroupPositionChanged;
+            Settings.PositionTradeButtonHorizontal.SettingChanged += OnButtonGroupPositionChanged;
+            Settings.PositionHideoutButtonHorizontal.SettingChanged += OnButtonGroupPositionChanged;
+            Settings.PositionExitButtonHorizontal.SettingChanged += OnButtonGroupPositionChanged;
             Settings.AccentColor.SettingChanged += OnLayoutSettingsChanged;
 
             _layoutSettingsSubscribed = true;
@@ -137,6 +142,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
             Settings.ScaleBackgroundY.SettingChanged -= OnScaleBackgroundChanged;
             Settings.EnableExtraShadows.SettingChanged -= OnLayoutSettingsChanged;
             Settings.EnableMenuButtonIcons.SettingChanged -= OnMenuIconVisibilityChanged;
+            Settings.PositionPlayButtonHorizontal.SettingChanged -= OnButtonGroupPositionChanged;
+            Settings.PositionCharacterButtonHorizontal.SettingChanged -= OnButtonGroupPositionChanged;
+            Settings.PositionTradeButtonHorizontal.SettingChanged -= OnButtonGroupPositionChanged;
+            Settings.PositionHideoutButtonHorizontal.SettingChanged -= OnButtonGroupPositionChanged;
+            Settings.PositionExitButtonHorizontal.SettingChanged -= OnButtonGroupPositionChanged;
             Settings.AccentColor.SettingChanged -= OnLayoutSettingsChanged;
 
             _layoutSettingsSubscribed = false;
@@ -154,6 +164,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static void OnLayoutSettingsChanged(object sender, EventArgs e) => UpdateLayoutElements();
         private static void OnScaleBackgroundChanged(object sender, EventArgs e) => UpdateCustomPlaneScale();
         private static void OnMenuIconVisibilityChanged(object sender, EventArgs e) => ButtonHelpers.UpdateMenuButtonIconVisibility();
+        private static void OnButtonGroupPositionChanged(object sender, EventArgs e) => ButtonHelpers.UpdateMenuButtonGroupPositions();
 
         public static void UpdateLayoutElements()
         {

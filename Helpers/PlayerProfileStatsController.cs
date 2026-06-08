@@ -1,6 +1,5 @@
 using System.Globalization;
 using System;
-using System.Globalization;
 using EFT;
 using SPT.Reflection.Utils;
 using TMPro;
