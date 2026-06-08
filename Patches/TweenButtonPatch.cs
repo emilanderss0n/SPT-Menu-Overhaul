@@ -64,10 +64,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 }
             }
 
-            if (__instance.Label != null)
-            {
-                __instance.Label.color = highlightedLabelColor;
-            }
+            // Smoothly fade/slide the label to the accent colour and pop the icon
+            // in, instead of an instant colour swap.
+            ButtonHoverEffects.ApplyHover(__instance, highlightedLabelColor, animated, Settings.EnableMenuButtonIcons.Value);
 
             if (__instance.Image != null)
             {

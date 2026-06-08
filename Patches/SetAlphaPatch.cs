@@ -70,10 +70,9 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 }
             }
 
-            if (__instance.Label != null)
-            {
-                __instance.Label.color = normalLabelColor;
-            }
+            // Reverse the hover motion (label colour/slide + icon pop) so the
+            // sophisticated hover effect cleanly settles back to rest.
+            ButtonHoverEffects.ApplyIdle(__instance, normalLabelColor, animated, MoxoPixel.MenuOverhaul.Utils.Settings.EnableMenuButtonIcons.Value);
 
             if (__instance.Image != null)
             {
