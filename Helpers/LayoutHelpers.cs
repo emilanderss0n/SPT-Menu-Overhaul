@@ -17,12 +17,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         private static readonly string BackgroundDirectory = Path.Combine(PluginResourcesRoot, "background");
         private static readonly Dictionary<string, string> ButtonNameToFileNameMap = new Dictionary<string, string>
         {
-            { "PlayButton", "icon_play" },
-            { "CharacterButton", "icon_mainmenu_character" },
-            { "TradeButton", "icon_trade" },
-            { "HideoutButton", "hideout_icon_black" },
-            { "ExitButton", "exit_status_runner" },
-            { "ExitButtonGroup", "exit_status_runner" }
+            { MenuOverhaulConstants.MenuButtons.PlayButton, "icon_play" },
+            { MenuOverhaulConstants.MenuButtons.CharacterButton, "icon_mainmenu_character" },
+            { MenuOverhaulConstants.MenuButtons.TradeButton, "icon_trade" },
+            { MenuOverhaulConstants.MenuButtons.HideoutButton, "hideout_icon_black" },
+            { MenuOverhaulConstants.MenuButtons.ExitButton, "exit_status_runner" },
+            { MenuOverhaulConstants.MenuButtons.ExitButtonGroup, "exit_status_runner" }
         };
         private static readonly Dictionary<string, Texture2D> TextureCache = new Dictionary<string, Texture2D>();
         private static readonly Dictionary<string, Sprite> SpriteCache = new Dictionary<string, Sprite>();
@@ -40,18 +40,18 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         public static EnvironmentObjects FindEnvironmentObjects()
         {
-            GameObject environmentUI = GameObject.Find("Environment UI");
+            GameObject environmentUI = GameObject.Find(MenuOverhaulConstants.Environment.EnvironmentUI);
             if (environmentUI == null) { Plugin.LogSource.LogWarning("Environment UI GameObject not found."); return null; }
 
-            Transform commonTransform = environmentUI.transform.Find("Common");
+            Transform commonTransform = environmentUI.transform.Find(MenuOverhaulConstants.Environment.Common);
             GameObject commonObj = commonTransform != null ? commonTransform.gameObject : null;
             if (commonObj == null) { Plugin.LogSource.LogWarning("Common GameObject not found in Environment UI."); return null; }
 
-            Transform environmentUISceneFactoryTransform = environmentUI.transform.Find("EnvironmentUISceneFactory");
+            Transform environmentUISceneFactoryTransform = environmentUI.transform.Find(MenuOverhaulConstants.Environment.EnvironmentUISceneFactory);
             GameObject environmentUISceneFactory = environmentUISceneFactoryTransform != null ? environmentUISceneFactoryTransform.gameObject : null;
             if (environmentUISceneFactory == null) { Plugin.LogSource.LogWarning("EnvironmentUISceneFactory GameObject not found in Environment UI."); return null; }
 
-            Transform factoryLayoutTransform = environmentUISceneFactory.transform.Find("FactoryLayout");
+            Transform factoryLayoutTransform = environmentUISceneFactory.transform.Find(MenuOverhaulConstants.Environment.FactoryLayout);
             GameObject factoryLayout = factoryLayoutTransform != null ? factoryLayoutTransform.gameObject : null;
             if (factoryLayout == null) { Plugin.LogSource.LogWarning("FactoryLayout GameObject not found in EnvironmentUISceneFactory."); return null; }
 
@@ -72,7 +72,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 Plugin.LogSource.LogWarning("GetBackgroundPlane - EnvironmentObjects or FactoryLayout not found.");
                 return null;
             }
-            Transform backgroundPlaneTransform = envObjects.FactoryLayout.transform.Find("CustomPlane");
+            Transform backgroundPlaneTransform = envObjects.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.CustomPlane);
             GameObject backgroundPlane = backgroundPlaneTransform != null ? backgroundPlaneTransform.gameObject : null;
             if (backgroundPlane == null) Plugin.LogSource.LogWarning("CustomPlane GameObject not found in FactoryLayout.");
             return backgroundPlane;
@@ -103,7 +103,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            Transform topGlowTransform = commonObj.transform.Find("Glow Canvas/TopGlowPve");
+            Transform topGlowTransform = commonObj.transform.Find(MenuOverhaulConstants.Environment.TopGlowPvePath);
             if (topGlowTransform == null)
             {
                 return;
@@ -162,7 +162,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
 
             SetImageComponentSprite(buttonObject, newIconSprite);
-            Transform iconTransform = buttonObject.transform.Find("SizeLabel/IconContainer/Icon");
+            Transform iconTransform = buttonObject.transform.Find(MenuOverhaulConstants.MenuButtons.IconPath);
             if (iconTransform != null)
             {
                 SetImageComponentSprite(iconTransform.gameObject, newIconSprite);
@@ -271,7 +271,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
 
             GameObject newPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
-            newPlane.name = "CustomPlane";
+            newPlane.name = MenuOverhaulConstants.Environment.CustomPlane;
             newPlane.transform.SetParent(factoryLayout.transform);
             newPlane.transform.localPosition = new Vector3(0f, 0f, 5.399f);
             newPlane.transform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
@@ -307,7 +307,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 ClearTextureCache();
             }
 
-            Transform panoramaTransform = factoryLayout.transform.Find("panorama");
+            Transform panoramaTransform = factoryLayout.transform.Find(MenuOverhaulConstants.Environment.Panorama);
             GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
             if (panorama == null)
             {
@@ -339,7 +339,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 appliedMaterials = CreateDefaultMaterialsWithEmission(preparedTexture);
             }
 
-            Transform existingCustomPlaneTransform = factoryLayout.transform.Find("CustomPlane");
+            Transform existingCustomPlaneTransform = factoryLayout.transform.Find(MenuOverhaulConstants.Environment.CustomPlane);
             GameObject existingCustomPlane = existingCustomPlaneTransform != null ? existingCustomPlaneTransform.gameObject : null;
             if (existingCustomPlane != null)
             {
@@ -454,10 +454,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         private static void DeactivateDefaultMainMenuCamera(GameObject environmentUISceneFactory)
         {
             if (environmentUISceneFactory == null) return;
-            Transform factoryCameraContainerTransform = environmentUISceneFactory.transform.Find("FactoryCameraContainer");
+            Transform factoryCameraContainerTransform = environmentUISceneFactory.transform.Find(MenuOverhaulConstants.Environment.FactoryCameraContainer);
             GameObject factoryCameraContainer = factoryCameraContainerTransform != null ? factoryCameraContainerTransform.gameObject : null;
             if (factoryCameraContainer == null) { Plugin.LogSource.LogWarning("FactoryCameraContainer GameObject not found."); return; }
-            Transform mainMenuCameraTransform = factoryCameraContainer.transform.Find("MainMenuCamera");
+            Transform mainMenuCameraTransform = factoryCameraContainer.transform.Find(MenuOverhaulConstants.Environment.MainMenuCamera);
             GameObject mainMenuCamera = mainMenuCameraTransform != null ? mainMenuCameraTransform.gameObject : null;
             if (mainMenuCamera != null) mainMenuCamera.SetActive(false);
             else Plugin.LogSource.LogWarning("MainMenuCamera GameObject not found in FactoryCameraContainer.");
@@ -470,7 +470,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            Transform pointLightBulbTransform = factoryLayout.transform.Find("LampContainer/Lamp/Lamp/Point light_bulb");
+            Transform pointLightBulbTransform = factoryLayout.transform.Find(MenuOverhaulConstants.Environment.LogotypeBulbLightPath);
             if (pointLightBulbTransform == null)
             {
                 return;
@@ -493,7 +493,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
             if (!isAlignmentCameraMoved)
             {
-                Transform alignmentCameraOldPosTransform = environmentUI.transform.Find("AlignmentCamera");
+                Transform alignmentCameraOldPosTransform = environmentUI.transform.Find(MenuOverhaulConstants.Environment.AlignmentCamera);
                 if (alignmentCameraOldPosTransform != null)
                 {
                     if (alignmentCameraOldPosTransform.parent != factoryLayout.transform)
@@ -504,13 +504,13 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
             }
 
-            Transform alignmentCameraTransform = factoryLayout.transform.Find("AlignmentCamera");
+            Transform alignmentCameraTransform = factoryLayout.transform.Find(MenuOverhaulConstants.Environment.AlignmentCamera);
             GameObject alignmentCamera;
 
             if (alignmentCameraTransform == null)
             {
                 Plugin.LogSource.LogDebug("AlignmentCamera not found in FactoryLayout, creating new one.");
-                alignmentCamera = new GameObject("AlignmentCamera");
+                alignmentCamera = new GameObject(MenuOverhaulConstants.Environment.AlignmentCamera);
                 alignmentCamera.transform.SetParent(factoryLayout.transform);
                 alignmentCamera.transform.localPosition = Vector3.zero;
                 alignmentCamera.transform.localRotation = Quaternion.identity;

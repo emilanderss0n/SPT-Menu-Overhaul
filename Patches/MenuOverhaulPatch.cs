@@ -76,22 +76,22 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void ApplyMenuLayout(LayoutHelpers.EnvironmentObjects env)
         {
-            Transform panoramaTransform = env.FactoryLayout.transform.Find("panorama");
+            Transform panoramaTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.Panorama);
             GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
             if (panorama != null)
             {
                 panorama.SetActive(false);
             }
 
-            LayoutHelpers.SetChildActive(env.FactoryLayout, "LampContainer", true);
+            LayoutHelpers.SetChildActive(env.FactoryLayout, MenuOverhaulConstants.Environment.LampContainer, true);
 
             // One-shot: only create the CustomPlane if it does not exist yet.
-            if (env.FactoryLayout.transform.Find("CustomPlane") == null)
+            if (env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.CustomPlane) == null)
             {
                 LayoutHelpers.SetPanoramaEmissionMap(env.FactoryLayout);
             }
 
-            Transform customPlaneTransform = env.FactoryLayout.transform.Find("CustomPlane");
+            Transform customPlaneTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.CustomPlane);
             GameObject customPlane = customPlaneTransform != null ? customPlaneTransform.gameObject : null;
             if (customPlane != null)
             {
@@ -178,7 +178,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             // Handle top glow
             if (environmentObjects.CommonObj != null)
             {
-                LayoutHelpers.SetChildActive(environmentObjects.CommonObj, "Glow Canvas", Settings.EnableTopGlow.Value);
+                LayoutHelpers.SetChildActive(environmentObjects.CommonObj, MenuOverhaulConstants.Environment.GlowCanvas, Settings.EnableTopGlow.Value);
                 LayoutHelpers.UpdateTopGlowColor(environmentObjects.CommonObj, Settings.AccentColor.Value);
             }
             else
@@ -189,7 +189,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             if (environmentObjects.FactoryLayout != null)
             {
                 // Handle custom plane
-                LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, "CustomPlane", Settings.EnableBackground.Value);
+                LayoutHelpers.SetChildActive(environmentObjects.FactoryLayout, MenuOverhaulConstants.Environment.CustomPlane, Settings.EnableBackground.Value);
                 LayoutHelpers.UpdateLogotypeBulbLightColor(environmentObjects.FactoryLayout);
                 
                 // Only update decal plane if we're not in game

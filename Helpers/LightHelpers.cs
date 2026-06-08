@@ -17,9 +17,9 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 Plugin.LogSource.LogWarning("SetupLights - clonedPlayerModelView is null.");
                 return;
             }
-            mainLightComponent = FindAndSetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Main Light", ConfigureMainLight);
-            mainLightAccentComponent = FindAndSetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Main Light (2)", ConfigureMainLightAccent);
-            hairLightComponent = FindAndSetupLight(clonedPlayerModelView, "PlayerMVObject/PlayerMVObjectLights/Hair Light", ConfigureHairLight);
+            mainLightComponent = FindAndSetupLight(clonedPlayerModelView, MenuOverhaulConstants.PlayerModel.MainLightPath, ConfigureMainLight);
+            mainLightAccentComponent = FindAndSetupLight(clonedPlayerModelView, MenuOverhaulConstants.PlayerModel.MainAccentLightPath, ConfigureMainLightAccent);
+            hairLightComponent = FindAndSetupLight(clonedPlayerModelView, MenuOverhaulConstants.PlayerModel.HairLightPath, ConfigureHairLight);
         }
 
         private static Light FindAndSetupLight(GameObject parent, string path, Action<Light> configureAction)

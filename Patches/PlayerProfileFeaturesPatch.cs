@@ -299,7 +299,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
                 return null;
             }
             GameObject instance = Object.Instantiate(prefab, parent.transform);
-            instance.name = "MainMenuPlayerModelView";
+            instance.name = MenuOverhaulConstants.PlayerModel.MainMenuPlayerModelViewName;
             instance.SetActive(true);
             return instance;
         }
@@ -473,13 +473,13 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void RemoveDynamicBottomFieldChildren(Transform bottomFieldTransform)
         {
-            DestroyBottomFieldChildIfExists(bottomFieldTransform, "LevelGroup");
-            DestroyBottomFieldChildIfExists(bottomFieldTransform, "LevelInfoRow");
-            DestroyBottomFieldChildIfExists(bottomFieldTransform, "NicknameText");
-            DestroyBottomFieldChildIfExists(bottomFieldTransform, "ExperienceRow");
-            DestroyBottomFieldChildIfExists(bottomFieldTransform, "Spacer_LevelInfo_Nickname");
-            DestroyBottomFieldChildIfExists(bottomFieldTransform, "Spacer_Nickname_Experience");
-            DestroyBottomFieldChildIfExists(bottomFieldTransform, "Experience");
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, MenuOverhaulConstants.BottomFieldUi.LevelGroup);
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, MenuOverhaulConstants.BottomFieldUi.LevelInfoRow);
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, MenuOverhaulConstants.BottomFieldUi.NicknameText);
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, MenuOverhaulConstants.BottomFieldUi.ExperienceRow);
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, MenuOverhaulConstants.BottomFieldUi.SpacerLevelInfoNickname);
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, MenuOverhaulConstants.BottomFieldUi.SpacerNicknameExperience);
+            DestroyBottomFieldChildIfExists(bottomFieldTransform, MenuOverhaulConstants.BottomFieldUi.Experience);
         }
 
         private static void DestroyBottomFieldChildIfExists(Transform bottomFieldTransform, string childName)
@@ -493,7 +493,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static GameObject CreateLevelInfoRow(Transform bottomFieldTransform, GameObject playerLevelViewPrefab, GameObject playerLevelIconViewPrefab)
         {
-            GameObject levelInfoRow = new GameObject("LevelInfoRow");
+            GameObject levelInfoRow = new GameObject(MenuOverhaulConstants.BottomFieldUi.LevelInfoRow);
             levelInfoRow.transform.SetParent(bottomFieldTransform, false);
 
             RectTransform levelInfoRect = levelInfoRow.AddComponent<RectTransform>();
@@ -535,7 +535,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
 
             GameObject clonedLevel = Object.Instantiate(playerLevelViewPrefab, levelInfoRow.transform);
-            clonedLevel.name = "Level";
+            clonedLevel.name = MenuOverhaulConstants.BottomFieldUi.Level;
             clonedLevel.SetActive(true);
 
             RectTransform levelRect = clonedLevel.GetComponent<RectTransform>();
@@ -570,7 +570,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
 
             GameObject clonedIcon = Object.Instantiate(playerLevelIconViewPrefab, levelInfoRow.transform);
-            clonedIcon.name = "Level Icon";
+            clonedIcon.name = MenuOverhaulConstants.BottomFieldUi.LevelIcon;
             clonedIcon.SetActive(true);
 
             RectTransform iconRect = clonedIcon.GetComponent<RectTransform>();
@@ -599,7 +599,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static GameObject CreateNicknameRow(Transform bottomFieldTransform)
         {
-            GameObject nicknameTextGo = new GameObject("NicknameText");
+            GameObject nicknameTextGo = new GameObject(MenuOverhaulConstants.BottomFieldUi.NicknameText);
             nicknameTextGo.transform.SetParent(bottomFieldTransform, false);
 
             RectTransform nicknameRect = nicknameTextGo.AddComponent<RectTransform>();
@@ -645,7 +645,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static GameObject CreateExperienceRow(Transform bottomFieldTransform)
         {
-            GameObject experienceRow = new GameObject("ExperienceRow");
+            GameObject experienceRow = new GameObject(MenuOverhaulConstants.BottomFieldUi.ExperienceRow);
             experienceRow.transform.SetParent(bottomFieldTransform, false);
 
             RectTransform expRect = experienceRow.AddComponent<RectTransform>();
@@ -671,7 +671,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             expCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
             expCsf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            GameObject expLabelGo = new GameObject("ExpLabel");
+            GameObject expLabelGo = new GameObject(MenuOverhaulConstants.BottomFieldUi.ExpLabel);
             expLabelGo.transform.SetParent(experienceRow.transform, false);
 
             TextMeshProUGUI expLabelTMP = expLabelGo.AddComponent<TextMeshProUGUI>();
@@ -682,7 +682,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             expLabelTMP.margin = Vector4.zero;
             expLabelTMP.enableWordWrapping = false;
 
-            GameObject expValueGo = new GameObject("ExpValue");
+            GameObject expValueGo = new GameObject(MenuOverhaulConstants.BottomFieldUi.ExpValue);
             expValueGo.transform.SetParent(experienceRow.transform, false);
 
             TextMeshProUGUI expValueTMP = expValueGo.AddComponent<TextMeshProUGUI>();
@@ -709,7 +709,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void DisableOriginalNicknameAndKarma(Transform bottomFieldTransform)
         {
-            Transform originalNicknameAndKarma = bottomFieldTransform.Find("NicknameAndKarma");
+            Transform originalNicknameAndKarma = bottomFieldTransform.Find(MenuOverhaulConstants.BottomFieldUi.NicknameAndKarma);
             if (originalNicknameAndKarma != null)
             {
                 originalNicknameAndKarma.gameObject.SetActive(false);

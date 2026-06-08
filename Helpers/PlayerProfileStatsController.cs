@@ -21,17 +21,17 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
             Color accentColor = Settings.AccentColor.Value;
 
-            Transform nicknameTransform = bottomFieldTransform.Find("NicknameText");
+            Transform nicknameTransform = bottomFieldTransform.Find(MenuOverhaulConstants.BottomFieldUi.NicknameText);
             TextMeshProUGUI nicknameTMP = nicknameTransform != null ? nicknameTransform.GetComponent<TextMeshProUGUI>() : null;
             if (nicknameTMP != null)
             {
                 nicknameTMP.color = accentColor;
             }
 
-            Transform experienceRow = bottomFieldTransform.Find("ExperienceRow");
+            Transform experienceRow = bottomFieldTransform.Find(MenuOverhaulConstants.BottomFieldUi.ExperienceRow);
             if (experienceRow != null)
             {
-                Transform expValueTransform = experienceRow.Find("ExpValue");
+                Transform expValueTransform = experienceRow.Find(MenuOverhaulConstants.BottomFieldUi.ExpValue);
                 TextMeshProUGUI expValueTMP = expValueTransform != null ? expValueTransform.GetComponent<TextMeshProUGUI>() : null;
                 if (expValueTMP != null)
                 {
@@ -68,7 +68,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         private static void UpdateNicknameDisplay(Transform bottomField, Profile profile)
         {
-            Transform nicknameTransform = bottomField.Find("NicknameText");
+            Transform nicknameTransform = bottomField.Find(MenuOverhaulConstants.BottomFieldUi.NicknameText);
             TextMeshProUGUI nicknameTMP = nicknameTransform != null ? nicknameTransform.GetComponent<TextMeshProUGUI>() : null;
             if (nicknameTMP != null)
             {
@@ -79,7 +79,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 Plugin.LogSource.LogWarning("UpdateNicknameDisplay - NicknameText TMP component not found in BottomField.");
             }
 
-            Transform originalNicknameAndKarma = bottomField.Find("NicknameAndKarma");
+            Transform originalNicknameAndKarma = bottomField.Find(MenuOverhaulConstants.BottomFieldUi.NicknameAndKarma);
             if (originalNicknameAndKarma != null)
             {
                 originalNicknameAndKarma.gameObject.SetActive(false);
@@ -88,14 +88,14 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         private static void UpdateExperienceDisplay(Transform bottomField, Profile profile)
         {
-            Transform experienceRow = bottomField.Find("ExperienceRow");
+            Transform experienceRow = bottomField.Find(MenuOverhaulConstants.BottomFieldUi.ExperienceRow);
             if (experienceRow == null)
             {
                 Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExperienceRow not found in BottomField.");
                 return;
             }
 
-            Transform expValueTransform = experienceRow.Find("ExpValue");
+            Transform expValueTransform = experienceRow.Find(MenuOverhaulConstants.BottomFieldUi.ExpValue);
             TextMeshProUGUI experienceTMP = expValueTransform != null ? expValueTransform.GetComponent<TextMeshProUGUI>() : null;
             if (experienceTMP != null)
             {
@@ -110,7 +110,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         private static void UpdateLevelDisplay(Transform bottomField, Profile profile, Action<Image, int> setLevelIcon)
         {
-            Transform levelInfoRow = bottomField.Find("LevelInfoRow");
+            Transform levelInfoRow = bottomField.Find(MenuOverhaulConstants.BottomFieldUi.LevelInfoRow);
             if (levelInfoRow == null)
             {
                 Plugin.LogSource.LogWarning("UpdateLevelDisplay - LevelInfoRow transform not found in BottomField.");
@@ -123,7 +123,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            Transform levelTransform = levelInfoRow.Find("Level");
+            Transform levelTransform = levelInfoRow.Find(MenuOverhaulConstants.BottomFieldUi.Level);
             TextMeshProUGUI levelTMP = levelTransform != null ? levelTransform.GetComponent<TextMeshProUGUI>() : null;
             if (levelTMP != null)
             {
@@ -139,7 +139,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level TMP component not found in LevelInfoRow.");
             }
 
-            Transform iconTransform = levelInfoRow.Find("Level Icon");
+            Transform iconTransform = levelInfoRow.Find(MenuOverhaulConstants.BottomFieldUi.LevelIcon);
             if (iconTransform != null)
             {
                 Image iconImage = iconTransform.GetComponent<Image>();

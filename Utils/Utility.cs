@@ -32,7 +32,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
             var env = LayoutHelpers.FindEnvironmentObjects();
             if (env == null || env.FactoryLayout == null) return;
 
-            Transform decalPlaneTransform = env.FactoryLayout.transform.Find("decal_plane");
+            Transform decalPlaneTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.DecalPlane);
             GameObject decalPlane = decalPlaneTransform != null ? decalPlaneTransform.gameObject : null;
             if (decalPlane == null) return;
 
@@ -43,13 +43,13 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     decalPlane.SetActive(true);
                 }
 
-                Transform pveTransform = decalPlane.transform.Find("decal_plane_pve");
+                Transform pveTransform = decalPlane.transform.Find(MenuOverhaulConstants.Environment.DecalPlanePve);
                 if (pveTransform != null && !pveTransform.gameObject.activeSelf)
                 {
                     pveTransform.gameObject.SetActive(true);
                 }
 
-                Transform childDecalPlane = decalPlane.transform.Find("decal_plane");
+                Transform childDecalPlane = decalPlane.transform.Find(MenuOverhaulConstants.Environment.DecalPlane);
                 if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
                 {
                     childDecalPlane.gameObject.SetActive(false);
@@ -62,13 +62,13 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     decalPlane.SetActive(false);
                 }
 
-                Transform pveTransform = decalPlane.transform.Find("decal_plane_pve");
+                Transform pveTransform = decalPlane.transform.Find(MenuOverhaulConstants.Environment.DecalPlanePve);
                 if (pveTransform != null && pveTransform.gameObject.activeSelf)
                 {
                     pveTransform.gameObject.SetActive(false);
                 }
 
-                Transform childDecalPlane = decalPlane.transform.Find("decal_plane");
+                Transform childDecalPlane = decalPlane.transform.Find(MenuOverhaulConstants.Environment.DecalPlane);
                 if (childDecalPlane != null && childDecalPlane.gameObject.activeSelf)
                 {
                     childDecalPlane.gameObject.SetActive(false);
@@ -84,7 +84,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
             var env = LayoutHelpers.FindEnvironmentObjects();
             if (env == null || env.FactoryLayout == null) return;
 
-            Transform decalPlaneTransform = env.FactoryLayout.transform.Find("decal_plane");
+            Transform decalPlaneTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.DecalPlane);
             GameObject decalPlane = decalPlaneTransform != null ? decalPlaneTransform.gameObject : null;
             if (decalPlane == null || !decalPlane.activeSelf) return;
 

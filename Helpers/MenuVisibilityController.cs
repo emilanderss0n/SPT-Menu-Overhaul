@@ -123,20 +123,20 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 var env = LayoutHelpers.FindEnvironmentObjects();
                 if (env != null && env.FactoryLayout != null)
                 {
-                    SetChildActiveIfPresent(env.FactoryLayout, "LampContainer", false);
+                    SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.LampContainer, false);
                     // AlignmentCamera positions/renders the CustomPlane, so it
                     // must stay on whenever CustomPlane is visible.
-                    SetChildActiveIfPresent(env.FactoryLayout, "AlignmentCamera", true);
-                    SetChildActiveIfPresent(env.FactoryLayout, "decal_plane", false);
+                    SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.AlignmentCamera, true);
+                    SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.DecalPlane, false);
 
-                    Transform panoramaTransform = env.FactoryLayout.transform.Find("panorama");
+                    Transform panoramaTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.Panorama);
                     GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
                     if (panorama != null && panorama.activeSelf)
                     {
                         panorama.SetActive(false);
                     }
 
-                    Transform customPlane = env.FactoryLayout.transform.Find("CustomPlane");
+                    Transform customPlane = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.CustomPlane);
                     if (customPlane != null)
                     {
                         customPlane.gameObject.SetActive(Settings.EnableBackground.Value);
@@ -149,7 +149,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
                 if (env != null && env.CommonObj != null)
                 {
-                    Transform glowCanvas = env.CommonObj.transform.Find("Glow Canvas");
+                    Transform glowCanvas = env.CommonObj.transform.Find(MenuOverhaulConstants.Environment.GlowCanvas);
                     if (glowCanvas != null && glowCanvas.gameObject.activeSelf)
                     {
                         glowCanvas.gameObject.SetActive(false);
@@ -188,15 +188,15 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 var env = LayoutHelpers.FindEnvironmentObjects();
                 if (env != null && env.FactoryLayout != null)
                 {
-                    SetChildActiveIfPresent(env.FactoryLayout, "CustomPlane", false);
-                    SetChildActiveIfPresent(env.FactoryLayout, "LampContainer", false);
-                    SetChildActiveIfPresent(env.FactoryLayout, "AlignmentCamera", false);
-                    SetChildActiveIfPresent(env.FactoryLayout, "decal_plane", false);
+                    SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.CustomPlane, false);
+                    SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.LampContainer, false);
+                    SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.AlignmentCamera, false);
+                    SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.DecalPlane, false);
 
                     // Restore the stock panorama so non-main-menu screens that
                     // also use the FactoryLayout environment (Hideout etc.)
                     // get the default look back.
-                    Transform panoramaTransform = env.FactoryLayout.transform.Find("panorama");
+                    Transform panoramaTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.Panorama);
                     GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
                     if (panorama != null && !panorama.activeSelf)
                     {
@@ -206,10 +206,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
                 if (env != null && env.EnvironmentUISceneFactory != null)
                 {
-                    Transform factoryCameraContainer = env.EnvironmentUISceneFactory.transform.Find("FactoryCameraContainer");
+                    Transform factoryCameraContainer = env.EnvironmentUISceneFactory.transform.Find(MenuOverhaulConstants.Environment.FactoryCameraContainer);
                     if (factoryCameraContainer != null)
                     {
-                        Transform mainMenuCamera = factoryCameraContainer.Find("MainMenuCamera");
+                        Transform mainMenuCamera = factoryCameraContainer.Find(MenuOverhaulConstants.Environment.MainMenuCamera);
                         if (mainMenuCamera != null && !mainMenuCamera.gameObject.activeSelf)
                         {
                             mainMenuCamera.gameObject.SetActive(true);
@@ -219,7 +219,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
                 if (env != null && env.CommonObj != null)
                 {
-                    Transform glowCanvas = env.CommonObj.transform.Find("Glow Canvas");
+                    Transform glowCanvas = env.CommonObj.transform.Find(MenuOverhaulConstants.Environment.GlowCanvas);
                     if (glowCanvas != null && glowCanvas.gameObject.activeSelf)
                     {
                         glowCanvas.gameObject.SetActive(false);
@@ -250,17 +250,17 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 var env = LayoutHelpers.FindEnvironmentObjects();
                 if (env != null && env.FactoryLayout != null)
                 {
-                    Transform panoramaTransform = env.FactoryLayout.transform.Find("panorama");
+                    Transform panoramaTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.Panorama);
                     GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
                     if (panorama != null && panorama.activeSelf)
                     {
                         panorama.SetActive(false);
                     }
 
-                    SetChildActiveIfPresent(env.FactoryLayout, "LampContainer", true);
-                    SetChildActiveIfPresent(env.FactoryLayout, "AlignmentCamera", true);
+                    SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.LampContainer, true);
+                    SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.AlignmentCamera, true);
 
-                    Transform customPlane = env.FactoryLayout.transform.Find("CustomPlane");
+                    Transform customPlane = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.CustomPlane);
                     if (customPlane != null)
                     {
                         customPlane.gameObject.SetActive(Settings.EnableBackground.Value);
@@ -269,10 +269,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
                 if (env != null && env.EnvironmentUISceneFactory != null)
                 {
-                    Transform factoryCameraContainer = env.EnvironmentUISceneFactory.transform.Find("FactoryCameraContainer");
+                    Transform factoryCameraContainer = env.EnvironmentUISceneFactory.transform.Find(MenuOverhaulConstants.Environment.FactoryCameraContainer);
                     if (factoryCameraContainer != null)
                     {
-                        Transform mainMenuCamera = factoryCameraContainer.Find("MainMenuCamera");
+                        Transform mainMenuCamera = factoryCameraContainer.Find(MenuOverhaulConstants.Environment.MainMenuCamera);
                         if (mainMenuCamera != null && mainMenuCamera.gameObject.activeSelf)
                         {
                             mainMenuCamera.gameObject.SetActive(false);
@@ -282,7 +282,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
                 if (env != null && env.CommonObj != null)
                 {
-                    Transform glowCanvas = env.CommonObj.transform.Find("Glow Canvas");
+                    Transform glowCanvas = env.CommonObj.transform.Find(MenuOverhaulConstants.Environment.GlowCanvas);
                     if (glowCanvas != null)
                     {
                         glowCanvas.gameObject.SetActive(Settings.EnableTopGlow.Value);

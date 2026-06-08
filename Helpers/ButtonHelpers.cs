@@ -13,7 +13,13 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         private const float ButtonIconScale = 0.8f;
         private const float ButtonYOffset = 60f;
         private const float DefaultButtonXOffset = 250f;
-        private static readonly string[] ButtonNames = ["PlayButton", "CharacterButton", "TradeButton", "HideoutButton", "ExitButtonGroup"
+        private static readonly string[] ButtonNames =
+        [
+            MenuOverhaulConstants.MenuButtons.PlayButton,
+            MenuOverhaulConstants.MenuButtons.CharacterButton,
+            MenuOverhaulConstants.MenuButtons.TradeButton,
+            MenuOverhaulConstants.MenuButtons.HideoutButton,
+            MenuOverhaulConstants.MenuButtons.ExitButtonGroup
         ];
 
         public static void SetupButtonIcons(MenuScreen menuScreenInstance)
@@ -23,10 +29,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 Plugin.LogSource.LogWarning("SetupButtonIcons - menuScreenInstance is null.");
                 return;
             }
-            SetButtonIconTransform(menuScreenInstance, "PlayButton", new Vector3(ButtonIconScale, ButtonIconScale, ButtonIconScale), new Vector3(-48f, 0f, 0f));
-            SetButtonIconTransform(menuScreenInstance, "TradeButton", new Vector3(ButtonIconScale, ButtonIconScale, ButtonIconScale));
-            SetButtonIconTransform(menuScreenInstance, "HideoutButton", new Vector3(ButtonIconScale, ButtonIconScale, ButtonIconScale));
-            SetButtonIconTransform(menuScreenInstance, "ExitButtonGroup", new Vector3(ButtonIconScale, ButtonIconScale, ButtonIconScale));
+            SetButtonIconTransform(menuScreenInstance, MenuOverhaulConstants.MenuButtons.PlayButton, new Vector3(ButtonIconScale, ButtonIconScale, ButtonIconScale), new Vector3(-48f, 0f, 0f));
+            SetButtonIconTransform(menuScreenInstance, MenuOverhaulConstants.MenuButtons.TradeButton, new Vector3(ButtonIconScale, ButtonIconScale, ButtonIconScale));
+            SetButtonIconTransform(menuScreenInstance, MenuOverhaulConstants.MenuButtons.HideoutButton, new Vector3(ButtonIconScale, ButtonIconScale, ButtonIconScale));
+            SetButtonIconTransform(menuScreenInstance, MenuOverhaulConstants.MenuButtons.ExitButtonGroup, new Vector3(ButtonIconScale, ButtonIconScale, ButtonIconScale));
         }
 
         /// <summary>
@@ -119,10 +125,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     continue;
                 }
 
-                Transform sizeLabelTransform = buttonObject.transform.Find("SizeLabel");
-                if (buttonName == "ExitButtonGroup")
+                Transform sizeLabelTransform = buttonObject.transform.Find(MenuOverhaulConstants.MenuButtons.SizeLabel);
+                if (buttonName == MenuOverhaulConstants.MenuButtons.ExitButtonGroup)
                 {
-                    sizeLabelTransform = buttonObject.transform.Find("ExitButton/SizeLabel");
+                    sizeLabelTransform = buttonObject.transform.Find(MenuOverhaulConstants.MenuButtons.ExitButtonSizeLabelPath);
                 }
 
                 if (sizeLabelTransform == null)
@@ -130,7 +136,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     continue;
                 }
 
-                Transform iconContainerTransform = sizeLabelTransform.Find("IconContainer");
+                Transform iconContainerTransform = sizeLabelTransform.Find(MenuOverhaulConstants.MenuButtons.IconContainer);
                 if (iconContainerTransform != null)
                 {
                     iconContainerTransform.gameObject.SetActive(showIcons);
@@ -189,11 +195,11 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             return buttonName switch
             {
-                "PlayButton" => Settings.PositionPlayButtonHorizontal.Value,
-                "CharacterButton" => Settings.PositionCharacterButtonHorizontal.Value,
-                "TradeButton" => Settings.PositionTradeButtonHorizontal.Value,
-                "HideoutButton" => Settings.PositionHideoutButtonHorizontal.Value,
-                "ExitButtonGroup" => Settings.PositionExitButtonHorizontal.Value,
+                MenuOverhaulConstants.MenuButtons.PlayButton => Settings.PositionPlayButtonHorizontal.Value,
+                MenuOverhaulConstants.MenuButtons.CharacterButton => Settings.PositionCharacterButtonHorizontal.Value,
+                MenuOverhaulConstants.MenuButtons.TradeButton => Settings.PositionTradeButtonHorizontal.Value,
+                MenuOverhaulConstants.MenuButtons.HideoutButton => Settings.PositionHideoutButtonHorizontal.Value,
+                MenuOverhaulConstants.MenuButtons.ExitButtonGroup => Settings.PositionExitButtonHorizontal.Value,
                 _ => DefaultButtonXOffset
             };
         }
@@ -204,10 +210,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             {
                 switch (buttonName)
                 {
-                    case "PlayButton":
+                    case MenuOverhaulConstants.MenuButtons.PlayButton:
                         await HandlePlayButtonLogic(menuScreenInstance, buttonObject);
                         break;
-                    case "ExitButtonGroup":
+                    case MenuOverhaulConstants.MenuButtons.ExitButtonGroup:
                         HandleExitButtonGroupLogic(buttonObject);
                         break;
                     default:
@@ -223,7 +229,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         private static async Task HandlePlayButtonLogic(MenuScreen menuScreenInstance, GameObject buttonObject)
         {
-            FieldInfo playButtonField = typeof(MenuScreen).GetField("_playButton", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo playButtonField = typeof(MenuScreen).GetField(MenuOverhaulConstants.MenuScreen.PlayButtonField, BindingFlags.NonPublic | BindingFlags.Instance);
             if (playButtonField != null)
             {
                 ModifyButtonTextComponent(playButtonField, menuScreenInstance, fontSize: 36);
@@ -235,12 +241,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
             await Task.Delay(1);
 
-            LayoutHelpers.SetChildActive(buttonObject, "Background", false);
-            Transform sizeLabelTransform = buttonObject.transform.Find("SizeLabel");
+            LayoutHelpers.SetChildActive(buttonObject, MenuOverhaulConstants.MenuButtons.Background, false);
+            Transform sizeLabelTransform = buttonObject.transform.Find(MenuOverhaulConstants.MenuButtons.SizeLabel);
             GameObject sizeLabel = sizeLabelTransform != null ? sizeLabelTransform.gameObject : null;
             if (sizeLabel != null)
             {
-                LayoutHelpers.SetChildActive(sizeLabel, "IconContainer", Settings.EnableMenuButtonIcons.Value);
+                LayoutHelpers.SetChildActive(sizeLabel, MenuOverhaulConstants.MenuButtons.IconContainer, Settings.EnableMenuButtonIcons.Value);
             }
             else
             {
@@ -250,20 +256,20 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         private static void HandleExitButtonGroupLogic(GameObject buttonGroupObject)
         {
-            Transform exitButtonTransform = buttonGroupObject.transform.Find("ExitButton");
+            Transform exitButtonTransform = buttonGroupObject.transform.Find(MenuOverhaulConstants.MenuButtons.ExitButton);
             GameObject exitButton = exitButtonTransform != null ? exitButtonTransform.gameObject : null;
             if (exitButton != null)
             {
-                LayoutHelpers.SetChildActive(exitButton, "Background", false);
-                Transform sizeLabelTransform = exitButton.transform.Find("SizeLabel");
+                LayoutHelpers.SetChildActive(exitButton, MenuOverhaulConstants.MenuButtons.Background, false);
+                Transform sizeLabelTransform = exitButton.transform.Find(MenuOverhaulConstants.MenuButtons.SizeLabel);
                 GameObject sizeLabel = sizeLabelTransform != null ? sizeLabelTransform.gameObject : null;
                 if (sizeLabel != null)
                 {
-                    Transform iconContainerTransform = sizeLabel.transform.Find("IconContainer");
+                    Transform iconContainerTransform = sizeLabel.transform.Find(MenuOverhaulConstants.MenuButtons.IconContainer);
                     GameObject iconContainer = iconContainerTransform != null ? iconContainerTransform.gameObject : null;
                     if (iconContainer != null)
                     {
-                        LayoutHelpers.SetChildActive(iconContainer, "Icon", Settings.EnableMenuButtonIcons.Value);
+                        LayoutHelpers.SetChildActive(iconContainer, MenuOverhaulConstants.MenuButtons.Icon, Settings.EnableMenuButtonIcons.Value);
                     }
                     else
                     {
@@ -274,7 +280,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 {
                     Plugin.LogSource.LogWarning("SizeLabel not found in ExitButton.");
                 }
-                LayoutHelpers.SetIconImages(exitButton, "ExitButton");
+                LayoutHelpers.SetIconImages(exitButton, MenuOverhaulConstants.MenuButtons.ExitButton);
             }
             else
             {
@@ -284,16 +290,16 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
         private static void HideButtonBackgroundAndActivateIcon(GameObject buttonObject, string buttonName)
         {
-            LayoutHelpers.SetChildActive(buttonObject, "Background", false);
-            Transform sizeLabelTransform = buttonObject.transform.Find("SizeLabel");
+            LayoutHelpers.SetChildActive(buttonObject, MenuOverhaulConstants.MenuButtons.Background, false);
+            Transform sizeLabelTransform = buttonObject.transform.Find(MenuOverhaulConstants.MenuButtons.SizeLabel);
             GameObject sizeLabel = sizeLabelTransform != null ? sizeLabelTransform.gameObject : null;
             if (sizeLabel != null)
             {
-                Transform iconContainerTransform = sizeLabel.transform.Find("IconContainer");
+                Transform iconContainerTransform = sizeLabel.transform.Find(MenuOverhaulConstants.MenuButtons.IconContainer);
                 GameObject iconContainer = iconContainerTransform != null ? iconContainerTransform.gameObject : null;
                 if (iconContainer != null)
                 {
-                    LayoutHelpers.SetChildActive(iconContainer, "Icon", Settings.EnableMenuButtonIcons.Value);
+                    LayoutHelpers.SetChildActive(iconContainer, MenuOverhaulConstants.MenuButtons.Icon, Settings.EnableMenuButtonIcons.Value);
                 }
                 else
                 {
@@ -322,9 +328,9 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
 
             Transform iconOwnerTransform = button.transform;
-            if (buttonName == "ExitButtonGroup")
+            if (buttonName == MenuOverhaulConstants.MenuButtons.ExitButtonGroup)
             {
-                Transform exitButtonTransform = button.transform.Find("ExitButton");
+                Transform exitButtonTransform = button.transform.Find(MenuOverhaulConstants.MenuButtons.ExitButton);
                 if (exitButtonTransform == null)
                 {
                     Plugin.LogSource.LogWarning($"SetButtonIconTransform - ExitButton not found in {buttonName}.");
@@ -333,7 +339,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 iconOwnerTransform = exitButtonTransform;
             }
 
-            Transform iconTransform = iconOwnerTransform.Find("SizeLabel/IconContainer/Icon");
+            Transform iconTransform = iconOwnerTransform.Find(MenuOverhaulConstants.MenuButtons.IconPath);
             if (iconTransform == null)
             {
                 Plugin.LogSource.LogWarning($"SetButtonIconTransform - Icon not found for {buttonName} at expected path.");

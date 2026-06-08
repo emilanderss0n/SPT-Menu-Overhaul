@@ -85,7 +85,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             Transform cameraTransform = clonedPlayerModelView.transform.Find(MenuOverhaulConstants.PlayerModel.CameraInventoryPath);
             if (cameraTransform == null)
             {
-                Plugin.LogSource.LogWarning("UpdateCameraPosition - Camera_inventory not found.");
+                Plugin.LogSource.LogWarning($"UpdateCameraPosition - {MenuOverhaulConstants.PlayerModel.CameraInventoryPath} not found.");
                 return;
             }
 
@@ -112,7 +112,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             Transform cameraTransform = clonedPlayerModelView.transform.Find(MenuOverhaulConstants.PlayerModel.CameraInventoryPath);
             if (cameraTransform == null)
             {
-                Plugin.LogSource.LogWarning("UpdateCameraRotation - Camera_inventory not found.");
+                Plugin.LogSource.LogWarning($"UpdateCameraRotation - {MenuOverhaulConstants.PlayerModel.CameraInventoryPath} not found.");
                 return;
             }
 
@@ -127,7 +127,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             Transform bottomFieldTransform = GetBottomFieldTransform(clonedPlayerModelView);
             if (bottomFieldTransform == null)
             {
-                Plugin.LogSource.LogWarning("BottomFieldPositionChanged - BottomField transform not found.");
+                Plugin.LogSource.LogWarning($"BottomFieldPositionChanged - {MenuOverhaulConstants.PlayerModel.BottomFieldName} transform not found.");
                 return;
             }
 
@@ -176,10 +176,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return;
             }
 
-            Transform innerModelTransform = playerMvObject.Find("MenuPlayer");
+            Transform innerModelTransform = playerMvObject.Find(MenuOverhaulConstants.PlayerModel.MenuPlayerName);
             if (innerModelTransform == null)
             {
-                Plugin.LogSource.LogWarning("AdjustInnerPlayerModelPosition - MenuPlayer not found in PlayerMVObject.");
+                Plugin.LogSource.LogWarning($"AdjustInnerPlayerModelPosition - {MenuOverhaulConstants.PlayerModel.MenuPlayerName} not found in {MenuOverhaulConstants.PlayerModel.RootPath}.");
                 return;
             }
 
