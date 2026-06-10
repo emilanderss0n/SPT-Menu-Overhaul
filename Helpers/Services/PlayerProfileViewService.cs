@@ -1,22 +1,22 @@
+using EFT;
 using EFT.UI;
-using SPT.Reflection.Patching;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
+using MoxoPixel.MenuOverhaul.Infrastructure.Lifecycle;
+using MoxoPixel.MenuOverhaul.Utils;
+using SPT.Reflection.Utils;
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using MoxoPixel.MenuOverhaul.Helpers;
-using MoxoPixel.MenuOverhaul.Utils;
-using EFT;
-using SPT.Reflection.Utils;
 using Object = UnityEngine.Object;
 
-namespace MoxoPixel.MenuOverhaul.Patches
+namespace MoxoPixel.MenuOverhaul.Helpers.Services
 {
-    internal class PlayerProfileFeaturesPatch : ModulePatch, ICleanupPatch
+    internal static class PlayerProfileViewService
     {
-        private static bool menuPlayerCreated;
+        private static bool _menuPlayerCreated;
         public static GameObject ClonedPlayerModelView;
 
         private static bool _profileSettingsSubscribed;
@@ -24,55 +24,21 @@ namespace MoxoPixel.MenuOverhaul.Patches
         private static Vector2? _basePreviewViewportSize;
         private static Vector3? _basePreviewViewportScale;
 
-        // Mouse drag rotation handle for the cloned player model.
         private static PlayerModelDragRotator _dragRotator;
 
-        protected override MethodBase GetTargetMethod()
+        public static MethodBase GetMenuScreenShowTargetMethod()
         {
-            return typeof(MenuScreen).GetMethod(MenuOverhaulConstants.Reflection.MenuScreenShowMethod, [typeof(Profile), typeof(MatchmakerPlayerControllerClass), typeof(ESessionMode)
-            ]);
+            return MenuGuardHelpers.GetMenuScreenShowTargetMethod();
         }
 
-        [PatchPostfix]
-        private static async void Postfix(MenuScreen __instance, Profile profile, MatchmakerPlayerControllerClass matchmaker)
+        public static async Task ApplyMainMenuProfileViewAsync()
         {
-            try
-            {
-                if (__instance == null)
-                {
-                    Plugin.LogSource.LogWarning("MenuScreen instance is null.");
-                    return;
-                }
-
-                // Only show the custom player model on the actual main menu screen.
-                // The in-raid Disconnect/Resume menu and the reconnect menu invoke Show with
-                // null profile/matchmaker; skip those so the default game UI is preserved.
-                if (profile == null || matchmaker == null || Utility.IsInGame())
-                {
-                    return;
-                }
-
-                await AddPlayerModel();
-                SubscribeToProfileSettingsChanges();
-                SubscribeToCharacterLevelUpEvent();
-
-                if (ClonedPlayerModelView != null)
-                {
-                    UpdatePlayerModelPosition();
-                    UpdatePlayerModelRotation();
-                    UpdateCameraPosition();
-                    UpdateCameraRotation();
-                    BottomFieldPositionChanged();
-                    UpdateTextColors();
-                }
-            }
-            catch (Exception e)
-            {
-                Plugin.LogSource.LogError(e.ToString());
-            }
+            await AddPlayerModel().ConfigureAwait(false);
+            MenuLifecycleCoordinator.EnsureProfileSubscriptions();
+            ApplyProfileViewState();
         }
 
-        private static void SubscribeToProfileSettingsChanges()
+        public static void SubscribeToProfileSettingsChanges()
         {
             if (_profileSettingsSubscribed) return;
 
@@ -94,7 +60,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             _profileSettingsSubscribed = true;
         }
 
-        private static void UnsubscribeFromProfileSettingsChanges()
+        public static void UnsubscribeFromProfileSettingsChanges()
         {
             if (!_profileSettingsSubscribed) return;
 
@@ -116,14 +82,40 @@ namespace MoxoPixel.MenuOverhaul.Patches
             _profileSettingsSubscribed = false;
         }
 
+        public static void SubscribeToCharacterLevelUpEvent()
+        {
+            if (_experienceEventsSubscribed) return;
+            if (PatchConstants.BackEndSession != null && PatchConstants.BackEndSession.Profile != null && PatchConstants.BackEndSession.Profile.Info != null)
+            {
+                PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged += OnExperienceChanged;
+                _experienceEventsSubscribed = true;
+            }
+            else
+            {
+                MenuDiagnosticsLogger.WarningOnce(LogSubsystem.Profile, "Profile.Experience.Subscribe.MissingInfo", "SubscribeToCharacterLevelUpEvent - BackEndSession.Profile.Info is null.");
+            }
+        }
+
+        public static void UnsubscribeFromCharacterLevelUpEvent()
+        {
+            if (!_experienceEventsSubscribed) return;
+            if (PatchConstants.BackEndSession != null && PatchConstants.BackEndSession.Profile != null && PatchConstants.BackEndSession.Profile.Info != null)
+            {
+                PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged -= OnExperienceChanged;
+                _experienceEventsSubscribed = false;
+            }
+        }
+
         private static void OnPlayerModelPositionChanged(object sender, EventArgs e) => UpdatePlayerModelPosition();
         private static void OnPlayerModelRotationChanged(object sender, EventArgs e) => UpdatePlayerModelRotation();
         private static void OnBottomFieldPositionChanged(object sender, EventArgs e) => BottomFieldPositionChanged();
+
         private static void OnAccentColorChanged(object sender, EventArgs e)
         {
             UpdateTextColors();
-            LightHelpers.UpdateAccentLightColor();
+            MainMenuLightingService.UpdateAccentLightColor();
         }
+
         private static void OnLargerPlayerModelChanged(object sender, EventArgs e)
         {
             UpdatePlayerModelPosition();
@@ -131,6 +123,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             UpdateCameraRotation();
             ConfigurePreviewRenderQuality(ClonedPlayerModelView);
         }
+
         private static void OnPlayerPreviewQualityChanged(object sender, EventArgs e)
         {
             ConfigurePreviewRenderQuality(ClonedPlayerModelView);
@@ -147,6 +140,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             UpdateCameraPosition();
             UpdateCameraRotation();
+        }
+
+        private static void OnExperienceChanged(int oldExperience, int newExperience)
+        {
+            Transform bottomFieldTransform = PlayerProfileTransformController.GetBottomFieldTransform(ClonedPlayerModelView);
+            if (bottomFieldTransform != null)
+            {
+                UpdatePlayerStats();
+            }
+            else
+            {
+                MenuDiagnosticsLogger.WarningOnce(LogSubsystem.Profile, "Profile.Experience.BottomFieldMissing", "OnExperienceChanged - BottomField transform not found, cannot update player stats.");
+            }
         }
 
         private static void UpdateTextColors()
@@ -179,43 +185,6 @@ namespace MoxoPixel.MenuOverhaul.Patches
             PlayerProfileTransformController.UpdateBottomFieldPosition(ClonedPlayerModelView);
         }
 
-        private static void SubscribeToCharacterLevelUpEvent()
-        {
-            if (_experienceEventsSubscribed) return;
-            if (PatchConstants.BackEndSession != null && PatchConstants.BackEndSession.Profile != null && PatchConstants.BackEndSession.Profile.Info != null)
-            {
-                PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged += OnExperienceChanged;
-                _experienceEventsSubscribed = true;
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("SubscribeToCharacterLevelUpEvent - BackEndSession.Profile.Info is null.");
-            }
-        }
-
-        private static void UnsubscribeFromCharacterLevelUpEvent()
-        {
-            if (!_experienceEventsSubscribed) return;
-            if (PatchConstants.BackEndSession != null && PatchConstants.BackEndSession.Profile != null && PatchConstants.BackEndSession.Profile.Info != null)
-            {
-                PatchConstants.BackEndSession.Profile.Info.OnExperienceChanged -= OnExperienceChanged;
-                _experienceEventsSubscribed = false;
-            }
-        }
-
-        private static void OnExperienceChanged(int oldExperience, int newExperience)
-        {
-            Transform bottomFieldTransform = PlayerProfileTransformController.GetBottomFieldTransform(ClonedPlayerModelView);
-            if (bottomFieldTransform != null)
-            {
-                UpdatePlayerStats();
-            }
-            else
-            {
-                Plugin.LogSource.LogWarning("OnExperienceChanged - BottomField transform not found, cannot update player stats.");
-            }
-        }
-
         private static float GetPreviewSupersampleFactor()
         {
             return PlayerProfileTransformController.GetPreviewSupersampleFactor();
@@ -228,15 +197,15 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static async Task AddPlayerModel()
         {
-            if (menuPlayerCreated && ClonedPlayerModelView != null)
+            if (_menuPlayerCreated && ClonedPlayerModelView != null)
             {
                 await RefreshPlayerModel();
                 return;
             }
-            if (menuPlayerCreated)
+            if (_menuPlayerCreated)
             {
-                Plugin.LogSource.LogWarning("AddPlayerModel - MenuPlayerCreated is true, but clonedPlayerModelView is null. Attempting to recreate.");
-                menuPlayerCreated = false;
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "AddPlayerModel - MenuPlayerCreated is true, but clonedPlayerModelView is null. Attempting to recreate.");
+                _menuPlayerCreated = false;
             }
 
             GameObject playerModelViewPrefab = GameObject.Find(MenuOverhaulConstants.PlayerModel.PlayerModelViewPrefabPath);
@@ -244,25 +213,25 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             if (playerModelViewPrefab == null || menuScreenParent == null)
             {
-                Plugin.LogSource.LogError("AddPlayerModel - PlayerModelView prefab or MenuScreen parent not found. Cannot create player model.");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Profile, "AddPlayerModel - PlayerModelView prefab or MenuScreen parent not found. Cannot create player model.");
                 return;
             }
 
             ClonedPlayerModelView = CreateClonedPlayerModelView(menuScreenParent, playerModelViewPrefab);
             if (ClonedPlayerModelView == null)
             {
-                Plugin.LogSource.LogError("AddPlayerModel - Failed to create clonedPlayerModelView.");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Profile, "AddPlayerModel - Failed to create clonedPlayerModelView.");
                 return;
             }
 
-            menuPlayerCreated = true;
+            _menuPlayerCreated = true;
 
             PlayerModelView playerModelViewScript = ClonedPlayerModelView.GetComponentInChildren<PlayerModelView>();
             if (playerModelViewScript == null)
             {
-                Plugin.LogSource.LogError("AddPlayerModel - PlayerModelView script not found on the cloned PlayerModelViewObject.");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Profile, "AddPlayerModel - PlayerModelView script not found on the cloned PlayerModelViewObject.");
                 Object.Destroy(ClonedPlayerModelView);
-                menuPlayerCreated = false;
+                _menuPlayerCreated = false;
                 ClonedPlayerModelView = null;
                 return;
             }
@@ -273,7 +242,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             GameObject playerLevelIconViewPrefab = GameObject.Find(MenuOverhaulConstants.PlayerModel.PlayerLevelIconPrefabPath);
             if (playerLevelViewPrefab == null || playerLevelIconViewPrefab == null)
             {
-                Plugin.LogSource.LogWarning("AddPlayerModel - PlayerLevelViewPrefab or PlayerLevelIconViewPrefab not found. BottomField setup might be incomplete.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "AddPlayerModel - PlayerLevelViewPrefab or PlayerLevelIconViewPrefab not found. BottomField setup might be incomplete.");
             }
             SetupBottomField(ClonedPlayerModelView, playerLevelViewPrefab, playerLevelIconViewPrefab);
 
@@ -287,7 +256,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
             else
             {
-                Plugin.LogSource.LogError("AddPlayerModel - BackEndSession.Profile is null. Cannot show player model view script.");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Profile, "AddPlayerModel - BackEndSession.Profile is null. Cannot show player model view script.");
             }
         }
 
@@ -295,7 +264,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (parent == null || prefab == null)
             {
-                Plugin.LogSource.LogError("CreateClonedPlayerModelView - Parent or Prefab is null.");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Profile, "CreateClonedPlayerModelView - Parent or Prefab is null.");
                 return null;
             }
             GameObject instance = Object.Instantiate(prefab, parent.transform);
@@ -306,7 +275,11 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void ConfigurePlayerModelVisuals(GameObject modelInstance)
         {
-            if (modelInstance == null) { Plugin.LogSource.LogWarning("ConfigurePlayerModelVisuals - modelInstance is null."); return; }
+            if (modelInstance == null)
+            {
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "ConfigurePlayerModelVisuals - modelInstance is null.");
+                return;
+            }
 
             modelInstance.transform.localPosition = new Vector3(Settings.PositionPlayerModelHorizontal.Value, -150f, 0f);
             modelInstance.transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
@@ -324,12 +297,18 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     prismEffects.exposureUpperLimit = 0.55f;
                     prismEffects.useExposure = true;
                 }
-                else { Plugin.LogSource.LogWarning("ConfigurePlayerModelVisuals - PrismEffects component not found on Camera_inventory."); }
+                else
+                {
+                    MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "ConfigurePlayerModelVisuals - PrismEffects component not found on Camera_inventory.");
+                }
             }
-            else { Plugin.LogSource.LogWarning("ConfigurePlayerModelVisuals - Camera_inventory not found in player model instance."); }
+            else
+            {
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "ConfigurePlayerModelVisuals - Camera_inventory not found in player model instance.");
+            }
 
             ConfigurePreviewRenderQuality(modelInstance);
-            LightHelpers.SetupLights(modelInstance);
+            MainMenuLightingService.SetupLights(modelInstance);
             UpdatePlayerModelRotation();
         }
 
@@ -350,7 +329,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
             if (cameraImage == null || previewCamera == null)
             {
-                Plugin.LogSource.LogWarning("ConfigurePreviewRenderQuality - CameraImage or Camera_inventory missing on player model preview.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "ConfigurePreviewRenderQuality - CameraImage or Camera_inventory missing on player model preview.");
                 return;
             }
 
@@ -410,19 +389,23 @@ namespace MoxoPixel.MenuOverhaul.Patches
 
         private static void SetupBottomField(GameObject modelInstance, GameObject playerLevelViewPrefab, GameObject playerLevelIconViewPrefab)
         {
-            if (modelInstance == null) { Plugin.LogSource.LogWarning("SetupBottomField - modelInstance is null."); return; }
+            if (modelInstance == null)
+            {
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "SetupBottomField - modelInstance is null.");
+                return;
+            }
 
             Transform bottomFieldTransform = modelInstance.transform.Find(MenuOverhaulConstants.PlayerModel.BottomFieldName);
             if (bottomFieldTransform == null)
             {
-                Plugin.LogSource.LogError("SetupBottomField - BottomField transform not found in modelInstance.");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Profile, "SetupBottomField - BottomField transform not found in modelInstance.");
                 return;
             }
 
             RectTransform bftRect = bottomFieldTransform.GetComponent<RectTransform>();
             if (bftRect == null)
             {
-                Plugin.LogSource.LogError("SetupBottomField - RectTransform not found on BottomField. Cannot configure layout.");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Profile, "SetupBottomField - RectTransform not found on BottomField. Cannot configure layout.");
                 return;
             }
             ConfigureBottomFieldLayout(bottomFieldTransform, bftRect);
@@ -463,7 +446,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
             }
             else
             {
-                Plugin.LogSource.LogWarning("SetupBottomField - VerticalLayoutGroup component not found on BottomField. Row layout might be incorrect.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "SetupBottomField - VerticalLayoutGroup component not found on BottomField. Row layout might be incorrect.");
             }
 
             float compensatedBottomFieldScale = 0.6f * GetPreviewSupersampleFactor();
@@ -530,7 +513,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (playerLevelViewPrefab == null)
             {
-                Plugin.LogSource.LogWarning("SetupBottomField - playerLevelViewPrefab is null. Level text will be missing.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "SetupBottomField - playerLevelViewPrefab is null. Level text will be missing.");
                 return;
             }
 
@@ -565,7 +548,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (playerLevelIconViewPrefab == null)
             {
-                Plugin.LogSource.LogWarning("SetupBottomField - playerLevelIconViewPrefab is null. Level Icon will be missing.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "SetupBottomField - playerLevelIconViewPrefab is null. Level Icon will be missing.");
                 return;
             }
 
@@ -748,7 +731,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         {
             if (ClonedPlayerModelView == null)
             {
-                Plugin.LogSource.LogWarning("RefreshPlayerModel - clonedPlayerModelView is null. Cannot refresh.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "RefreshPlayerModel - clonedPlayerModelView is null. Cannot refresh.");
                 return;
             }
 
@@ -764,9 +747,15 @@ namespace MoxoPixel.MenuOverhaul.Patches
                     UpdateCameraRotation();
                     ConfigurePreviewRenderQuality(ClonedPlayerModelView);
                 }
-                else { Plugin.LogSource.LogWarning("RefreshPlayerModel - BackEndSession.Profile is null. Cannot show player model."); }
+                else
+                {
+                    MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "RefreshPlayerModel - BackEndSession.Profile is null. Cannot show player model.");
+                }
             }
-            else { Plugin.LogSource.LogWarning("RefreshPlayerModel - PlayerModelView script not found on clonedPlayerModelView."); }
+            else
+            {
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "RefreshPlayerModel - PlayerModelView script not found on clonedPlayerModelView.");
+            }
         }
 
         private static void UpdatePlayerStats()
@@ -774,10 +763,19 @@ namespace MoxoPixel.MenuOverhaul.Patches
             PlayerProfileStatsController.UpdatePlayerStats(ClonedPlayerModelView, PlayerLevelPanel.SetLevelIcon);
         }
 
-        public void CleanupBeforeDisable()
+        private static void ApplyProfileViewState()
         {
-            UnsubscribeFromProfileSettingsChanges();
-            UnsubscribeFromCharacterLevelUpEvent();
+            if (ClonedPlayerModelView == null)
+            {
+                return;
+            }
+
+            UpdatePlayerModelPosition();
+            UpdatePlayerModelRotation();
+            UpdateCameraPosition();
+            UpdateCameraRotation();
+            BottomFieldPositionChanged();
+            UpdateTextColors();
         }
     }
 }

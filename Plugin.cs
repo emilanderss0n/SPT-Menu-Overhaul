@@ -1,8 +1,11 @@
-﻿using BepInEx.Logging;
+using BepInEx.Logging;
 using BepInEx;
 using MoxoPixel.MenuOverhaul.Patches;
 using MoxoPixel.MenuOverhaul.Utils;
 using MoxoPixel.MenuOverhaul.Helpers;
+using MoxoPixel.MenuOverhaul.Infrastructure.Reflection;
+using MoxoPixel.MenuOverhaul.Infrastructure.Lifecycle;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
 using System.Collections.Generic;
 using System;
 using SPT.Reflection.Patching;
@@ -21,6 +24,23 @@ namespace MoxoPixel.MenuOverhaul
             LogSource = Logger;
             Settings.Init(Config);
 
+            EftReflectionMap.Initialize();
+            MenuDiagnosticsLogger.Info(LogSubsystem.Reflection, EftReflectionMap.GetStartupSummary());
+            if (EftReflectionMap.HasMissingMembers())
+            {
+                foreach (string missingMember in EftReflectionMap.GetMissingMembers())
+                {
+                    MenuDiagnosticsLogger.WarningOnce(
+                        LogSubsystem.Reflection,
+                        "Reflection.StartupMissing." + missingMember,
+                        "Missing reflection member at startup: " + missingMember);
+                }
+            }
+            else
+            {
+                MenuDiagnosticsLogger.Info(LogSubsystem.Reflection, "Integrity check passed: all mapped members resolved.");
+            }
+
             InitializeAndEnablePatches();
 
             LogSource.LogInfo($"Plugin {Info.Metadata.Name} version {Info.Metadata.Version} loaded.");
@@ -28,10 +48,10 @@ namespace MoxoPixel.MenuOverhaul
 
         private void InitializeAndEnablePatches()
         {
-            _patches.Add(new MenuOverhaulPatch());
-            _patches.Add(new PlayerProfileFeaturesPatch());
-            _patches.Add(new SetAlphaPatch());
-            _patches.Add(new TweenButtonPatch());
+            _patches.Add(new MainMenuLayoutPatchAdapter());
+            _patches.Add(new PlayerProfileViewPatchAdapter());
+            _patches.Add(new DefaultUIButtonIdlePatchAdapter());
+            _patches.Add(new DefaultUIButtonHoverPatchAdapter());
             _patches.Add(new OnGameStartedPatch());
             _patches.Add(new OnGameEndedPatch());
 
@@ -57,23 +77,12 @@ namespace MoxoPixel.MenuOverhaul
         {
             try
             {
-                // Unsubscribe from events
-                foreach (var patch in _patches)
-                {
-                    ICleanupPatch cleanupPatch = patch as ICleanupPatch;
-                    if (cleanupPatch != null)
-                    {
-                        cleanupPatch.CleanupBeforeDisable();
-                    }
-                }
+                MenuLifecycleCoordinator.CleanupOnUnload();
                 
-                // Unsubscribe screen-change listener
-                MenuVisibilityController.Unsubscribe();
-
                 // Cleanup static helpers
-                LayoutHelpers.DisposeResources();
-                LightHelpers.Cleanup();
-                Utils.Utility.ResetGameState();
+                MainMenuLayoutRuntime.DisposeResources();
+                MainMenuLightingService.Cleanup();
+                Utils.GameStateUtility.ResetGameState();
                 
                 LogSource.LogDebug("MenuOverhaul plugin resources cleaned up.");
             }

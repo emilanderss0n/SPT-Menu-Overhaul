@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using UnityEngine;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
 using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
 {
-    internal static class LightHelpers
+    internal static class MainMenuLightingService
     {
         private static Light mainLightComponent;
         private static Light hairLightComponent;
@@ -14,7 +15,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (clonedPlayerModelView == null)
             {
-                Plugin.LogSource.LogWarning("SetupLights - clonedPlayerModelView is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "SetupLights - clonedPlayerModelView is null.");
                 return;
             }
             mainLightComponent = FindAndSetupLight(clonedPlayerModelView, MenuOverhaulConstants.PlayerModel.MainLightPath, ConfigureMainLight);
@@ -26,21 +27,21 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (parent == null || string.IsNullOrEmpty(path) || configureAction == null)
             {
-                Plugin.LogSource.LogError("FindAndSetupLight - Invalid arguments.");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Layout, "FindAndSetupLight - Invalid arguments.");
                 return null;
             }
 
             Transform lightTransform = parent.transform.Find(path);
             if (lightTransform == null)
             {
-                Plugin.LogSource.LogWarning($"Light GameObject not found at path: {path} in {parent.name}.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, $"Light GameObject not found at path: {path} in {parent.name}.");
                 return null;
             }
 
             Light lightComponent = lightTransform.GetComponent<Light>();
             if (lightComponent == null)
             {
-                Plugin.LogSource.LogWarning($"Light component not found on GameObject at path: {path} in {parent.name}.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, $"Light component not found on GameObject at path: {path} in {parent.name}.");
                 return null;
             }
 
@@ -95,7 +96,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             hairLightComponent = null;
             mainLightAccentComponent = null;
             
-            Plugin.LogSource.LogDebug("Light helper references cleared during cleanup");
+            MenuDiagnosticsLogger.Debug(LogSubsystem.Layout, "Light helper references cleared during cleanup");
         }
     }
 }

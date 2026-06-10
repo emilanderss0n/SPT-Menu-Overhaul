@@ -1,9 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 using MoxoPixel.MenuOverhaul.Helpers;
+using EFT.UI.Screens;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
 
 namespace MoxoPixel.MenuOverhaul.Utils
 {
-    public static class Utility
+    public static class GameStateUtility
     {
         private static bool isInGame;
         private const float DefaultDecalPlaneY = -999.4f;
@@ -29,7 +31,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
         /// </summary>
         public static void ConfigureDecalPlane(bool enable)
         {
-            var env = LayoutHelpers.FindEnvironmentObjects();
+            var env = MainMenuLayoutRuntime.FindEnvironmentObjects();
             if (env == null || env.FactoryLayout == null) return;
 
             Transform decalPlaneTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.DecalPlane);
@@ -81,7 +83,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
         /// </summary>
         public static void SetDecalPlanePosition(float xPosition, float yOffset)
         {
-            var env = LayoutHelpers.FindEnvironmentObjects();
+            var env = MainMenuLayoutRuntime.FindEnvironmentObjects();
             if (env == null || env.FactoryLayout == null) return;
 
             Transform decalPlaneTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.DecalPlane);
@@ -97,7 +99,7 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static void ResetGameState()
         {
             isInGame = false;
-            Plugin.LogSource.LogDebug("Game state tracking reset");
+            MenuDiagnosticsLogger.Debug(LogSubsystem.General, "Game state tracking reset");
         }
     }
 }

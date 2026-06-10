@@ -1,7 +1,9 @@
-﻿using EFT;
+using EFT;
 using SPT.Reflection.Patching;
 using System.Reflection;
 using MoxoPixel.MenuOverhaul.Helpers;
+using MoxoPixel.MenuOverhaul.Helpers.Services;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
 using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Patches
@@ -16,15 +18,15 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static void PatchPostfix()
         {
-            Utility.SetGameStarted(false);
+            GameStateUtility.SetGameStarted(false);
 
-            if (PlayerProfileFeaturesPatch.ClonedPlayerModelView != null)
+            if (PlayerProfileViewService.ClonedPlayerModelView != null)
             {
-                PlayerProfileFeaturesPatch.ClonedPlayerModelView.SetActive(true);
-                LightHelpers.SetupLights(PlayerProfileFeaturesPatch.ClonedPlayerModelView);
+                PlayerProfileViewService.ClonedPlayerModelView.SetActive(true);
+                MainMenuLightingService.SetupLights(PlayerProfileViewService.ClonedPlayerModelView);
             }
 
-            Plugin.LogSource.LogDebug("MenuOverhaul: game ended, custom menu re-armed.");
+            MenuDiagnosticsLogger.Debug(LogSubsystem.Lifecycle, "MenuOverhaul: game ended, custom menu re-armed.");
         }
     }
 }

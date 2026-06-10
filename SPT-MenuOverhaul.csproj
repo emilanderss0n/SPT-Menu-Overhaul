@@ -20,6 +20,7 @@
     <EmbeddedResource Remove="Interfaces\**" />
     <None Remove="build\**" />
     <None Remove="Interfaces\**" />
+    <None Include=".github\copilot-instructions.md" />
     <None Include="build\postbuild-copy.cmd" />
     <None Update="Resources\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

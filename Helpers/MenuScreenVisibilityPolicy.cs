@@ -1,6 +1,6 @@
 using UnityEngine;
-using EFT.UI.Screens;
-using MoxoPixel.MenuOverhaul.Patches;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
+using MoxoPixel.MenuOverhaul.Helpers.Services;
 using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
@@ -19,10 +19,8 @@ namespace MoxoPixel.MenuOverhaul.Helpers
     ///   fires OnScreenChanged(EEftScreenType) whenever the active screen
     ///   identity changes, which is the correct hook for hiding/showing them.
     /// </summary>
-    internal static class MenuVisibilityController
+    internal static class MenuScreenVisibilityPolicy
     {
-        private static bool _subscribed;
-
         /// <summary>
         /// True while EFT's current screen is the real main menu (and we are
         /// not in a raid). Other patches (button styling) gate on this so they
@@ -32,95 +30,24 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         /// </summary>
         public static bool IsMainMenuActive { get; private set; }
 
-        public static void EnsureSubscribed()
-        {
-            if (_subscribed) return;
-
-            var singleton = CurrentScreenSingletonClass.Instance;
-            if (singleton == null)
-            {
-                Plugin.LogSource.LogWarning("MenuVisibilityController - CurrentScreenSingletonClass.Instance not available yet.");
-                return;
-            }
-
-            singleton.OnScreenChanged += OnScreenChanged;
-            _subscribed = true;
-            Plugin.LogSource.LogDebug("MenuVisibilityController subscribed to OnScreenChanged.");
-        }
-
-        public static void Unsubscribe()
-        {
-            if (!_subscribed) return;
-
-            var singleton = CurrentScreenSingletonClass.Instance;
-            if (singleton != null)
-            {
-                singleton.OnScreenChanged -= OnScreenChanged;
-            }
-
-            _subscribed = false;
-            IsMainMenuActive = false;
-            Plugin.LogSource.LogDebug("MenuVisibilityController unsubscribed from OnScreenChanged.");
-        }
-
-        private static void OnScreenChanged(EEftScreenType screenType)
-        {
-            if (Utility.IsInGame())
-            {
-                HideCustomElements();
-                return;
-            }
-
-            if (screenType == EEftScreenType.MainMenu)
-            {
-                ShowCustomElements();
-            }
-            else if (IsBackgroundOnlyScreen(screenType))
-            {
-                ShowBackgroundOnly();
-            }
-            else
-            {
-                HideCustomElements();
-            }
-        }
-
-        /// <summary>
-        /// Screens where the user wants the custom plane + background to also
-        /// be visible, but without the rest of the main-menu customizations
-        /// (cloned player model, lamps, alignment camera, glow, decal, etc.).
-        /// </summary>
-        private static bool IsBackgroundOnlyScreen(EEftScreenType screenType)
-        {
-            switch (screenType)
-            {
-                case EEftScreenType.WeaponModding:   // weapon and armor/item modding
-                case EEftScreenType.EditBuild:       // building a weapon preset
-                case EEftScreenType.EquipmentBuilds: // weapon/equipment build list
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
         /// <summary>
         /// Show only the custom background plane (and hide the stock panorama)
         /// on screens listed in <see cref="IsBackgroundOnlyScreen"/>. All other
         /// modded elements stay hidden so the rest of the UI looks default.
         /// </summary>
-        private static void ShowBackgroundOnly()
+        internal static void ShowBackgroundOnly()
         {
             try
             {
                 IsMainMenuActive = false;
 
-                if (PlayerProfileFeaturesPatch.ClonedPlayerModelView != null
-                    && PlayerProfileFeaturesPatch.ClonedPlayerModelView.activeSelf)
+                if (PlayerProfileViewService.ClonedPlayerModelView != null
+                    && PlayerProfileViewService.ClonedPlayerModelView.activeSelf)
                 {
-                    PlayerProfileFeaturesPatch.ClonedPlayerModelView.SetActive(false);
+                    PlayerProfileViewService.ClonedPlayerModelView.SetActive(false);
                 }
 
-                var env = LayoutHelpers.FindEnvironmentObjects();
+                var env = MainMenuLayoutRuntime.FindEnvironmentObjects();
                 if (env != null && env.FactoryLayout != null)
                 {
                     SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.LampContainer, false);
@@ -158,12 +85,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             catch (System.Exception ex)
             {
-                Plugin.LogSource.LogError($"MenuVisibilityController.ShowBackgroundOnly error: {ex}");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Lifecycle, $"MenuScreenVisibilityPolicy.ShowBackgroundOnly error: {ex}");
             }
         }
 
         /// <summary>
-        /// Called from MenuOverhaulPatch.Postfix after the initial main-menu
+        /// Called from MainMenuLayoutPatchAdapter.Postfix after the initial main-menu
         /// layout has been applied. Sets IsMainMenuActive so
         /// downstream patches (button styling) can opt in immediately, before
         /// the first OnScreenChanged callback fires.
@@ -179,13 +106,13 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             {
                 IsMainMenuActive = false;
 
-                if (PlayerProfileFeaturesPatch.ClonedPlayerModelView != null
-                    && PlayerProfileFeaturesPatch.ClonedPlayerModelView.activeSelf)
+                if (PlayerProfileViewService.ClonedPlayerModelView != null
+                    && PlayerProfileViewService.ClonedPlayerModelView.activeSelf)
                 {
-                    PlayerProfileFeaturesPatch.ClonedPlayerModelView.SetActive(false);
+                    PlayerProfileViewService.ClonedPlayerModelView.SetActive(false);
                 }
 
-                var env = LayoutHelpers.FindEnvironmentObjects();
+                var env = MainMenuLayoutRuntime.FindEnvironmentObjects();
                 if (env != null && env.FactoryLayout != null)
                 {
                     SetChildActiveIfPresent(env.FactoryLayout, MenuOverhaulConstants.Environment.CustomPlane, false);
@@ -228,7 +155,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             catch (System.Exception ex)
             {
-                Plugin.LogSource.LogError($"MenuVisibilityController.HideCustomElements error: {ex}");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Lifecycle, $"MenuScreenVisibilityPolicy.HideCustomElements error: {ex}");
             }
         }
 
@@ -238,16 +165,16 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             {
                 IsMainMenuActive = true;
 
-                if (PlayerProfileFeaturesPatch.ClonedPlayerModelView != null)
+                if (PlayerProfileViewService.ClonedPlayerModelView != null)
                 {
-                    if (!PlayerProfileFeaturesPatch.ClonedPlayerModelView.activeSelf)
+                    if (!PlayerProfileViewService.ClonedPlayerModelView.activeSelf)
                     {
-                        PlayerProfileFeaturesPatch.ClonedPlayerModelView.SetActive(true);
+                        PlayerProfileViewService.ClonedPlayerModelView.SetActive(true);
                     }
-                    LightHelpers.SetupLights(PlayerProfileFeaturesPatch.ClonedPlayerModelView);
+                    MainMenuLightingService.SetupLights(PlayerProfileViewService.ClonedPlayerModelView);
                 }
 
-                var env = LayoutHelpers.FindEnvironmentObjects();
+                var env = MainMenuLayoutRuntime.FindEnvironmentObjects();
                 if (env != null && env.FactoryLayout != null)
                 {
                     Transform panoramaTransform = env.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.Panorama);
@@ -289,12 +216,12 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                     }
                 }
 
-                Utility.ConfigureDecalPlane(true);
-                Utility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value, Settings.PositionLogotypeVertical.Value);
+                GameStateUtility.ConfigureDecalPlane(true);
+                GameStateUtility.SetDecalPlanePosition(Settings.PositionLogotypeHorizontal.Value, Settings.PositionLogotypeVertical.Value);
             }
             catch (System.Exception ex)
             {
-                Plugin.LogSource.LogError($"MenuVisibilityController.ShowCustomElements error: {ex}");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Lifecycle, $"MenuScreenVisibilityPolicy.ShowCustomElements error: {ex}");
             }
         }
 

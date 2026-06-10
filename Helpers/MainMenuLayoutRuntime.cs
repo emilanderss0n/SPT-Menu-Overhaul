@@ -1,15 +1,16 @@
-﻿using EFT.UI;
+using EFT.UI;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
+using MoxoPixel.MenuOverhaul.Infrastructure.Reflection;
 using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
 {
-    public static class LayoutHelpers
+    public static class MainMenuLayoutRuntime
     {
         private static bool isAlignmentCameraMoved;
         private static readonly string PluginResourcesRoot = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "MoxoPixel.MenuOverhaul", "Resources");
@@ -25,7 +26,6 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             { MenuOverhaulConstants.MenuButtons.ExitButtonGroup, "exit_status_runner" }
         };
         private static readonly Dictionary<string, Texture2D> TextureCache = new Dictionary<string, Texture2D>();
-        private static readonly Dictionary<string, Sprite> SpriteCache = new Dictionary<string, Sprite>();
         private static readonly int EmissionMap = Shader.PropertyToID("_EmissionMap");
         private static readonly int MainTex = Shader.PropertyToID("_MainTex");
         private static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
@@ -41,19 +41,19 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         public static EnvironmentObjects FindEnvironmentObjects()
         {
             GameObject environmentUI = GameObject.Find(MenuOverhaulConstants.Environment.EnvironmentUI);
-            if (environmentUI == null) { Plugin.LogSource.LogWarning("Environment UI GameObject not found."); return null; }
+            if (environmentUI == null) { MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Environment UI GameObject not found."); return null; }
 
             Transform commonTransform = environmentUI.transform.Find(MenuOverhaulConstants.Environment.Common);
             GameObject commonObj = commonTransform != null ? commonTransform.gameObject : null;
-            if (commonObj == null) { Plugin.LogSource.LogWarning("Common GameObject not found in Environment UI."); return null; }
+            if (commonObj == null) { MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Common GameObject not found in Environment UI."); return null; }
 
             Transform environmentUISceneFactoryTransform = environmentUI.transform.Find(MenuOverhaulConstants.Environment.EnvironmentUISceneFactory);
             GameObject environmentUISceneFactory = environmentUISceneFactoryTransform != null ? environmentUISceneFactoryTransform.gameObject : null;
-            if (environmentUISceneFactory == null) { Plugin.LogSource.LogWarning("EnvironmentUISceneFactory GameObject not found in Environment UI."); return null; }
+            if (environmentUISceneFactory == null) { MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "EnvironmentUISceneFactory GameObject not found in Environment UI."); return null; }
 
             Transform factoryLayoutTransform = environmentUISceneFactory.transform.Find(MenuOverhaulConstants.Environment.FactoryLayout);
             GameObject factoryLayout = factoryLayoutTransform != null ? factoryLayoutTransform.gameObject : null;
-            if (factoryLayout == null) { Plugin.LogSource.LogWarning("FactoryLayout GameObject not found in EnvironmentUISceneFactory."); return null; }
+            if (factoryLayout == null) { MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "FactoryLayout GameObject not found in EnvironmentUISceneFactory."); return null; }
 
             return new EnvironmentObjects
             {
@@ -69,19 +69,31 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             EnvironmentObjects envObjects = FindEnvironmentObjects();
             if (envObjects == null || envObjects.FactoryLayout == null)
             {
-                Plugin.LogSource.LogWarning("GetBackgroundPlane - EnvironmentObjects or FactoryLayout not found.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "GetBackgroundPlane - EnvironmentObjects or FactoryLayout not found.");
                 return null;
             }
             Transform backgroundPlaneTransform = envObjects.FactoryLayout.transform.Find(MenuOverhaulConstants.Environment.CustomPlane);
             GameObject backgroundPlane = backgroundPlaneTransform != null ? backgroundPlaneTransform.gameObject : null;
-            if (backgroundPlane == null) Plugin.LogSource.LogWarning("CustomPlane GameObject not found in FactoryLayout.");
+            if (backgroundPlane == null) MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "CustomPlane GameObject not found in FactoryLayout.");
             return backgroundPlane;
         }
 
         public static void HideGameObject(MenuScreen instance, string fieldName)
         {
             if (instance == null || string.IsNullOrEmpty(fieldName)) return;
-            var field = typeof(MenuScreen).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+
+            if (!EftReflectionMap.IsInitialized)
+            {
+                EftReflectionMap.Initialize();
+            }
+
+            if (!EftReflectionMap.TryGetMenuScreenField(fieldName, out var field, out var fieldKey))
+            {
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, $"Field '{fieldName}' is not mapped in EftReflectionMap for HideGameObject.");
+                return;
+            }
+
+            EftReflectionMap.WarnIfMissing(field, fieldKey);
             if (field != null)
             {
                 var gameObject = field.GetValue(instance) as GameObject;
@@ -92,7 +104,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             else
             {
-                Plugin.LogSource.LogWarning($"Field '{fieldName}' not found in MenuScreen for HideGameObject.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, $"Field '{fieldName}' not found in MenuScreen for HideGameObject.");
             }
         }
 
@@ -135,7 +147,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             else
             {
-                Plugin.LogSource.LogDebug($"{childName} not found in {parent.name}.");
+                MenuDiagnosticsLogger.Debug(LogSubsystem.Layout, $"{childName} not found in {parent.name}.");
             }
         }
 
@@ -144,20 +156,20 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (buttonObject == null)
             {
-                Plugin.LogSource.LogWarning($"{buttonName} buttonObject is null for SetIconImages.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, $"{buttonName} buttonObject is null for SetIconImages.");
                 return;
             }
 
             if (!ButtonNameToFileNameMap.TryGetValue(buttonName, out string fileName))
             {
-                Plugin.LogSource.LogWarning($"No icon mapping found for button name: {buttonName}");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, $"No icon mapping found for button name: {buttonName}");
                 return;
             }
 
             Sprite newIconSprite = LoadIconSprite(fileName);
             if (newIconSprite == null)
             {
-                Plugin.LogSource.LogWarning($"Icon sprite '{fileName}' for {buttonName} could not be loaded from '{IconsDirectory}'.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, $"Icon sprite '{fileName}' for {buttonName} could not be loaded from '{IconsDirectory}'.");
                 return;
             }
 
@@ -205,10 +217,10 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return cachedTexture;
             }
 
-            Texture2D texture = LoadTextureFromDirectory(BackgroundDirectory, textureName);
+            Texture2D texture = UIAssetLoader.LoadTextureFromDirectory(BackgroundDirectory, textureName);
             if (texture == null)
             {
-                Plugin.LogSource.LogWarning($"Texture '{textureName}' could not be loaded from '{BackgroundDirectory}'.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, $"Texture '{textureName}' could not be loaded from '{BackgroundDirectory}'.");
                 return null;
             }
 
@@ -254,7 +266,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 }
                 else
                 {
-                    Plugin.LogSource.LogWarning($"Material with name containing '{materialName}' not found on panorama renderer.");
+                    MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, $"Material with name containing '{materialName}' not found on panorama renderer.");
                 }
             }
             return appliedMaterials;
@@ -266,7 +278,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             if (factoryLayout == null || panoramaSource == null || !hasMaterials) 
             {
                 int materialsCount = materialsToApply != null ? materialsToApply.Count : 0;
-                Plugin.LogSource.LogError($"CreateCustomPlaneForPanorama - Invalid input parameters: factoryLayout={factoryLayout!=null}, panoramaSource={panoramaSource!=null}, materialsToApply={materialsCount}");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Layout, $"CreateCustomPlaneForPanorama - Invalid input parameters: factoryLayout={factoryLayout!=null}, panoramaSource={panoramaSource!=null}, materialsToApply={materialsCount}");
                 return;
             }
 
@@ -290,7 +302,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             else
             {
-                Plugin.LogSource.LogError("Failed to get Renderer on newly created CustomPlane.");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Layout, "Failed to get Renderer on newly created CustomPlane.");
             }
         }
 
@@ -298,7 +310,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (factoryLayout == null)
             {
-                Plugin.LogSource.LogWarning("SetPanoramaEmissionMap - factoryLayout is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "SetPanoramaEmissionMap - factoryLayout is null.");
                 return;
             }
 
@@ -311,7 +323,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             GameObject panorama = panoramaTransform != null ? panoramaTransform.gameObject : null;
             if (panorama == null)
             {
-                Plugin.LogSource.LogWarning("panorama GameObject not found in FactoryLayout.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "panorama GameObject not found in FactoryLayout.");
                 return;
             }
 
@@ -321,21 +333,21 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             Renderer panoramaRenderer = panorama.GetComponent<Renderer>();
             if (panoramaRenderer == null)
             {
-                Plugin.LogSource.LogWarning("Renderer component not found on panorama.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Renderer component not found on panorama.");
                 return;
             }
 
             Texture2D preparedTexture = LoadAndPreparePanoramaTexture();
             if (preparedTexture == null)
             {
-                Plugin.LogSource.LogWarning("Failed to prepare panorama texture.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Failed to prepare panorama texture.");
                 return;
             }
 
             List<Material> appliedMaterials = ApplyEmissionToPanoramaMaterials(panoramaRenderer, preparedTexture);
             if (appliedMaterials.Count == 0)
             {
-                Plugin.LogSource.LogWarning("Failed to apply emission to any panorama materials. Will recreate materials.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Failed to apply emission to any panorama materials. Will recreate materials.");
                 appliedMaterials = CreateDefaultMaterialsWithEmission(preparedTexture);
             }
 
@@ -352,11 +364,11 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             else if (!Settings.EnableBackground.Value)
             {
-                Plugin.LogSource.LogDebug("SetPanoramaEmissionMap - CustomPlane creation skipped because EnableBackground is disabled.");
+                MenuDiagnosticsLogger.Debug(LogSubsystem.Layout, "SetPanoramaEmissionMap - CustomPlane creation skipped because EnableBackground is disabled.");
             }
             else
             {
-                Plugin.LogSource.LogError("SetPanoramaEmissionMap - Failed to create any materials for the custom plane!");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Layout, "SetPanoramaEmissionMap - Failed to create any materials for the custom plane!");
             }
         }
 
@@ -377,7 +389,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             else
             {
-                Plugin.LogSource.LogError("Failed to create default material - Standard shader not found");
+                MenuDiagnosticsLogger.Error(LogSubsystem.Layout, "Failed to create default material - Standard shader not found");
             }
             
             return materials;
@@ -438,17 +450,17 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                                 ? Settings.AccentColor.Value
                                 : Color.white;
                         }
-                        else Plugin.LogSource.LogWarning("Light component not found on Point light_bulb.");
+                        else MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Light component not found on Point light_bulb.");
                         pointLightBulbTransform.localPosition = new Vector3(-2.9435f, 1.2058f, 0.024f);
                     }
-                    else { Plugin.LogSource.LogWarning("Point light_bulb not found in nested Lamp."); }
+                    else { MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Point light_bulb not found in nested Lamp."); }
 
                     SetChildActive(nestedLampTransform.gameObject, "bulb", false);
                     SetChildActive(nestedLampTransform.gameObject, "flare_lampmenu", false);
                 }
-                else { Plugin.LogSource.LogWarning("Nested Lamp GameObject not found within Lamp."); }
+                else { MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Nested Lamp GameObject not found within Lamp."); }
             }
-            else { Plugin.LogSource.LogWarning("Lamp GameObject not found within LampContainer."); }
+            else { MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Lamp GameObject not found within LampContainer."); }
         }
 
         private static void DeactivateDefaultMainMenuCamera(GameObject environmentUISceneFactory)
@@ -456,11 +468,11 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             if (environmentUISceneFactory == null) return;
             Transform factoryCameraContainerTransform = environmentUISceneFactory.transform.Find(MenuOverhaulConstants.Environment.FactoryCameraContainer);
             GameObject factoryCameraContainer = factoryCameraContainerTransform != null ? factoryCameraContainerTransform.gameObject : null;
-            if (factoryCameraContainer == null) { Plugin.LogSource.LogWarning("FactoryCameraContainer GameObject not found."); return; }
+            if (factoryCameraContainer == null) { MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "FactoryCameraContainer GameObject not found."); return; }
             Transform mainMenuCameraTransform = factoryCameraContainer.transform.Find(MenuOverhaulConstants.Environment.MainMenuCamera);
             GameObject mainMenuCamera = mainMenuCameraTransform != null ? mainMenuCameraTransform.gameObject : null;
             if (mainMenuCamera != null) mainMenuCamera.SetActive(false);
-            else Plugin.LogSource.LogWarning("MainMenuCamera GameObject not found in FactoryCameraContainer.");
+            else MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "MainMenuCamera GameObject not found in FactoryCameraContainer.");
         }
 
         public static void UpdateLogotypeBulbLightColor(GameObject factoryLayout)
@@ -509,7 +521,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
 
             if (alignmentCameraTransform == null)
             {
-                Plugin.LogSource.LogDebug("AlignmentCamera not found in FactoryLayout, creating new one.");
+                MenuDiagnosticsLogger.Debug(LogSubsystem.Layout, "AlignmentCamera not found in FactoryLayout, creating new one.");
                 alignmentCamera = new GameObject(MenuOverhaulConstants.Environment.AlignmentCamera);
                 alignmentCamera.transform.SetParent(factoryLayout.transform);
                 alignmentCamera.transform.localPosition = Vector3.zero;
@@ -539,7 +551,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             EnvironmentObjects envObjects = FindEnvironmentObjects();
             if (envObjects == null || envObjects.EnvironmentUISceneFactory == null || envObjects.FactoryLayout == null || envObjects.EnvironmentUI == null)
             {
-                Plugin.LogSource.LogWarning("DisableCameraMovement - Essential EnvironmentObjects not found.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "DisableCameraMovement - Essential EnvironmentObjects not found.");
                 return;
             }
             DeactivateDefaultMainMenuCamera(envObjects.EnvironmentUISceneFactory);
@@ -561,14 +573,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             TextureCache.Clear();
 
-            foreach (var sprite in SpriteCache.Values)
-            {
-                if (sprite != null)
-                {
-                    UnityEngine.Object.Destroy(sprite);
-                }
-            }
-            SpriteCache.Clear();
+            UIAssetLoader.ClearCaches();
         }
 
         private static Sprite LoadIconSprite(string baseFileName)
@@ -578,94 +583,14 @@ namespace MoxoPixel.MenuOverhaul.Helpers
                 return null;
             }
 
-            if (SpriteCache.TryGetValue(baseFileName, out Sprite cachedSprite))
-            {
-                return cachedSprite;
-            }
-
-            Texture2D iconTexture = LoadTextureFromDirectory(IconsDirectory, baseFileName);
-            if (iconTexture == null)
-            {
-                return null;
-            }
-
-            Sprite sprite = Sprite.Create(iconTexture, new Rect(0, 0, iconTexture.width, iconTexture.height), new Vector2(0.5f, 0.5f), 100f);
-            SpriteCache[baseFileName] = sprite;
-            return sprite;
-        }
-
-        private static Texture2D LoadTextureFromDirectory(string directory, string baseFileName)
-        {
-            string filePath = ResolveAssetPath(directory, baseFileName);
-            if (string.IsNullOrEmpty(filePath))
-            {
-                return null;
-            }
-
-            try
-            {
-                byte[] fileBytes = File.ReadAllBytes(filePath);
-                Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                if (!texture.LoadImage(fileBytes))
-                {
-                    UnityEngine.Object.Destroy(texture);
-                    Plugin.LogSource.LogWarning($"Failed to decode image file '{filePath}'.");
-                    return null;
-                }
-
-                texture.name = Path.GetFileNameWithoutExtension(filePath);
-                texture.wrapMode = TextureWrapMode.Clamp;
-                texture.filterMode = FilterMode.Bilinear;
-                return texture;
-            }
-            catch (Exception ex)
-            {
-                Plugin.LogSource.LogError($"Failed to read texture from '{filePath}': {ex.Message}");
-                return null;
-            }
-        }
-
-        private static string ResolveAssetPath(string directory, string baseFileName)
-        {
-            if (string.IsNullOrEmpty(directory) || string.IsNullOrEmpty(baseFileName) || !Directory.Exists(directory))
-            {
-                return null;
-            }
-
-            string[] extensions = new[] { ".png", ".jpg", ".jpeg", ".tga" };
-
-            if (Path.HasExtension(baseFileName))
-            {
-                string explicitPath = Path.Combine(directory, baseFileName);
-                if (File.Exists(explicitPath))
-                {
-                    return explicitPath;
-                }
-            }
-
-            foreach (string extension in extensions)
-            {
-                string candidatePath = Path.Combine(directory, baseFileName + extension);
-                if (File.Exists(candidatePath))
-                {
-                    return candidatePath;
-                }
-            }
-
-            string[] matchingFiles = Directory.GetFiles(directory, baseFileName + ".*");
-            if (matchingFiles.Length > 0)
-            {
-                return matchingFiles[0];
-            }
-
-            return null;
+            return UIAssetLoader.LoadSpriteFromDirectory(IconsDirectory, baseFileName);
         }
 
         public static void DisposeResources()
         {
             ClearTextureCache();
             isAlignmentCameraMoved = false;
-            Plugin.LogSource.LogDebug("LayoutHelpers resources disposed");
+            MenuDiagnosticsLogger.Debug(LogSubsystem.Layout, "MainMenuLayoutRuntime resources disposed");
         }
 
     }

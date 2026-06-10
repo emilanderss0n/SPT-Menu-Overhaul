@@ -1,4 +1,6 @@
-﻿using EFT;
+using EFT;
+using MoxoPixel.MenuOverhaul.Helpers.Services;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
 using MoxoPixel.MenuOverhaul.Utils;
 using SPT.Reflection.Patching;
 using System.Reflection;
@@ -15,17 +17,17 @@ namespace MoxoPixel.MenuOverhaul.Patches
         [PatchPostfix]
         private static void PatchPostfix()
         {
-            Utility.SetGameStarted(true);
+            GameStateUtility.SetGameStarted(true);
 
-            if (PlayerProfileFeaturesPatch.ClonedPlayerModelView != null)
+            if (PlayerProfileViewService.ClonedPlayerModelView != null)
             {
-                PlayerProfileFeaturesPatch.ClonedPlayerModelView.SetActive(false);
+                PlayerProfileViewService.ClonedPlayerModelView.SetActive(false);
             }
 
             // Hide the decal plane explicitly while in a raid.
-            Utility.ConfigureDecalPlane(false);
+            GameStateUtility.ConfigureDecalPlane(false);
 
-            Plugin.LogSource.LogDebug("MenuOverhaul: game started, custom menu suspended.");
+            MenuDiagnosticsLogger.Debug(LogSubsystem.Lifecycle, "MenuOverhaul: game started, custom menu suspended.");
         }
     }
 }

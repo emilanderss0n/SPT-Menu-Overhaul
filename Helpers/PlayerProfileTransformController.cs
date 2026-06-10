@@ -1,5 +1,6 @@
-using MoxoPixel.MenuOverhaul.Utils;
 using UnityEngine;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
+using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
 {
@@ -22,7 +23,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (clonedPlayerModelView == null)
             {
-                Plugin.LogSource.LogWarning("UpdatePlayerModelPosition - clonedPlayerModelView is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdatePlayerModelPosition - clonedPlayerModelView is null.");
                 return;
             }
 
@@ -50,7 +51,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (clonedPlayerModelView == null)
             {
-                Plugin.LogSource.LogWarning("UpdatePlayerModelRotation - clonedPlayerModelView is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdatePlayerModelRotation - clonedPlayerModelView is null.");
                 return dragRotator;
             }
 
@@ -78,14 +79,14 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (clonedPlayerModelView == null)
             {
-                Plugin.LogSource.LogWarning("UpdateCameraPosition - clonedPlayerModelView is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdateCameraPosition - clonedPlayerModelView is null.");
                 return;
             }
 
             Transform cameraTransform = clonedPlayerModelView.transform.Find(MenuOverhaulConstants.PlayerModel.CameraInventoryPath);
             if (cameraTransform == null)
             {
-                Plugin.LogSource.LogWarning($"UpdateCameraPosition - {MenuOverhaulConstants.PlayerModel.CameraInventoryPath} not found.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, $"UpdateCameraPosition - {MenuOverhaulConstants.PlayerModel.CameraInventoryPath} not found.");
                 return;
             }
 
@@ -105,14 +106,14 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (clonedPlayerModelView == null)
             {
-                Plugin.LogSource.LogWarning("UpdateCameraRotation - clonedPlayerModelView is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdateCameraRotation - clonedPlayerModelView is null.");
                 return;
             }
 
             Transform cameraTransform = clonedPlayerModelView.transform.Find(MenuOverhaulConstants.PlayerModel.CameraInventoryPath);
             if (cameraTransform == null)
             {
-                Plugin.LogSource.LogWarning($"UpdateCameraRotation - {MenuOverhaulConstants.PlayerModel.CameraInventoryPath} not found.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, $"UpdateCameraRotation - {MenuOverhaulConstants.PlayerModel.CameraInventoryPath} not found.");
                 return;
             }
 
@@ -127,7 +128,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             Transform bottomFieldTransform = GetBottomFieldTransform(clonedPlayerModelView);
             if (bottomFieldTransform == null)
             {
-                Plugin.LogSource.LogWarning($"BottomFieldPositionChanged - {MenuOverhaulConstants.PlayerModel.BottomFieldName} transform not found.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, $"BottomFieldPositionChanged - {MenuOverhaulConstants.PlayerModel.BottomFieldName} transform not found.");
                 return;
             }
 
@@ -153,33 +154,33 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         {
             if (modelInstance == null)
             {
-                Plugin.LogSource.LogWarning("HidePlayerModelExtraElements - modelInstance is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "HidePlayerModelExtraElements - modelInstance is null.");
                 return;
             }
 
-            LayoutHelpers.SetChildActive(modelInstance, "IconsContainer", false);
-            LayoutHelpers.SetChildActive(modelInstance, "DragTrigger", false);
+            MainMenuLayoutRuntime.SetChildActive(modelInstance, "IconsContainer", false);
+            MainMenuLayoutRuntime.SetChildActive(modelInstance, "DragTrigger", false);
         }
 
         public static void AdjustInnerPlayerModelPosition(GameObject modelInstance)
         {
             if (modelInstance == null)
             {
-                Plugin.LogSource.LogWarning("AdjustInnerPlayerModelPosition - modelInstance is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "AdjustInnerPlayerModelPosition - modelInstance is null.");
                 return;
             }
 
             Transform playerMvObject = modelInstance.transform.Find(MenuOverhaulConstants.PlayerModel.RootPath);
             if (playerMvObject == null)
             {
-                Plugin.LogSource.LogWarning("AdjustInnerPlayerModelPosition - PlayerMVObject not found in modelInstance.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "AdjustInnerPlayerModelPosition - PlayerMVObject not found in modelInstance.");
                 return;
             }
 
             Transform innerModelTransform = playerMvObject.Find(MenuOverhaulConstants.PlayerModel.MenuPlayerName);
             if (innerModelTransform == null)
             {
-                Plugin.LogSource.LogWarning($"AdjustInnerPlayerModelPosition - {MenuOverhaulConstants.PlayerModel.MenuPlayerName} not found in {MenuOverhaulConstants.PlayerModel.RootPath}.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, $"AdjustInnerPlayerModelPosition - {MenuOverhaulConstants.PlayerModel.MenuPlayerName} not found in {MenuOverhaulConstants.PlayerModel.RootPath}.");
                 return;
             }
 

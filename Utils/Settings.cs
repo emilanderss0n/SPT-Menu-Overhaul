@@ -23,6 +23,13 @@ namespace MoxoPixel.MenuOverhaul.Utils
         public static ConfigEntry<bool> EnableHighQualityPlayerPreview;
         public static ConfigEntry<bool> EnableDefaultPlayerAnimation;
         public static ConfigEntry<bool> EnableMenuButtonIcons;
+        public static ConfigEntry<float> HoverLabelSlideDistance;
+        public static ConfigEntry<float> HoverIconScaleMultiplier;
+        public static ConfigEntry<float> HoverIndicatorSizeMultiplier;
+        public static ConfigEntry<float> HoverIndicatorSpacing;
+        public static ConfigEntry<string> HoverAnimationDurationPreset;
+        public static ConfigEntry<bool> EnableDebugDiagnostics;
+        public static ConfigEntry<bool> EnableVerboseLifecycleDiagnostics;
         public static ConfigEntry<float> PositionPlayButtonHorizontal;
         public static ConfigEntry<float> PositionCharacterButtonHorizontal;
         public static ConfigEntry<float> PositionTradeButtonHorizontal;
@@ -120,6 +127,69 @@ namespace MoxoPixel.MenuOverhaul.Utils
                     "Show or hide menu button icons. When disabled, icons are hidden in both default and hover states",
                     null,
                     new ConfigurationManagerAttributes { })));
+
+            ConfigEntries.Add(HoverLabelSlideDistance = config.Bind(
+                AdvancedSectionTitle,
+                "Hover Label Slide Distance",
+                12f,
+                new ConfigDescription(
+                    "Horizontal slide distance for menu label hover animation",
+                    new AcceptableValueRange<float>(0f, 40f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(HoverIconScaleMultiplier = config.Bind(
+                AdvancedSectionTitle,
+                "Hover Icon Scale Multiplier",
+                1.12f,
+                new ConfigDescription(
+                    "Scale multiplier applied to button icons while hovered",
+                    new AcceptableValueRange<float>(0.5f, 2f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(HoverIndicatorSizeMultiplier = config.Bind(
+                AdvancedSectionTitle,
+                "Hover Indicator Size Multiplier",
+                0.35f,
+                new ConfigDescription(
+                    "Size multiplier for the hover indicator relative to icon size",
+                    new AcceptableValueRange<float>(0.1f, 1.5f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(HoverIndicatorSpacing = config.Bind(
+                AdvancedSectionTitle,
+                "Hover Indicator Spacing",
+                8f,
+                new ConfigDescription(
+                    "Horizontal spacing between icon edge and hover indicator",
+                    new AcceptableValueRange<float>(0f, 32f),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(HoverAnimationDurationPreset = config.Bind(
+                AdvancedSectionTitle,
+                "Hover Animation Duration Preset",
+                "Normal",
+                new ConfigDescription(
+                    "Duration preset for hover/idle button animation timing",
+                    new AcceptableValueList<string>("Fast", "Normal", "Slow"),
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(EnableDebugDiagnostics = config.Bind(
+                AdvancedSectionTitle,
+                "Enable Debug Diagnostics",
+                false,
+                new ConfigDescription(
+                    "Enable debug-level diagnostics logs for menu overhaul subsystems",
+                    null,
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
+
+            ConfigEntries.Add(EnableVerboseLifecycleDiagnostics = config.Bind(
+                AdvancedSectionTitle,
+                "Enable Verbose Lifecycle Diagnostics",
+                false,
+                new ConfigDescription(
+                    "Enable extra lifecycle coordinator debug traces (requires Enable Debug Diagnostics)",
+                    null,
+                    new ConfigurationManagerAttributes { IsAdvanced = true })));
 
             ConfigEntries.Add(PositionPlayButtonHorizontal = config.Bind(
                 AdvancedSectionTitle,

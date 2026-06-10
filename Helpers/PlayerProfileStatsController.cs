@@ -5,6 +5,7 @@ using SPT.Reflection.Utils;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
 using MoxoPixel.MenuOverhaul.Utils;
 
 namespace MoxoPixel.MenuOverhaul.Helpers
@@ -45,7 +46,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             Transform bottomFieldTransform = PlayerProfileTransformController.GetBottomFieldTransform(clonedPlayerModelView);
             if (bottomFieldTransform == null)
             {
-                Plugin.LogSource.LogWarning("UpdatePlayerStats - bottomFieldTransform is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdatePlayerStats - bottomFieldTransform is null.");
                 return;
             }
 
@@ -56,7 +57,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             if (profile == null)
             {
-                Plugin.LogSource.LogWarning("UpdatePlayerStats - BackEndSession.Profile is null. Cannot update stats.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdatePlayerStats - BackEndSession.Profile is null. Cannot update stats.");
                 return;
             }
 
@@ -76,7 +77,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             else
             {
-                Plugin.LogSource.LogWarning("UpdateNicknameDisplay - NicknameText TMP component not found in BottomField.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdateNicknameDisplay - NicknameText TMP component not found in BottomField.");
             }
 
             Transform originalNicknameAndKarma = bottomField.Find(MenuOverhaulConstants.BottomFieldUi.NicknameAndKarma);
@@ -91,7 +92,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             Transform experienceRow = bottomField.Find(MenuOverhaulConstants.BottomFieldUi.ExperienceRow);
             if (experienceRow == null)
             {
-                Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExperienceRow not found in BottomField.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdateExperienceDisplay - ExperienceRow not found in BottomField.");
                 return;
             }
 
@@ -104,7 +105,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             else
             {
-                Plugin.LogSource.LogWarning("UpdateExperienceDisplay - ExpValue TMP component not found in ExperienceRow.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdateExperienceDisplay - ExpValue TMP component not found in ExperienceRow.");
             }
         }
 
@@ -113,13 +114,13 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             Transform levelInfoRow = bottomField.Find(MenuOverhaulConstants.BottomFieldUi.LevelInfoRow);
             if (levelInfoRow == null)
             {
-                Plugin.LogSource.LogWarning("UpdateLevelDisplay - LevelInfoRow transform not found in BottomField.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdateLevelDisplay - LevelInfoRow transform not found in BottomField.");
                 return;
             }
 
             if (profile.Info == null)
             {
-                Plugin.LogSource.LogWarning("UpdateLevelDisplay - Profile.Info is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdateLevelDisplay - Profile.Info is null.");
                 return;
             }
 
@@ -136,7 +137,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             else
             {
-                Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level TMP component not found in LevelInfoRow.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdateLevelDisplay - Level TMP component not found in LevelInfoRow.");
             }
 
             Transform iconTransform = levelInfoRow.Find(MenuOverhaulConstants.BottomFieldUi.LevelIcon);
@@ -170,7 +171,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
             }
             else
             {
-                Plugin.LogSource.LogWarning("UpdateLevelDisplay - Level Icon transform not found in LevelInfoRow.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Profile, "UpdateLevelDisplay - Level Icon transform not found in LevelInfoRow.");
             }
 
             HorizontalLayoutGroup hlg = levelInfoRow.GetComponent<HorizontalLayoutGroup>();

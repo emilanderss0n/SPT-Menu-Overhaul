@@ -14,6 +14,13 @@ namespace MoxoPixel.MenuOverhaul.Utils
             public const string MenuScreenShowMethod = "Show";
             public const string DefaultButtonIdleMethod = "method_1";
             public const string DefaultButtonHighlightedMethod = "method_2";
+
+            public const string NormalIconColorField = "_normalIconColor";
+            public const string NormalLabelColorField = "_normalLabelColor";
+            public const string NormalImageColorField = "_normalImageColor";
+            public const string BackgroundNormalStateAlphaField = "_backgorundNormalStateAplha";
+            public const string HighlightedIconColorField = "_highlightedIconColor";
+            public const string HighlightedImageColorField = "_highlightedImageColor";
         }
 
         internal static class MenuScreen
