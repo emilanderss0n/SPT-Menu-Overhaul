@@ -78,11 +78,9 @@ namespace MoxoPixel.MenuOverhaul
             try
             {
                 MenuLifecycleCoordinator.CleanupOnUnload();
-                
-                // Cleanup static helpers
                 MainMenuLayoutRuntime.DisposeResources();
                 MainMenuLightingService.Cleanup();
-                Utils.GameStateUtility.ResetGameState();
+                GameStateUtility.ResetGameState();
                 
                 LogSource.LogDebug("MenuOverhaul plugin resources cleaned up.");
             }
