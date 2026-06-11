@@ -1,6 +1,5 @@
 using UnityEngine;
 using MoxoPixel.MenuOverhaul.Helpers;
-using EFT.UI.Screens;
 using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
 
 namespace MoxoPixel.MenuOverhaul.Utils
