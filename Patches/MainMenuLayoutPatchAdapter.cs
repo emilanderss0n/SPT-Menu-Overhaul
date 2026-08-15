@@ -1,5 +1,6 @@
 using EFT;
 using EFT.UI;
+using EFT.UI.Matchmaker;
 using MoxoPixel.MenuOverhaul.Helpers.Services;
 using MoxoPixel.MenuOverhaul.Infrastructure.Diagnostics;
 using SPT.Reflection.Patching;
@@ -16,7 +17,7 @@ namespace MoxoPixel.MenuOverhaul.Patches
         }
 
         [PatchPostfix]
-        private static async void Postfix(MenuScreen __instance, Profile profile, MatchmakerPlayerControllerClass matchmaker)
+        private static async void Postfix(MenuScreen __instance, Profile profile, MatchmakerPlayersController matchmaker)
         {
             try
             {

@@ -1,9 +1,9 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.11.35312.102
+VisualStudioVersion = 17.14.33.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPT-MenuOverhaul", "SPT-MenuOverhaul.csproj", "{0EC7C917-6D22-4BE2-B2BE-ED9B18885679}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SPT-MenuOverhaul", "SPT-MenuOverhaul.csproj", "{3B444021-CDA0-4F9F-B16C-244DCC93AD33}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0EC7C917-6D22-4BE2-B2BE-ED9B18885679}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0EC7C917-6D22-4BE2-B2BE-ED9B18885679}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0EC7C917-6D22-4BE2-B2BE-ED9B18885679}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0EC7C917-6D22-4BE2-B2BE-ED9B18885679}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B444021-CDA0-4F9F-B16C-244DCC93AD33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B444021-CDA0-4F9F-B16C-244DCC93AD33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B444021-CDA0-4F9F-B16C-244DCC93AD33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B444021-CDA0-4F9F-B16C-244DCC93AD33}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {901B4F39-A1B5-451C-BBB1-8DB834C74E52}
+		SolutionGuid = {D529B865-4CA8-4D1B-AAED-18A6ACE086E2}
 	EndGlobalSection
 EndGlobal

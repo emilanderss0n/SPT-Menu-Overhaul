@@ -41,7 +41,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         public static EnvironmentObjects FindEnvironmentObjects()
         {
             GameObject environmentUI = GameObject.Find(MenuOverhaulConstants.Environment.EnvironmentUI);
-            if (environmentUI == null) { MenuDiagnosticsLogger.Warning(LogSubsystem.Layout, "Environment UI GameObject not found."); return null; }
+            if (environmentUI == null) { MenuDiagnosticsLogger.Debug(LogSubsystem.Layout, "Environment UI GameObject not found."); return null; }
 
             Transform commonTransform = environmentUI.transform.Find(MenuOverhaulConstants.Environment.Common);
             GameObject commonObj = commonTransform != null ? commonTransform.gameObject : null;

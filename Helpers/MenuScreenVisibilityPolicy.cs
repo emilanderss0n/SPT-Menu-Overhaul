@@ -9,13 +9,14 @@ namespace MoxoPixel.MenuOverhaul.Helpers
     /// Tracks the active EFT screen and toggles the mod's environment-level
     /// customizations so they only apply while the real main menu is on-screen.
     ///
-    /// - MenuScreen.GClass3878.ScreenType returns EEftScreenType.MainMenu and
-    ///   MainEnvironment/ShowEnvironment/ShowEnvironmentCamera are Enabled. The
-    ///   Environment UI GameObjects we mutate (CustomPlane, LampContainer,
-    ///   decal_plane, AlignmentCamera, MainMenuCamera, Glow Canvas, cloned
-    ///   player model) are persistent across screen transitions, so gating
-    ///   MenuScreen.Show alone is not enough.
-    /// - CurrentScreenSingletonClass : UserInterfaceClass&lt;EEftScreenType&gt;
+    /// - MenuScreen.MainMenuScreenController.ScreenType returns
+    ///   EEftScreenType.MainMenu and MainEnvironment/ShowEnvironment/
+    ///   ShowEnvironmentCamera are Enabled. The Environment UI GameObjects we
+    ///   mutate (CustomPlane, LampContainer, decal_plane, AlignmentCamera,
+    ///   MainMenuCamera, Glow Canvas, cloned player model) are persistent
+    ///   across screen transitions, so gating MenuScreen.Show alone is not
+    ///   enough.
+    /// - EftScreenManager : ScreenManager&lt;EEftScreenType&gt;
     ///   fires OnScreenChanged(EEftScreenType) whenever the active screen
     ///   identity changes, which is the correct hook for hiding/showing them.
     /// </summary>
@@ -24,8 +25,9 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         /// <summary>
         /// True while EFT's current screen is the real main menu (and we are
         /// not in a raid). Other patches (button styling) gate on this so they
-        /// do not affect the in-raid ESC menu (MenuScreen.GClass3880) or the
-        /// reconnect menu (MenuScreen.GClass3879), which both reuse the
+        /// do not affect the in-raid ESC menu
+        /// (MenuScreen.RaidMainMenuScreenController) or the reconnect menu
+        /// (MenuScreen.MainMenuReconnectScreenController), which both reuse the
         /// MenuScreen GameObject and DefaultUIButtonAnimation instances.
         /// </summary>
         public static bool IsMainMenuActive { get; private set; }

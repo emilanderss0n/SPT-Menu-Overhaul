@@ -38,7 +38,7 @@ namespace MoxoPixel.MenuOverhaul.Helpers
         }
 
         /// <summary>
-        /// Re-invokes DefaultUIButtonAnimation.method_1(false) on every button
+        /// Re-invokes DefaultUIButtonAnimation.SetNormalState(false) on every button
         /// under the MenuScreen so DefaultUIButtonIdlePatchAdapter can restore icon/label/image
         /// alpha now that MenuScreenVisibilityPolicy.IsMainMenuActive is true.
         /// The game itself runs the initial idle pass before our postfix, so

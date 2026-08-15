@@ -34,10 +34,10 @@ namespace MoxoPixel.MenuOverhaul.Infrastructure.Lifecycle
                 return;
             }
 
-            CurrentScreenSingletonClass singleton = CurrentScreenSingletonClass.Instance;
+            EftScreenManager singleton = EftScreenManager.Instance;
             if (singleton == null)
             {
-                MenuDiagnosticsLogger.Warning(LogSubsystem.Lifecycle, "Screen subscription deferred; CurrentScreenSingletonClass.Instance is null.");
+                MenuDiagnosticsLogger.Warning(LogSubsystem.Lifecycle, "Screen subscription deferred; EftScreenManager.Instance is null.");
                 return;
             }
 
@@ -96,7 +96,7 @@ namespace MoxoPixel.MenuOverhaul.Infrastructure.Lifecycle
 
             if (_screenSubscribed)
             {
-                CurrentScreenSingletonClass singleton = CurrentScreenSingletonClass.Instance;
+                EftScreenManager singleton = EftScreenManager.Instance;
                 if (singleton != null)
                 {
                     singleton.OnScreenChanged -= OnScreenChanged;

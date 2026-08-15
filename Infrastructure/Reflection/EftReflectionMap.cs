@@ -163,16 +163,24 @@ namespace MoxoPixel.MenuOverhaul.Infrastructure.Reflection
             }
         }
 
+        // SPT 4.1 deobfuscated the client and changed the visibility of several of
+        // these members (MenuScreen._playButton and DefaultUIButtonAnimation's
+        // _normalLabelColor / _backgorundNormalStateAplha went private -> public,
+        // while the *IconColor / *ImageColor fields stayed protected). Match on
+        // both visibilities so a future flip does not silently resolve to null.
+        private const BindingFlags MemberLookup =
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
         private static MethodInfo ResolveMethod(Type type, string methodName, string memberKey)
         {
-            MethodInfo method = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public);
+            MethodInfo method = type.GetMethod(methodName, MemberLookup);
             TrackResolution(method, memberKey);
             return method;
         }
 
         private static FieldInfo ResolveField(Type type, string fieldName, string memberKey)
         {
-            FieldInfo field = type.GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo field = type.GetField(fieldName, MemberLookup);
             TrackResolution(field, memberKey);
             return field;
         }

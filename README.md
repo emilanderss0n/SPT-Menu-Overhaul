@@ -9,7 +9,7 @@ Install the mod by dragging the first folder in the zip into your SPT install di
 
 ![image](https://i.imgur.com/NZJPKny.jpeg)
 
-[Go to the mod page](https://hub.sp-tarkov.com/files/file/2412-wtt-menu-overhaul)
+[Go to the mod page](https://sp-mod.com/mod/1775/wtt-menu-overhaul)
 
 ## Features
 
